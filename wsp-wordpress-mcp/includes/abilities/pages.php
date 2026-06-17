@@ -19,11 +19,12 @@ function wsp_register_pages_abilities() {
             'label'              => 'Create Page',
             'description'        => 'Creates a new page.',
             'input_schema'       => array( 'type' => 'object', 'required' => array( 'title', 'content' ), 'properties' => array(
-                'title'   => array( 'type' => 'string',  'description' => 'Page title.' ),
-                'content' => array( 'type' => 'string',  'description' => 'Page content.' ),
-                'status'  => array( 'type' => 'string',  'description' => 'publish | draft.' ),
-                'parent'  => array( 'type' => 'integer', 'description' => 'Parent page ID.' ),
-                'slug'    => array( 'type' => 'string',  'description' => 'URL slug.' ),
+                'title'    => array( 'type' => 'string',  'description' => 'Page title.' ),
+                'content'  => array( 'type' => 'string',  'description' => 'Page content.' ),
+                'status'   => array( 'type' => 'string',  'description' => 'publish | draft.' ),
+                'parent'   => array( 'type' => 'integer', 'description' => 'Parent page ID.' ),
+                'slug'     => array( 'type' => 'string',  'description' => 'URL slug.' ),
+                'elementor' => array( 'type' => 'boolean', 'description' => 'Set true to initialize Elementor on the new page.' ),
             ) ),
             'permission_callback' => function() { return current_user_can( 'publish_pages' ); },
             'execute_callback'   => 'wsp_execute_create_page',
@@ -84,7 +85,14 @@ function wsp_execute_create_page( $input ) {
     if ( ! empty( $input['slug'] ) )   $args['post_name']   = sanitize_title( $input['slug'] );
     $id = wp_insert_post( $args, true );
     if ( is_wp_error( $id ) ) return array( 'success' => false, 'error' => $id->get_error_message() );
-    return array( 'success' => true, 'id' => $id, 'url' => get_permalink( $id ) );
+
+    $elementor_initialized = false;
+    if ( ! empty( $input['elementor'] ) && wsp_elementor_is_active() ) {
+        wsp_elementor_save_data( $id, array() );
+        $elementor_initialized = true;
+    }
+
+    return array( 'success' => true, 'id' => $id, 'url' => get_permalink( $id ), 'elementor' => $elementor_initialized );
 }
 
 function wsp_execute_update_page( $input ) {
