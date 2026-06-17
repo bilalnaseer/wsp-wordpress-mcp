@@ -93,6 +93,14 @@ function wsp_execute_create_page( $input ) {
         $elementor_initialized = true;
     }
 
+    if ( ! empty( $input['page_layout'] ) ) {
+        $allowed_layouts = array( 'default', 'elementor_header_footer', 'elementor_canvas' );
+        $layout = sanitize_text_field( wp_unslash( $input['page_layout'] ) );
+        if ( in_array( $layout, $allowed_layouts, true ) ) {
+            update_post_meta( $id, '_wp_page_template', $layout );
+        }
+    }
+
     return array( 'success' => true, 'id' => $id, 'url' => get_permalink( $id ), 'elementor' => $elementor_initialized );
 }
 
