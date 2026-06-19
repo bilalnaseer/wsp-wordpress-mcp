@@ -33,6 +33,13 @@ function wsp_mcp_ability_registry() {
         'wsp/get-plugins'     => array( 'label' => 'Read Plugins',    'description' => 'List all active plugins with name, version, and author.',    'group' => 'Site',     'access' => 'read',  'default' => false ),
     );
 
+    if ( wsp_yoast_is_active() ) {
+        $abilities += array(
+            // YOAST SEO
+            'wsp/yoast-get-seo'    => array( 'label' => 'Get Yoast SEO Meta',    'description' => 'Get Yoast SEO title, meta description, and focus keyphrase for a post or page.', 'group' => 'Yoast SEO', 'access' => 'read',  'default' => false ),
+            'wsp/yoast-update-seo' => array( 'label' => 'Update Yoast SEO Meta', 'description' => 'Update Yoast SEO title, meta description, and/or focus keyphrase for a post or page.', 'group' => 'Yoast SEO', 'access' => 'write', 'default' => false ),
+        );
+    }
     if ( class_exists( '\Elementor\Plugin' ) ) {
         $abilities += array(
             // ELEMENTOR
