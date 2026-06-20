@@ -2,7 +2,7 @@
 
 > **By [WebSensePro](https://websensepro.com) — Official Shopify Partner & WordPress Agency**
 
-[![Version](https://img.shields.io/badge/Version-1.3.0-blue?style=for-the-badge)](https://github.com/bilalnaseer/wsp-wordpress-mcp/releases)
+[![Version](https://img.shields.io/badge/Version-2.0.0-blue?style=for-the-badge)](https://github.com/bilalnaseer/wsp-wordpress-mcp/releases)
 [![YouTube](https://img.shields.io/badge/YouTube-140K%2B%20Subscribers-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtube.com/websensepro)
 [![License](https://img.shields.io/badge/License-GPL%202.0-green?style=for-the-badge)](LICENSE)
 
@@ -14,11 +14,17 @@
 
 ---
 
-## ✨ What's New in v1.3.0
+## ✨ What's New in v2.0.0
 
-- 🔍 **Yoast SEO Abilities** — read and update Yoast SEO title, meta description, and focus keyphrase for any post or page directly via AI agent. Yoast SEO group only appears when Yoast is active on your site.
+- 🚀 **Built-in Native MCP Server** — the plugin now ships its own MCP server at `/wp-json/wsp-mcp/v1/mcp`. **No companion plugin, WordPress MCP Adapter, or Node.js bridge required.**
+- 🔌 **MCP > Connection Page** — endpoint URL, API key (with one-click regenerate), and ready-to-paste config tabs for **Claude Desktop, Cursor, Codex, Antigravity, and OpenClaw** — the API key is pre-filled for you.
+- 🔐 **Flexible Auth** — connect with a WordPress Application Password **or** the plugin's API key (`Authorization: Bearer`), with per-tool capability enforcement.
+- 🗂️ **Cleaner Settings** — ability groups are now collapsible accordions with live enabled/total counts.
+- ♻️ **Dual-Mode** — existing Abilities-API / MCP-Adapter connections keep working untouched.
 
 ## Previous Releases
+
+**v1.3.0** — 🔍 Yoast SEO abilities (read/update SEO title, meta description, focus keyphrase); group only appears when Yoast is active.
 
 **v1.2.1** — Add OpenClaw tab to Config Files page
 
@@ -68,13 +74,15 @@
 
 ## 🚀 Quick Start
 
-**Prerequisites:** WordPress 6.9+, [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter), Node.js 18+
+**Prerequisites:** WordPress 6.2+, PHP 7.4+ — **that's it.** No companion plugin, no MCP Adapter, no Node.js for natively-supported clients (Cursor, Codex, Antigravity). Claude Desktop & OpenClaw use the `mcp-remote` bridge, which needs Node.js 18+.
 
 1. Install & activate this plugin
 2. Go to **MCP > Settings** in wp-admin and enable the abilities you need
-3. Go to **MCP > Config Files** and copy your auto-generated config
-4. Paste it into `claude_desktop_config.json` (or `~/.codex/config.toml` for Codex)
-5. Start prompting your AI agent
+3. Go to **MCP > Connection** and pick your client tab (Claude Desktop, Cursor, Codex, Antigravity, or OpenClaw)
+4. Copy the snippet — the endpoint URL and API key are already filled in — and paste it into your client's config
+5. Reconnect / restart the client and start prompting your AI agent
+
+> **Upgrading from v1.x?** Your existing MCP-Adapter connection keeps working in dual-mode. The legacy **MCP > Config Files** page is still available, but the native **MCP > Connection** page is now the recommended path.
 
 ---
 
