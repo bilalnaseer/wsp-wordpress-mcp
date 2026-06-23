@@ -228,14 +228,7 @@ function wsp_register_woocommerce_abilities() {
         ) ) );
     }
 
-    if ( wsp_mcp_is_enabled( 'wsp/woo-list-payment-gateways' ) ) {
-        wp_register_ability( 'wsp/woo-list-payment-gateways', array_merge( $base, array(
-            'label'              => 'List Payment Gateways',
-            'input_schema'       => array( 'type' => 'object', 'properties' => array() ),
-            'permission_callback' => $can_edit,
-            'execute_callback'   => 'wsp_execute_woo_list_payment_gateways',
-        ) ) );
-    }
+    
 
     if ( wsp_mcp_is_enabled( 'wsp/woo-list-orders' ) ) {
         wp_register_ability( 'wsp/woo-list-orders', array_merge( $base, array(
@@ -771,19 +764,6 @@ function wsp_execute_woo_refund_order( $input ) {
     );
 }
 
-function wsp_execute_woo_list_payment_gateways( $input ) {
-    $gateways = WC()->payment_gateways->payment_gateways();
-    $result   = array();
-    foreach ( $gateways as $id => $gateway ) {
-        $result[] = array(
-            'id'          => $id,
-            'title'       => $gateway->get_title(),
-            'description' => wp_strip_all_tags( $gateway->get_description() ),
-            'enabled'     => 'yes' === $gateway->enabled,
-        );
-    }
-    return array( 'gateways' => $result, 'total' => count( $result ) );
-}
 
 add_filter( 'http_request_args', 'wsp_woo_bypass_local_ssl_verify', 10, 2 );
 function wsp_woo_bypass_local_ssl_verify( $args, $url ) {

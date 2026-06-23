@@ -60,7 +60,6 @@ function wsp_mcp_ability_registry() {
             'wsp/woo-report-sales'        => array( 'label' => 'Get Sales Report',            'description' => 'Get sales, orders, net revenue, and average order value reports.', 'group' => 'WooCommerce', 'access' => 'read',  'default' => false ),
             'wsp/woo-get-low-stock'       => array( 'label' => 'Get Low Stock Alerts',        'description' => 'Inspect and list products running low on stock.',    'group' => 'WooCommerce', 'access' => 'read',  'default' => false ),
             'wsp/woo-moderate-review'     => array( 'label' => 'Moderate Product Reviews',    'description' => 'Approve, spam, trash, or reply to product reviews.',  'group' => 'WooCommerce', 'access' => 'write', 'default' => false ),
-            'wsp/woo-list-payment-gateways'=> array( 'label' => 'List Payment Gateways',       'description' => 'List active and available payment gateways.',         'group' => 'WooCommerce', 'access' => 'read',  'default' => false ),
         );
     }
 

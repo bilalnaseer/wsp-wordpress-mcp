@@ -429,13 +429,6 @@ function wsp_mcp_register_native_tools() {
 			'capability'  => 'edit_posts',
 			'enable_key'  => 'wsp/woo-moderate-review',
 		) );
-		WSP_MCP_Server::register_tool( 'wsp_woo_list_payment_gateways', array(
-			'description' => 'List active and available payment gateways.',
-			'inputSchema' => array( 'type' => 'object', 'properties' => array() ),
-			'callback'    => 'wsp_execute_woo_list_payment_gateways',
-			'capability'  => 'edit_posts',
-			'enable_key'  => 'wsp/woo-list-payment-gateways',
-		) );
 	}
 
 
