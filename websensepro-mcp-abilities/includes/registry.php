@@ -1,6 +1,16 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+/**
+ * Helper to check if Advanced Custom Fields is active.
+ * Defined here defensively in case registry.php loads before acf.php.
+ */
+if ( ! function_exists( 'wsp_acf_is_active' ) ) {
+    function wsp_acf_is_active() {
+        return class_exists( 'ACF' ) || function_exists( 'get_field' );
+    }
+}
+
 function wsp_mcp_ability_registry() {
     $abilities = array(
         // POSTS
@@ -41,7 +51,6 @@ function wsp_mcp_ability_registry() {
         );
     }
 
-
     if ( class_exists( 'WooCommerce' ) ) {
         $abilities += array(
             // WOOCOMMERCE
@@ -63,8 +72,6 @@ function wsp_mcp_ability_registry() {
         );
     }
 
-
-
     if ( class_exists( '\Elementor\Plugin' ) ) {
         $abilities += array(
             // ELEMENTOR
@@ -77,6 +84,40 @@ function wsp_mcp_ability_registry() {
             'wsp/elementor-add-widget'     => array( 'label' => 'Add Widget',            'description' => 'Add a widget to a container or column on an Elementor page.',              'group' => 'Elementor', 'access' => 'write', 'default' => false ),
             'wsp/elementor-add-container'  => array( 'label' => 'Add Container',         'description' => 'Add a layout container or section to an Elementor page.',                  'group' => 'Elementor', 'access' => 'write', 'default' => false ),
             'wsp/elementor-remove-element' => array( 'label' => 'Remove Element',        'description' => 'Remove a widget or container from an Elementor page by element ID.',       'group' => 'Elementor', 'access' => 'write', 'default' => false ),
+        );
+    }
+
+    if ( wsp_acf_is_active() ) {
+        $abilities += array(
+            // ADVANCED CUSTOM FIELDS
+            'wsp/acf-list-field-groups'    => array( 'label' => 'List Field Groups',       'description' => 'List all registered field groups.', 'group' => 'Advanced Custom Fields', 'access' => 'read',  'default' => false ),
+            'wsp/acf-get-field-group'     => array( 'label' => 'Get Field Group',         'description' => 'Get detailed setup of a specific field group.', 'group' => 'Advanced Custom Fields', 'access' => 'read',  'default' => false ),
+            'wsp/acf-create-field-group'  => array( 'label' => 'Create Field Group',      'description' => 'Create a brand new custom field group configuration.', 'group' => 'Advanced Custom Fields', 'access' => 'write', 'default' => false ),
+            'wsp/acf-update-field-group'  => array( 'label' => 'Update Field Group Settings', 'description' => 'Update existing custom field group rules/configurations.', 'group' => 'Advanced Custom Fields', 'access' => 'write', 'default' => false ),
+            'wsp/acf-delete-field-group'  => array( 'label' => 'Delete Field Group',      'description' => 'Delete/trash a field group by its key.', 'group' => 'Advanced Custom Fields', 'access' => 'write', 'default' => false ),
+            'wsp/acf-import-field-groups' => array( 'label' => 'Import Field Groups',     'description' => 'Programmatically import field groups via raw JSON parameters.', 'group' => 'Advanced Custom Fields', 'access' => 'write', 'default' => false ),
+            'wsp/acf-list-fields'         => array( 'label' => 'List Fields inside Group', 'description' => 'List all registered fields configs inside a specific field group.', 'group' => 'Advanced Custom Fields', 'access' => 'read',  'default' => false ),
+            'wsp/acf-get-field'           => array( 'label' => 'Get Field Config Details', 'description' => 'Fetch direct key attributes and parameters for a custom field.', 'group' => 'Advanced Custom Fields', 'access' => 'read',  'default' => false ),
+            'wsp/acf-create-field'        => array( 'label' => 'Create Field Configuration', 'description' => 'Register a new field inside an existing custom group.', 'group' => 'Advanced Custom Fields', 'access' => 'write', 'default' => false ),
+            'wsp/acf-update-field-config' => array( 'label' => 'Update Field Configuration', 'description' => 'Update schema configuration for a custom field.', 'group' => 'Advanced Custom Fields', 'access' => 'write', 'default' => false ),
+            'wsp/acf-delete-field'        => array( 'label' => 'Delete Field Config',     'description' => 'Deletes config parameters for a custom field.', 'group' => 'Advanced Custom Fields', 'access' => 'write', 'default' => false ),
+            'wsp/acf-duplicate-field'     => array( 'label' => 'Duplicate Field Config',  'description' => 'Duplicate an existing field configuration key.', 'group' => 'Advanced Custom Fields', 'access' => 'write', 'default' => false ),
+            'wsp/acf-sync-fields'         => array( 'label' => 'Force Sync Fields JSON',  'description' => 'Force reload and sync schema settings dynamically.', 'group' => 'Advanced Custom Fields', 'access' => 'write', 'default' => false ),
+            'wsp/acf-get-value-deep'      => array( 'label' => 'Get Field Value Deep',    'description' => 'Dot-notation deep access to variables (e.g. repeater.0.subfield).', 'group' => 'Advanced Custom Fields', 'access' => 'read',  'default' => false ),
+            'wsp/acf-update-value-deep'   => array( 'label' => 'Update Field Value Deep', 'description' => 'Update specific deep metadata locations with dot-notation.', 'group' => 'Advanced Custom Fields', 'access' => 'write', 'default' => false ),
+            'wsp/acf-delete-value'        => array( 'label' => 'Delete Field Value',      'description' => 'Delete specific key field metadata value.', 'group' => 'Advanced Custom Fields', 'access' => 'write', 'default' => false ),
+            'wsp/acf-get-all-values'      => array( 'label' => 'Get All Fields Values',   'description' => 'Get all raw field values mapped on any object.', 'group' => 'Advanced Custom Fields', 'access' => 'read',  'default' => false ),
+            'wsp/acf-bulk-update-values'  => array( 'label' => 'Bulk Update Values',      'description' => 'Bulk update array values instantly.', 'group' => 'Advanced Custom Fields', 'access' => 'write', 'default' => false ),
+            'wsp/acf-get-field-object'    => array( 'label' => 'Get Value & Config Object', 'description' => 'Return both config object and mapped values.', 'group' => 'Advanced Custom Fields', 'access' => 'read',  'default' => false ),
+            'wsp/acf-list-post-types'     => array( 'label' => 'List Registered Post Types', 'description' => 'List post types with active register mappings.', 'group' => 'Advanced Custom Fields', 'access' => 'read',  'default' => false ),
+            'wsp/acf-create-post-type'    => array( 'label' => 'Create Custom Post Type', 'description' => 'Programmatically register brand new WordPress Post Type.', 'group' => 'Advanced Custom Fields', 'access' => 'write', 'default' => false ),
+            'wsp/acf-list-taxonomies'     => array( 'label' => 'List Registered Taxonomies', 'description' => 'List taxonomies structure.', 'group' => 'Advanced Custom Fields', 'access' => 'read',  'default' => false ),
+            'wsp/acf-create-taxonomy'     => array( 'label' => 'Create Custom Taxonomy',  'description' => 'Programmatically register brand new WordPress taxonomy.', 'group' => 'Advanced Custom Fields', 'access' => 'write', 'default' => false ),
+            'wsp/acf-list-options-pages'  => array( 'label' => 'List ACF Options Pages',  'description' => 'List registered global options views.', 'group' => 'Advanced Custom Fields', 'access' => 'read',  'default' => false ),
+            'wsp/acf-create-options-page' => array( 'label' => 'Create Options Page',     'description' => 'Programmatically register global ACF Options Page.', 'group' => 'Advanced Custom Fields', 'access' => 'write', 'default' => false ),
+            'wsp/acf-get-option-value'    => array( 'label' => 'Get Option Value',        'description' => 'Read global option value metadata.', 'group' => 'Advanced Custom Fields', 'access' => 'read',  'default' => false ),
+            'wsp/acf-update-option-value' => array( 'label' => 'Update Option Value',     'description' => 'Write option values globally.', 'group' => 'Advanced Custom Fields', 'access' => 'write', 'default' => false ),
+            'wsp/acf-delete-options-page' => array( 'label' => 'Delete Options Page',     'description' => 'Deregister options pages dynamically.', 'group' => 'Advanced Custom Fields', 'access' => 'write', 'default' => false ),
         );
     }
 
