@@ -1,7 +1,7 @@
 <?php
 /**
- * Plugin Name: Easy AI Agents Connector
- * Description: Exposes WordPress content to Claude AI and other AI Agents via a built-in MCP server (no companion plugin required). Manage all abilities from Settings > MCP.
+ * Plugin Name: WebSensePro MCP Abilities
+ * Description: Exposes WordPress content to Claude AI via a built-in MCP server (no companion plugin required). Manage all abilities from Settings > MCP.
  * Version: 2.2.0
  * Requires at least: 6.2
  * Requires PHP: 7.4
@@ -37,11 +37,12 @@ require_once WSP_MCP_DIR . 'includes/abilities/site.php';
 require_once WSP_MCP_DIR . 'includes/abilities/yoast.php';
 require_once WSP_MCP_DIR . 'includes/abilities/elementor.php';
 require_once WSP_MCP_DIR . 'includes/abilities/woocommerce.php';
+require_once WSP_MCP_DIR . 'includes/abilities/acf.php'; // Included ACF Pro Abilities
 
 add_action( 'admin_menu',                       'wsp_mcp_add_menu' );
 add_action( 'admin_init',                       'wsp_mcp_register_settings' );
 
-// Native MCP server (v2.0) — booted late so Elementor/Yoast classes are loaded
+// Native MCP server (v2.0) — booted late so Elementor/Yoast/ACF classes are loaded
 // before the tool registry is built. Registers its own REST endpoint.
 add_action( 'plugins_loaded', array( 'WSP_MCP_Server', 'init' ) );
 add_action( 'plugins_loaded', 'wsp_mcp_maybe_upgrade_db' );
