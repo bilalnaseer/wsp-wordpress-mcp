@@ -45,16 +45,18 @@ function wsp_mcp_settings_page() {
     }
 
     $icons   = array(
-        'Posts'     => '📝',
-        'Pages'     => '📄',
-        'Taxonomy'  => '🏷️',
-        'Comments'  => '💬',
-        'Media'     => '🖼️',
-        'Users'     => '👥',
-        'Search'    => '🔍',
-        'Site'      => '🌐',
-        'Elementor' => '⚡',
-        'Yoast SEO' => '🔎',
+        'Posts'                  => '📝',
+        'Pages'                  => '📄',
+        'Taxonomy'               => '🏷️',
+        'Comments'               => '💬',
+        'Media'                  => '🖼️',
+        'Users'                  => '👥',
+        'Search'                 => '🔍',
+        'Site'                   => '🌐',
+        'Elementor'              => '⚡',
+        'Yoast SEO'              => '🔎',
+        'WooCommerce'            => '🛍️',
+        'Advanced Custom Fields' => '🧩',
     );
     $total   = count( $settings );
     $enabled = count( array_filter( $settings ) );
