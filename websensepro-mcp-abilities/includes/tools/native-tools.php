@@ -247,7 +247,6 @@ function wsp_mcp_register_native_tools() {
 		) );
 	}
 
-
 	// ---- WooCommerce (only when WooCommerce is active) ----
 	if ( class_exists( 'WooCommerce' ) ) {
 		WSP_MCP_Server::register_tool( 'wsp_woo_get_products', array(
@@ -431,8 +430,6 @@ function wsp_mcp_register_native_tools() {
 		) );
 	}
 
-
-
 	// ---- Elementor (only when Elementor is active) ----
 	if ( function_exists( 'wsp_elementor_is_active' ) && wsp_elementor_is_active() ) {
 		WSP_MCP_Server::register_tool( 'wsp_elementor_list_pages', array(
@@ -532,6 +529,283 @@ function wsp_mcp_register_native_tools() {
 			'callback'    => 'wsp_execute_elementor_remove_element',
 			'capability'  => 'edit_posts',
 			'enable_key'  => 'wsp/elementor-remove-element',
+		) );
+	}
+
+	// ---- Advanced Custom Fields (only when ACF is active) ----
+	if ( function_exists( 'wsp_acf_is_active' ) && wsp_acf_is_active() ) {
+		WSP_MCP_Server::register_tool( 'wsp_acf_list_field_groups', array(
+			'description' => 'List all registered custom field groups.',
+			'inputSchema' => $obj,
+			'callback'    => 'wsp_execute_acf_list_field_groups',
+			'capability'  => 'edit_posts',
+			'enable_key'  => 'wsp/acf-list-field-groups',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_get_field_group', array(
+			'description' => 'Retrieve configuration parameters of a specific field group by key.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'key' ), 'properties' => array(
+				'key' => array( 'type' => 'string', 'description' => 'Field group key (e.g. group_60a5b2).' ),
+			) ),
+			'callback'    => 'wsp_execute_acf_get_field_group',
+			'capability'  => 'edit_posts',
+			'enable_key'  => 'wsp/acf-get-field-group',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_create_field_group', array(
+			'description' => 'Create a brand new custom field group configuration.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'title' ), 'properties' => array(
+				'title'    => array( 'type' => 'string' ),
+				'key'      => array( 'type' => 'string', 'description' => 'Optional group key structure.' ),
+				'fields'   => array( 'type' => 'array', 'items' => array( 'type' => 'object' ) ),
+				'location' => array( 'type' => 'array', 'items' => array( 'type' => 'array' ) ),
+				'active'   => array( 'type' => 'boolean' ),
+			) ),
+			'callback'    => 'wsp_execute_acf_create_field_group',
+			'capability'  => 'manage_options',
+			'enable_key'  => 'wsp/acf-create-field-group',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_update_field_group', array(
+			'description' => 'Update location rules or active parameters of a field group.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'key' ), 'properties' => array(
+				'key'      => array( 'type' => 'string' ),
+				'title'    => array( 'type' => 'string' ),
+				'location' => array( 'type' => 'array', 'items' => array( 'type' => 'array' ) ),
+				'active'   => array( 'type' => 'boolean' ),
+			) ),
+			'callback'    => 'wsp_execute_acf_update_field_group',
+			'capability'  => 'manage_options',
+			'enable_key'  => 'wsp/acf-update-field-group',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_delete_field_group', array(
+			'description' => 'Permanently delete or trash a field group by its key.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'key' ), 'properties' => array(
+				'key' => array( 'type' => 'string' ),
+			) ),
+			'callback'    => 'wsp_execute_acf_delete_field_group',
+			'capability'  => 'manage_options',
+			'enable_key'  => 'wsp/acf-delete-field-group',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_import_field_groups', array(
+			'description' => 'Import field groups config structure programmatically from JSON parameters.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'json_data' ), 'properties' => array(
+				'json_data' => array( 'type' => 'string', 'description' => 'JSON payload of group configurations.' ),
+			) ),
+			'callback'    => 'wsp_execute_acf_import_field_groups',
+			'capability'  => 'manage_options',
+			'enable_key'  => 'wsp/acf-import-field-groups',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_list_fields', array(
+			'description' => 'List all custom fields declared inside a specific field group.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'group_key' ), 'properties' => array(
+				'group_key' => array( 'type' => 'string' ),
+			) ),
+			'callback'    => 'wsp_execute_acf_list_fields',
+			'capability'  => 'edit_posts',
+			'enable_key'  => 'wsp/acf-list-fields',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_get_field', array(
+			'description' => 'Get full configurations and rules of a single field key.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'field_key' ), 'properties' => array(
+				'field_key' => array( 'type' => 'string' ),
+			) ),
+			'callback'    => 'wsp_execute_acf_get_field',
+			'capability'  => 'edit_posts',
+			'enable_key'  => 'wsp/acf-get-field',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_create_field', array(
+			'description' => 'Inject a new custom field config inside an existing group configuration.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'field_config' ), 'properties' => array(
+				'field_config' => array( 'type' => 'object', 'description' => 'Field parameter details (name, type, parent, instructions etc.)' ),
+			) ),
+			'callback'    => 'wsp_execute_acf_create_field',
+			'capability'  => 'manage_options',
+			'enable_key'  => 'wsp/acf-create-field',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_update_field_config', array(
+			'description' => 'Modify attribute settings for a single field configuration parameters.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'field_key', 'config' ), 'properties' => array(
+				'field_key' => array( 'type' => 'string' ),
+				'config'    => array( 'type' => 'object' ),
+			) ),
+			'callback'    => 'wsp_execute_acf_update_field_config',
+			'capability'  => 'manage_options',
+			'enable_key'  => 'wsp/acf-update-field-config',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_delete_field', array(
+			'description' => 'Delete config mapping of a field configuration.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'field_key' ), 'properties' => array(
+				'field_key' => array( 'type' => 'string' ),
+			) ),
+			'callback'    => 'wsp_execute_acf_delete_field',
+			'capability'  => 'manage_options',
+			'enable_key'  => 'wsp/acf-delete-field',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_duplicate_field', array(
+			'description' => 'Duplicate an existing field config mapping.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'field_key' ), 'properties' => array(
+				'field_key' => array( 'type' => 'string' ),
+				'parent_id' => array( 'type' => 'string' ),
+			) ),
+			'callback'    => 'wsp_execute_acf_duplicate_field',
+			'capability'  => 'manage_options',
+			'enable_key'  => 'wsp/acf-duplicate-field',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_sync_fields', array(
+			'description' => 'Sync database structures with local filesystem JSON config records.',
+			'inputSchema' => $obj,
+			'callback'    => 'wsp_execute_acf_sync_fields',
+			'capability'  => 'manage_options',
+			'enable_key'  => 'wsp/acf-sync-fields',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_get_value_deep', array(
+			'description' => 'Deep read custom field values with dot-notation pathing support (e.g. key.0.subkey).',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'target_id', 'field_name' ), 'properties' => array(
+				'target_id'   => array( 'type' => 'string', 'description' => 'Target selector or ID (e.g. 101, "options", "user_1", "term_5")' ),
+				'target_type' => array( 'type' => 'string', 'description' => 'post | page | user | term | option' ),
+				'field_name'  => array( 'type' => 'string' ),
+				'path'        => array( 'type' => 'string', 'description' => 'Dot-notation nested index selector (e.g. "repeater.0.text_field")' ),
+			) ),
+			'callback'    => 'wsp_execute_acf_get_value_deep',
+			'capability'  => 'edit_posts',
+			'enable_key'  => 'wsp/acf-get-value-deep',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_update_value_deep', array(
+			'description' => 'Deep write custom field values supporting array indices with dot-notation (e.g. repeater.0.key).',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'target_id', 'field_name', 'value' ), 'properties' => array(
+				'target_id'   => array( 'type' => 'string' ),
+				'target_type' => array( 'type' => 'string' ),
+				'field_name'  => array( 'type' => 'string' ),
+				'path'        => array( 'type' => 'string' ),
+				'value'       => array( 'type' => 'string' ),
+			) ),
+			'callback'    => 'wsp_execute_acf_update_value_deep',
+			'capability'  => 'edit_posts',
+			'enable_key'  => 'wsp/acf-update-value-deep',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_delete_value', array(
+			'description' => 'Delete specific key field metadata value.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'target_id', 'field_name' ), 'properties' => array(
+				'target_id'   => array( 'type' => 'string' ),
+				'target_type' => array( 'type' => 'string' ),
+				'field_name'  => array( 'type' => 'string' ),
+			) ),
+			'callback'    => 'wsp_execute_acf_delete_value',
+			'capability'  => 'edit_posts',
+			'enable_key'  => 'wsp/acf-delete-value',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_get_all_values', array(
+			'description' => 'Get all raw field values mapped on any object.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'target_id' ), 'properties' => array(
+				'target_id'   => array( 'type' => 'string' ),
+				'target_type' => array( 'type' => 'string' ),
+			) ),
+			'callback'    => 'wsp_execute_acf_get_all_values',
+			'capability'  => 'edit_posts',
+			'enable_key'  => 'wsp/acf-get-all-values',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_bulk_update_values', array(
+			'description' => 'Bulk update array values instantly.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'target_id', 'fields' ), 'properties' => array(
+				'target_id'   => array( 'type' => 'string' ),
+				'target_type' => array( 'type' => 'string' ),
+				'fields'      => array( 'type' => 'object', 'description' => 'Key-value maps of fields structure.' ),
+			) ),
+			'callback'    => 'wsp_execute_acf_bulk_update_values',
+			'capability'  => 'edit_posts',
+			'enable_key'  => 'wsp/acf-bulk-update-values',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_get_field_object', array(
+			'description' => 'Return both config parameter object and loaded values.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'target_id', 'field_selector' ), 'properties' => array(
+				'target_id'      => array( 'type' => 'string' ),
+				'target_type'    => array( 'type' => 'string' ),
+				'field_selector' => array( 'type' => 'string' ),
+			) ),
+			'callback'    => 'wsp_execute_acf_get_field_object',
+			'capability'  => 'edit_posts',
+			'enable_key'  => 'wsp/acf-get-field-object',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_list_post_types', array(
+			'description' => 'List registered post types.',
+			'inputSchema' => $obj,
+			'callback'    => 'wsp_execute_acf_list_post_types',
+			'capability'  => 'edit_posts',
+			'enable_key'  => 'wsp/acf-list-post-types',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_create_post_type', array(
+			'description' => 'Programmatically register brand new WordPress Post Type.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'post_type_slug', 'singular_name', 'plural_name' ), 'properties' => array(
+				'post_type_slug' => array( 'type' => 'string' ),
+				'singular_name'  => array( 'type' => 'string' ),
+				'plural_name'    => array( 'type' => 'string' ),
+			) ),
+			'callback'    => 'wsp_execute_acf_create_post_type',
+			'capability'  => 'manage_options',
+			'enable_key'  => 'wsp/acf-create-post-type',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_list_taxonomies', array(
+			'description' => 'List taxonomies structure.',
+			'inputSchema' => $obj,
+			'callback'    => 'wsp_execute_acf_list_taxonomies',
+			'capability'  => 'edit_posts',
+			'enable_key'  => 'wsp/acf-list-taxonomies',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_create_taxonomy', array(
+			'description' => 'Programmatically register brand new WordPress taxonomy.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'taxonomy_slug', 'singular_name', 'plural_name', 'post_types' ), 'properties' => array(
+				'taxonomy_slug' => array( 'type' => 'string' ),
+				'singular_name' => array( 'type' => 'string' ),
+				'plural_name'   => array( 'type' => 'string' ),
+				'post_types'    => array( 'type' => 'array', 'items' => array( 'type' => 'string' ) ),
+			) ),
+			'callback'    => 'wsp_execute_acf_create_taxonomy',
+			'capability'  => 'manage_options',
+			'enable_key'  => 'wsp/acf-create-taxonomy',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_list_options_pages', array(
+			'description' => 'List registered global options views.',
+			'inputSchema' => $obj,
+			'callback'    => 'wsp_execute_acf_list_options_pages',
+			'capability'  => 'edit_posts',
+			'enable_key'  => 'wsp/acf-list-options-pages',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_create_options_page', array(
+			'description' => 'Programmatically register global ACF Options Page.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'page_title' ), 'properties' => array(
+				'page_title' => array( 'type' => 'string' ),
+				'menu_title' => array( 'type' => 'string' ),
+				'menu_slug'  => array( 'type' => 'string' ),
+			) ),
+			'callback'    => 'wsp_execute_acf_create_options_page',
+			'capability'  => 'manage_options',
+			'enable_key'  => 'wsp/acf-create-options-page',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_get_option_value', array(
+			'description' => 'Read global option value metadata.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'field_name' ), 'properties' => array(
+				'field_name' => array( 'type' => 'string' ),
+			) ),
+			'callback'    => 'wsp_execute_acf_get_option_value',
+			'capability'  => 'edit_posts',
+			'enable_key'  => 'wsp/acf-get-option-value',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_update_option_value', array(
+			'description' => 'Write option values globally.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'field_name', 'value' ), 'properties' => array(
+				'field_name' => array( 'type' => 'string' ),
+				'value'      => array( 'type' => 'string' ),
+			) ),
+			'callback'    => 'wsp_execute_acf_update_option_value',
+			'capability'  => 'manage_options',
+			'enable_key'  => 'wsp/acf-update-option-value',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_acf_delete_options_page', array(
+			'description' => 'Deregister options pages dynamically.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'menu_slug' ), 'properties' => array(
+				'menu_slug' => array( 'type' => 'string' ),
+			) ),
+			'callback'    => 'wsp_execute_acf_delete_options_page',
+			'capability'  => 'manage_options',
+			'enable_key'  => 'wsp/acf-delete-options-page',
 		) );
 	}
 
