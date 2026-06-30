@@ -27,8 +27,7 @@ function wsp_mcp_add_menu() {
  * The Config Files page and its mcp-adapter snippets were removed in v2.2.0.
  */
 function wsp_mcp_redirect_legacy_config_page() {
-    // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only routing of a GET navigation param; redirect only, no state change.
-    if ( isset( $_GET['page'] ) && 'wsp-mcp-config' === sanitize_key( wp_unslash( $_GET['page'] ) ) && current_user_can( 'manage_options' ) ) {
+    if ( isset( $_GET['page'] ) && 'wsp-mcp-config' === $_GET['page'] && current_user_can( 'manage_options' ) ) {
         wp_safe_redirect( admin_url( 'admin.php?page=wsp-mcp-connection' ) );
         exit;
     }
@@ -46,16 +45,18 @@ function wsp_mcp_settings_page() {
     }
 
     $icons   = array(
-        'Posts'     => '📝',
-        'Pages'     => '📄',
-        'Taxonomy'  => '🏷️',
-        'Comments'  => '💬',
-        'Media'     => '🖼️',
-        'Users'     => '👥',
-        'Search'    => '🔍',
-        'Site'      => '🌐',
-        'Elementor' => '⚡',
-        'Yoast SEO' => '🔎',
+        'Posts'                  => '📝',
+        'Pages'                  => '📄',
+        'Taxonomy'               => '🏷️',
+        'Comments'               => '💬',
+        'Media'                  => '🖼️',
+        'Users'                  => '👥',
+        'Search'                 => '🔍',
+        'Site'                   => '🌐',
+        'Elementor'              => '⚡',
+        'Yoast SEO'              => '🔎',
+        'WooCommerce'            => '🛍️',
+        'Advanced Custom Fields' => '🧩',
     );
     $total   = count( $settings );
     $enabled = count( array_filter( $settings ) );
