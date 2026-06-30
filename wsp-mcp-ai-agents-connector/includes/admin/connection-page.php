@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 /** Register the Connection submenu under the MCP top-level menu. */
 function wsp_mcp_add_connection_menu() {
-	add_submenu_page(
+	$page_hook = add_submenu_page(
 		'wsp-mcp-abilities',
 		'Connection',
 		'Connection',
@@ -22,8 +22,79 @@ function wsp_mcp_add_connection_menu() {
 		'wsp-mcp-connection',
 		'wsp_mcp_connection_page'
 	);
+
+	// Safely enqueue scripts and styles only on this specific page
+	add_action( 'load-' . $page_hook, 'wsp_mcp_enqueue_connection_assets' );
 }
 add_action( 'admin_menu', 'wsp_mcp_add_connection_menu', 20 );
+
+/** Enqueue assets for the Connection page contextually. */
+function wsp_mcp_enqueue_connection_assets() {
+	add_action( 'admin_enqueue_scripts', function() {
+		$custom_css = '
+			.wsp-wrap{max-width:860px;margin:24px 20px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+			.wsp-header h1{margin:0 0 6px;font-size:22px;font-weight:700;color:#1d2327}
+			.wsp-desc{color:#646970;margin:0 0 20px;font-size:13.5px;line-height:1.65}
+			.wsp-facts{background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:4px 20px;margin-bottom:24px}
+			.wsp-facts table{width:100%;border-collapse:collapse}
+			.wsp-facts th{text-align:left;padding:12px 0;width:120px;color:#1d2327;font-size:13.5px;vertical-align:top}
+			.wsp-facts td{padding:12px 0;font-size:13.5px}
+			.wsp-facts code{background:#f0f0f1;padding:3px 8px;border-radius:4px;font-size:12.5px;color:#1d2327;font-family:Consolas,Monaco,monospace;word-break:break-all}
+			.wsp-tabs{display:flex;gap:0;border-bottom:2px solid #dcdcde;flex-wrap:wrap}
+			.wsp-tab-btn{background:none;border:none;padding:10px 20px;font-size:14px;font-weight:600;color:#787c82;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:color .15s,border-color .15s}
+			.wsp-tab-btn:hover{color:#1d2327}
+			.wsp-tab-btn.wsp-tab-active{color:#0073aa;border-bottom-color:#0073aa}
+			.wsp-tab-panel{display:none}
+			.wsp-tab-panel.wsp-tab-panel-active{display:block}
+			.wsp-config-box{background:#fff;border:1px solid #dcdcde;border-radius:0 0 8px 8px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+			.wsp-instructions{padding:18px 20px;border-bottom:1px solid #f0f0f1;background:#fff}
+			.wsp-instructions p{margin:0 0 9px;color:#3c434a;font-size:13.5px;line-height:1.6}
+			.wsp-instructions p:last-child{margin:0}
+			.wsp-instructions code{background:#f0f0f1;padding:3px 6px;border-radius:4px;font-size:12.5px;color:#d63638;font-family:monospace}
+			.wsp-config-header{background:#f6f7f7;padding:11px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #dcdcde}
+			.wsp-config-title{font-weight:700;font-size:13px;color:#1d2327;margin:0;font-family:Consolas,Monaco,monospace}
+			.wsp-copy-btn{font-size:12px;color:#0073aa;cursor:pointer;background:none;border:none;padding:0;font-weight:600;display:flex;align-items:center;gap:4px;transition:color .2s}
+			.wsp-copy-btn:hover{color:#00a32a}
+			.wsp-code-area{background:#1e1e1e;color:#d4d4d4;padding:20px;margin:0;font-family:Consolas,Monaco,monospace;font-size:13px;line-height:1.6;overflow-x:auto;white-space:pre}
+			.wsp-badge{display:inline-block;background:#edf6ff;color:#0073aa;font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;margin-left:6px;vertical-align:middle}
+			.wsp-badge-node{background:#fff4e5;color:#996800}
+		';
+		wp_add_inline_style( 'common', $custom_css );
+
+		$custom_js = '
+			document.addEventListener("DOMContentLoaded", function() {
+				document.querySelectorAll(".wsp-tab-btn").forEach(function(btn) {
+					btn.addEventListener("click", function() {
+						document.querySelectorAll(".wsp-tab-btn").forEach(function(b){ b.classList.remove("wsp-tab-active"); });
+						document.querySelectorAll(".wsp-tab-panel").forEach(function(p){ p.classList.remove("wsp-tab-panel-active"); });
+						btn.classList.add("wsp-tab-active");
+						document.getElementById("wsp-tab-" + btn.dataset.tab).classList.add("wsp-tab-panel-active");
+					});
+				});
+
+				function makeCopyBtn(btnId, codeId) {
+					var btn  = document.getElementById(btnId);
+					var code = document.getElementById(codeId);
+					if (!btn || !code) return;
+					btn.addEventListener("click", function() {
+						navigator.clipboard.writeText(code.innerText).then(function() {
+							var orig = btn.innerHTML;
+							btn.innerHTML = \'<span class="dashicons dashicons-yes-alt" style="font-size:16px;width:16px;height:16px;"></span> Copied!\';
+							btn.style.color = "#00a32a";
+							setTimeout(function(){ btn.innerHTML = orig; btn.style.color = ""; }, 2500);
+						}).catch(function(){ alert("Failed to copy. Please select and copy manually."); });
+					});
+				}
+				makeCopyBtn("wsp-copy-claude",      "wsp-code-claude");
+				makeCopyBtn("wsp-copy-cursor",      "wsp-code-cursor");
+				makeCopyBtn("wsp-copy-codex",       "wsp-code-codex");
+				makeCopyBtn("wsp-copy-antigravity", "wsp-code-antigravity");
+				makeCopyBtn("wsp-copy-openclaw",    "wsp-code-openclaw");
+			});
+		';
+		wp_add_inline_script( 'common', $custom_js );
+	} );
+}
 
 /** Handle API-key regeneration. */
 function wsp_mcp_handle_regenerate_key() {
@@ -113,35 +184,6 @@ function wsp_mcp_connection_page() {
 		. "    }\n"
 		. "},";
 	?>
-	<style>
-		.wsp-wrap{max-width:860px;margin:24px 20px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-		.wsp-header h1{margin:0 0 6px;font-size:22px;font-weight:700;color:#1d2327}
-		.wsp-desc{color:#646970;margin:0 0 20px;font-size:13.5px;line-height:1.65}
-		.wsp-facts{background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:4px 20px;margin-bottom:24px}
-		.wsp-facts table{width:100%;border-collapse:collapse}
-		.wsp-facts th{text-align:left;padding:12px 0;width:120px;color:#1d2327;font-size:13.5px;vertical-align:top}
-		.wsp-facts td{padding:12px 0;font-size:13.5px}
-		.wsp-facts code{background:#f0f0f1;padding:3px 8px;border-radius:4px;font-size:12.5px;color:#1d2327;font-family:Consolas,Monaco,monospace;word-break:break-all}
-		.wsp-tabs{display:flex;gap:0;border-bottom:2px solid #dcdcde;flex-wrap:wrap}
-		.wsp-tab-btn{background:none;border:none;padding:10px 20px;font-size:14px;font-weight:600;color:#787c82;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:color .15s,border-color .15s}
-		.wsp-tab-btn:hover{color:#1d2327}
-		.wsp-tab-btn.wsp-tab-active{color:#0073aa;border-bottom-color:#0073aa}
-		.wsp-tab-panel{display:none}
-		.wsp-tab-panel.wsp-tab-panel-active{display:block}
-		.wsp-config-box{background:#fff;border:1px solid #dcdcde;border-radius:0 0 8px 8px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)}
-		.wsp-instructions{padding:18px 20px;border-bottom:1px solid #f0f0f1;background:#fff}
-		.wsp-instructions p{margin:0 0 9px;color:#3c434a;font-size:13.5px;line-height:1.6}
-		.wsp-instructions p:last-child{margin:0}
-		.wsp-instructions code{background:#f0f0f1;padding:3px 6px;border-radius:4px;font-size:12.5px;color:#d63638;font-family:monospace}
-		.wsp-config-header{background:#f6f7f7;padding:11px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #dcdcde}
-		.wsp-config-title{font-weight:700;font-size:13px;color:#1d2327;margin:0;font-family:Consolas,Monaco,monospace}
-		.wsp-copy-btn{font-size:12px;color:#0073aa;cursor:pointer;background:none;border:none;padding:0;font-weight:600;display:flex;align-items:center;gap:4px;transition:color .2s}
-		.wsp-copy-btn:hover{color:#00a32a}
-		.wsp-code-area{background:#1e1e1e;color:#d4d4d4;padding:20px;margin:0;font-family:Consolas,Monaco,monospace;font-size:13px;line-height:1.6;overflow-x:auto;white-space:pre}
-		.wsp-badge{display:inline-block;background:#edf6ff;color:#0073aa;font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;margin-left:6px;vertical-align:middle}
-		.wsp-badge-node{background:#fff4e5;color:#996800}
-	</style>
-
 	<div class="wsp-wrap">
 		<div class="wsp-header">
 			<h1><?php esc_html_e( 'MCP Connection', 'wsp-mcp-ai-agents-connector' ); ?></h1>
@@ -288,37 +330,5 @@ function wsp_mcp_connection_page() {
 			<?php esc_html_e( 'header to the endpoint URL, or a WordPress Application Password via HTTP Basic auth.', 'wsp-mcp-ai-agents-connector' ); ?>
 		</p>
 	</div>
-
-	<script>
-	document.addEventListener('DOMContentLoaded', function() {
-		document.querySelectorAll('.wsp-tab-btn').forEach(function(btn) {
-			btn.addEventListener('click', function() {
-				document.querySelectorAll('.wsp-tab-btn').forEach(function(b){ b.classList.remove('wsp-tab-active'); });
-				document.querySelectorAll('.wsp-tab-panel').forEach(function(p){ p.classList.remove('wsp-tab-panel-active'); });
-				btn.classList.add('wsp-tab-active');
-				document.getElementById('wsp-tab-' + btn.dataset.tab).classList.add('wsp-tab-panel-active');
-			});
-		});
-
-		function makeCopyBtn(btnId, codeId) {
-			var btn  = document.getElementById(btnId);
-			var code = document.getElementById(codeId);
-			if (!btn || !code) return;
-			btn.addEventListener('click', function() {
-				navigator.clipboard.writeText(code.innerText).then(function() {
-					var orig = btn.innerHTML;
-					btn.innerHTML = '<span class="dashicons dashicons-yes-alt" style="font-size:16px;width:16px;height:16px;"></span> Copied!';
-					btn.style.color = '#00a32a';
-					setTimeout(function(){ btn.innerHTML = orig; btn.style.color = ''; }, 2500);
-				}).catch(function(){ alert('Failed to copy. Please select and copy manually.'); });
-			});
-		}
-		makeCopyBtn('wsp-copy-claude',      'wsp-code-claude');
-		makeCopyBtn('wsp-copy-cursor',      'wsp-code-cursor');
-		makeCopyBtn('wsp-copy-codex',       'wsp-code-codex');
-		makeCopyBtn('wsp-copy-antigravity', 'wsp-code-antigravity');
-		makeCopyBtn('wsp-copy-openclaw',    'wsp-code-openclaw');
-	});
-	</script>
 	<?php
 }
