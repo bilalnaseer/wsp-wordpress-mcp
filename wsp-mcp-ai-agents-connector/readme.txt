@@ -4,7 +4,7 @@ Tags: mcp, ai, claude, model context protocol, woocommerce
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.2.0
+Stable tag: 2.3.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -14,7 +14,7 @@ Expose your WordPress site to AI agents (Claude, Cursor, and other MCP clients) 
 
 WSP MCP - AI Agents Connector turns your WordPress site into a Model Context Protocol (MCP) server. AI clients can read and edit posts, pages, categories, tags, media, comments, users, and (when installed) Yoast SEO meta and Elementor page content — all under granular, per-ability admin control.
 
-The plugin ships its **own native MCP server**. You do not need the WordPress MCP Adapter or any companion plugin: activate, copy your connection details from **MCP > Connection**, and connect. WooCommerce tools (products, orders, refunds, coupons, customers, reports) are available when WooCommerce is active.
+The plugin ships its **own native MCP server**. You do not need the WordPress MCP Adapter or any companion plugin: activate, copy your connection details from **MCP > Connection**, and connect. WooCommerce tools (products, orders, refunds, coupons, customers, reports) are available when WooCommerce is active, and Advanced Custom Fields tools (field groups, fields, values, post types, taxonomies, options pages) when ACF is active.
 
 = Key features =
 
@@ -34,6 +34,7 @@ The plugin ships its **own native MCP server**. You do not need the WordPress MC
 * Read and update Yoast SEO meta (requires Yoast SEO)
 * Read and edit Elementor page structure (requires Elementor)
 * Manage WooCommerce products, variations, orders, refunds, coupons, customers, order notes, sales reports, low-stock alerts, and review moderation (requires WooCommerce)
+* Manage Advanced Custom Fields — field groups, fields, field values (with dot-notation deep access), custom post types, taxonomies, and options pages (requires ACF)
 
 == Installation ==
 
@@ -58,7 +59,9 @@ Any client that supports the Streamable HTTP MCP transport — Claude Desktop, M
 
 == Changelog ==
 
-= Unreleased =
+= 2.3.0 =
+* New: 27 Advanced Custom Fields tools — field groups (list, get, create, update, delete, import), fields (list, get, create, update, delete, duplicate, sync), values with dot-notation deep get/set (delete, get-all, bulk-update, field object), custom post types, taxonomies, and options pages.
+* All ACF tools are off by default and only registered when ACF is active. Structural changes (groups, fields, CPTs, taxonomies, options pages) require `manage_options`; value reads/writes enforce per-object capabilities (`edit_post`, `edit_user`, `list_users`, `manage_categories`, `manage_options`).
 * Changed: plugin slug renamed to `wsp-mcp-ai-agents-connector` (folder, main file, and text domain) to match the public name ahead of WordPress.org submission.
 * Breaking: the plugin folder name changed — on existing installs, remove the old copy and activate the renamed plugin. Saved settings, the sessions table, and the API key are preserved.
 

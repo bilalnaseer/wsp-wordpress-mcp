@@ -567,7 +567,8 @@ function wsp_execute_acf_update_option_value( $input ) {
     return array( 'success' => true, 'field_name' => $field_name, 'value' => get_field( $field_name, 'options' ) );
 }
 
-// Option page delete tool (wsp_acf_delete_options_page) has been completely removed to comply with issue #2
+// Note: no options-page delete tool — ACF options pages are re-registered on every load,
+// so a runtime delete cannot persist.
 
 // ─────────────────────────────────────────────────────────────────────────────
 // REGISTRATION (Back-compat / Dual Mode registration)

@@ -31,7 +31,7 @@ These three files give you complete project understanding without touching the c
 ## What this plugin is
 
 **Plugin Name:** WSP MCP - AI Agents Connector  
-**Version:** 2.2.0  
+**Version:** 2.3.0  
 **Slug/prefix:** `wsp`  
 **WP option key:** `wsp_mcp_abilities`  
 **Constant prefix:** `WSP_MCP_`
@@ -75,7 +75,8 @@ registry key driving the admin toggle). Add-ons can hook `do_action('wsp_mcp_reg
 **Naming:** MCP tool names use underscores (`wsp_get_posts`); the matching admin-toggle
 `enable_key` uses the slash form (`wsp/get-posts`). The native server only advertises tools whose
 `enable_key` is enabled via `wsp_mcp_is_enabled()`, so **MCP > Settings controls both transports**.
-Yoast tools register only if `wsp_yoast_is_active()`; Elementor tools only if `wsp_elementor_is_active()`.
+Yoast tools register only if `wsp_yoast_is_active()`; Elementor tools only if `wsp_elementor_is_active()`;
+WooCommerce tools only if `class_exists('WooCommerce')`; ACF tools only if `wsp_acf_is_active()`.
 
 **Admin:** `includes/admin/connection-page.php` adds **MCP > Connection** (endpoint URL, API key +
 regenerate, and per-client tabbed config snippets for Claude Desktop / Cursor / Codex / Antigravity /
@@ -122,7 +123,8 @@ wsp-wordpress-mcp/
         │   └── connection-page.php  ← native endpoint + API key + per-client tabs (MCP > Connection)
         └── abilities/           ← wsp_execute_* logic (called by the native server)
             ├── posts.php  pages.php  taxonomy.php  comments.php  media.php
-            ├── users.php  search.php  site.php  yoast.php  elementor.php  woocommerce.php
+            ├── users.php  search.php  site.php  yoast.php  elementor.php
+            ├── woocommerce.php  acf.php
 ```
 
 **Rule:** The main file is a minimal loader (+ activation/migration glue) only. All feature logic lives in `includes/`. Never put feature code in `wsp-mcp-ai-agents-connector.php`.
@@ -133,7 +135,7 @@ wsp-wordpress-mcp/
 
 | Constant | Value |
 |---|---|
-| `WSP_MCP_VERSION` | `'2.2.0'` |
+| `WSP_MCP_VERSION` | `'2.3.0'` |
 | `WSP_MCP_OPTION` | `'wsp_mcp_abilities'` (per-ability on/off toggles) |
 | `WSP_MCP_DIR` | `plugin_dir_path(__FILE__)` |
 
@@ -172,7 +174,9 @@ Deactivation (`wsp_mcp_deactivate`): clear cron.
     'default'     => true|false,      // whether enabled out of the box
 ]
 ```
-Elementor abilities are only appended if `\Elementor\Plugin` class exists.
+Elementor abilities are only appended if `\Elementor\Plugin` class exists; WooCommerce abilities if
+`class_exists('WooCommerce')`; ACF abilities if `wsp_acf_is_active()`
+(`class_exists('ACF') || function_exists('get_field')`).
 
 **`wsp_mcp_get_settings()`** — merges saved option with registry defaults. Returns `['wsp/key' => bool]`.
 
@@ -334,6 +338,64 @@ Only registered if `class_exists('WooCommerce')`. All 15 tools are OFF by defaul
 - Financial/PII tools (`refund-order`, `create-coupon`, `list-coupons`, `list-customers`) require `manage_woocommerce`.
 - Enum inputs (`status`, `discount_type`, `action`) are validated with `in_array(..., true)` in the execute callbacks.
 - `wsp_woo_sideload_image_by_url()` downloads/attaches product images; SSL verification is bypassed only for the single download request and only on `local`/`development` environments.
+
+#### Advanced Custom Fields (`acf.php`)
+
+Only registered if `wsp_acf_is_active()` (`class_exists('ACF') || function_exists('get_field')`).
+**27 functional tools**, all OFF by default (added via PR #8). MCP tool names use the `wsp_acf_*` form;
+enable keys use `wsp/acf-*`. Structural tools (create/update/delete field groups, fields, CPTs,
+taxonomies, options pages) require `manage_options`; list/read and value-edit tools require `edit_posts`.
+
+| Ability key | Label | Access | Capability |
+|---|---|---|---|
+| `wsp/acf-list-field-groups` | List Field Groups | read | `edit_posts` |
+| `wsp/acf-get-field-group` | Get Field Group | read | `edit_posts` |
+| `wsp/acf-create-field-group` | Create Field Group | write | `manage_options` |
+| `wsp/acf-update-field-group` | Update Field Group | write | `manage_options` |
+| `wsp/acf-delete-field-group` | Delete Field Group | write | `manage_options` |
+| `wsp/acf-import-field-groups` | Import Field Groups (JSON) | write | `manage_options` |
+| `wsp/acf-list-fields` | List Fields in Group | read | `edit_posts` |
+| `wsp/acf-get-field` | Get Field Config | read | `edit_posts` |
+| `wsp/acf-create-field` | Create Field | write | `manage_options` |
+| `wsp/acf-update-field-config` | Update Field Config | write | `manage_options` |
+| `wsp/acf-delete-field` | Delete Field | write | `manage_options` |
+| `wsp/acf-duplicate-field` | Duplicate Field | write | `manage_options` |
+| `wsp/acf-sync-fields` | Force Sync Fields | write | `manage_options` |
+| `wsp/acf-get-value-deep` | Get Field Value (deep) | read | `edit_posts` |
+| `wsp/acf-update-value-deep` | Update Field Value (deep) | write | `edit_posts` |
+| `wsp/acf-delete-value` | Delete Field Value | write | `edit_posts` |
+| `wsp/acf-get-all-values` | Get All Values | read | `edit_posts` |
+| `wsp/acf-bulk-update-values` | Bulk Update Values | write | `edit_posts` |
+| `wsp/acf-get-field-object` | Get Field Object | read | `edit_posts` |
+| `wsp/acf-list-post-types` | List Post Types | read | `edit_posts` |
+| `wsp/acf-create-post-type` | Create Custom Post Type | write | `manage_options` |
+| `wsp/acf-list-taxonomies` | List Taxonomies | read | `edit_posts` |
+| `wsp/acf-create-taxonomy` | Create Taxonomy | write | `manage_options` |
+| `wsp/acf-list-options-pages` | List Options Pages | read | `edit_posts` |
+| `wsp/acf-create-options-page` | Create Options Page | write | `manage_options` |
+| `wsp/acf-get-option-value` | Get Option Value | read | `edit_posts` |
+| `wsp/acf-update-option-value` | Update Option Value | write | `manage_options` |
+
+- **Target resolution** — value tools (`get-value-deep`, `update-value-deep`, `delete-value`,
+  `get-all-values`, `bulk-update-values`, `get-field-object`) resolve the object via
+  `wsp_acf_validate_target( $target_id, $target_type, $is_write )`. Accepts a numeric post/page ID,
+  `user_<id>`, `term_<id>`/`category_<id>`, or `options`. String forms (`user_5`) are normalized to
+  id + type so they pass through the same checks.
+- **Per-object capabilities** (enforced in `validate_target`, on top of the tool capability):
+  `edit_post($id)` for post/page, `edit_user($id)` (write) / `list_users` (read, self-read allowed)
+  for user, `manage_categories` for term, `manage_options` for the `options` target.
+- **Deep get/set** — `wsp_acf_get_nested_value()` / `wsp_acf_set_nested_value()` walk a dot-notation
+  `path` (e.g. `repeater.0.text_field`) over the field's array/object value.
+- **CPT/taxonomy creation** requires ACF 6.1+ (`acf_update_post_type()` / `acf_update_taxonomy()`);
+  options-page creation requires ACF Pro (`acf_add_options_page()`). Each falls back to a `WP_Error`
+  `unsupported` when the underlying function is absent.
+- Helpers: `wsp_acf_is_active()`, `wsp_acf_check_cap()`, `wsp_acf_validate_target()`,
+  `wsp_acf_get_nested_value()`, `wsp_acf_set_nested_value()`.
+
+> **No delete-options-page tool.** A `wsp/acf-delete-options-page` tool was proposed but dropped:
+> ACF options pages are re-registered on every load (via `acf_add_options_page()` hooks), so a
+> runtime delete can't persist. Its callback, native-tool registration, and registry entry were all
+> removed — don't reintroduce it without a durable deletion mechanism.
 
 ---
 

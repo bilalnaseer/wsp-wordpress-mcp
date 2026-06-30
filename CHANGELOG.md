@@ -8,7 +8,23 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [Unreleased]
+## [2.3.0] — 2026-06-30
+
+### Added
+- **Advanced Custom Fields (ACF) suite** (`includes/abilities/acf.php`) — 27 tools covering field groups, fields, field values (with dot-notation deep get/set), custom post types, taxonomies, and options pages. All OFF by default and only registered when ACF is active (`class_exists('ACF') || function_exists('get_field')`). Shipped via PR #8.
+  - **Field groups:** list, get, create, update, delete, import-from-JSON.
+  - **Fields:** list (by group), get, create, update config, delete, duplicate, force-sync (`acf/include_fields`).
+  - **Values:** get/update deep (dot-notation, e.g. `repeater.0.subfield`), delete, get-all, bulk-update, get-field-object. Targets resolve via `wsp_acf_validate_target()` — accepts a numeric post/page ID, `user_<id>`, `term_<id>`/`category_<id>`, or `options`.
+  - **CPT/taxonomy:** list post types, list taxonomies, programmatically create CPT/taxonomy (requires ACF 6.1+ `acf_update_post_type()` / `acf_update_taxonomy()`).
+  - **Options pages:** list, create (ACF Pro), get/update option value.
+- **Settings UI** — added "WooCommerce" (🛍️) and "Advanced Custom Fields" (🧩) group icons in `settings-page.php`.
+
+### Security
+- ACF value tools enforce **per-object** capabilities inside `wsp_acf_validate_target($target_id, $target_type, $is_write)`, not a blanket cap: `edit_post($id)` for post/page targets, `edit_user($id)` (write) / `list_users` (read, with self-read allowance) for user targets, `manage_categories` for term targets, and `manage_options` for the `options` target. String targets like `user_5` are normalized to id+type so they flow through the same capability gates (closes a pre-merge bypass where string targets skipped all checks).
+- Field-group / field / CPT / taxonomy / options-page **create/update/delete** tools require `manage_options`; read and value-edit tools require `edit_posts`.
+
+### Removed
+- A proposed `wsp/acf-delete-options-page` tool was dropped before release. ACF options pages are re-registered on every load, so a runtime delete can't persist — its callback, native-tool registration, and registry entry were all removed to avoid advertising a non-functional tool.
 
 ### Fixed (WordPress.org Plugin Check)
 - `includes/abilities/woocommerce.php` — replaced `parse_url()` with `wp_parse_url()` and `@unlink()` with `wp_delete_file()` (WordPress.WP.AlternativeFunctions).

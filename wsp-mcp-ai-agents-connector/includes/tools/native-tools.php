@@ -798,15 +798,6 @@ function wsp_mcp_register_native_tools() {
 			'capability'  => 'manage_options',
 			'enable_key'  => 'wsp/acf-update-option-value',
 		) );
-		WSP_MCP_Server::register_tool( 'wsp_acf_delete_options_page', array(
-			'description' => 'Deregister options pages dynamically.',
-			'inputSchema' => array( 'type' => 'object', 'required' => array( 'menu_slug' ), 'properties' => array(
-				'menu_slug' => array( 'type' => 'string' ),
-			) ),
-			'callback'    => 'wsp_execute_acf_delete_options_page',
-			'capability'  => 'manage_options',
-			'enable_key'  => 'wsp/acf-delete-options-page',
-		) );
 	}
 
 	/**

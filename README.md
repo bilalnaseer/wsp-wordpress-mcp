@@ -2,7 +2,7 @@
 
 > **By [WebSensePro](https://websensepro.com) — Official Shopify Partner & WordPress Agency**
 
-[![Version](https://img.shields.io/badge/Version-2.2.0-blue?style=for-the-badge)](https://github.com/bilalnaseer/wsp-wordpress-mcp/releases)
+[![Version](https://img.shields.io/badge/Version-2.3.0-blue?style=for-the-badge)](https://github.com/bilalnaseer/wsp-wordpress-mcp/releases)
 [![YouTube](https://img.shields.io/badge/YouTube-140K%2B%20Subscribers-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtube.com/websensepro)
 [![License](https://img.shields.io/badge/License-GPL%202.0-green?style=for-the-badge)](LICENSE)
 
@@ -13,6 +13,11 @@
 [![WSP WordPress MCP — Full Tutorial](https://img.youtube.com/vi/nHE6PcA5pfc/maxresdefault.jpg)](https://youtu.be/nHE6PcA5pfc)
 
 ---
+
+## ✨ What's New in v2.3.0
+
+- 🧩 **Advanced Custom Fields Suite** — 27 new tools for ACF: field groups, fields, field values with **dot-notation deep access** (e.g. `repeater.0.subfield`), custom post types, taxonomies, and options pages. All off by default and only registered when ACF is active; structural changes (create/update/delete groups, fields, CPTs, taxonomies) require `manage_options`, with per-object capability checks on every value read/write.
+- 🏷️ **Plugin slug renamed** to `wsp-mcp-ai-agents-connector` to match the public name ahead of WordPress.org submission. ⚠️ **Breaking on existing installs** — WordPress treats the renamed folder as a separate plugin, so remove the old `websensepro-mcp-abilities` copy and activate the new one. Saved settings, the sessions table, and the API key are preserved (no reconfiguration needed).
 
 ## ✨ What's New in v2.2.0
 
@@ -91,6 +96,24 @@
 | Sales Report | read |
 | Low-Stock Alerts | read |
 | Moderate Product Reviews | write |
+
+### Advanced Custom Fields *(requires ACF plugin)*
+| Ability | Access |
+|---------|--------|
+| List / Get Field Groups | read |
+| Create / Update / Delete Field Group | write |
+| Import Field Groups (JSON) | write |
+| List / Get Fields | read |
+| Create / Update / Delete / Duplicate Field | write |
+| Force Sync Fields | write |
+| Get / Get-All / Get Field Object (values) | read |
+| Update Deep / Bulk Update / Delete Value | write |
+| List Post Types / Taxonomies | read |
+| Create Custom Post Type / Taxonomy *(ACF 6.1+)* | write |
+| List / Create Options Page *(create needs ACF Pro)* | read / write |
+| Get / Update Option Value | read / write |
+
+> Value reads/writes accept a target of a post/page ID, `user_<id>`, `term_<id>`, or `options`, and enforce per-object capabilities (e.g. `edit_post`, `edit_user`, `manage_categories`, `manage_options`). Structural changes require `manage_options`.
 
 ---
 

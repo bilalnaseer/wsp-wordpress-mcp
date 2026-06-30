@@ -117,7 +117,6 @@ function wsp_mcp_ability_registry() {
             'wsp/acf-create-options-page' => array( 'label' => 'Create Options Page',     'description' => 'Programmatically register global ACF Options Page.', 'group' => 'Advanced Custom Fields', 'access' => 'write', 'default' => false ),
             'wsp/acf-get-option-value'    => array( 'label' => 'Get Option Value',        'description' => 'Read global option value metadata.', 'group' => 'Advanced Custom Fields', 'access' => 'read',  'default' => false ),
             'wsp/acf-update-option-value' => array( 'label' => 'Update Option Value',     'description' => 'Write option values globally.', 'group' => 'Advanced Custom Fields', 'access' => 'write', 'default' => false ),
-            'wsp/acf-delete-options-page' => array( 'label' => 'Delete Options Page',     'description' => 'Deregister options pages dynamically.', 'group' => 'Advanced Custom Fields', 'access' => 'write', 'default' => false ),
         );
     }
 
