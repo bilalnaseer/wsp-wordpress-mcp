@@ -36,7 +36,7 @@ Every tool is individually toggleable in **MCP > Settings**, and all write tools
 * Pages — read, create, update, delete
 * Categories — list, create, update, delete
 * Tags — list, create, update, delete
-* Comments — read and moderate (approve, spam, trash)
+* Comments — read, approve, and delete
 * Media — read the media library
 * Users — read user data
 * Site info — read general site details
@@ -49,9 +49,13 @@ Every tool is individually toggleable in **MCP > Settings**, and all write tools
 * Update SEO title, meta description, and focus keyphrase
  
 **Elementor** (requires Elementor)
- 
-* Read Elementor page structure
-* Edit Elementor page structure (code-bearing widgets and settings are blocked/sanitized for security)
+
+* Pages — list pages/posts built with Elementor
+* Page structure — read the full element tree of a page
+* Elements — get a single element's settings, or find elements by widget type or content
+* Templates — list saved templates from the library
+* Editing — add widgets, add layout containers/sections, update element settings, and remove elements
+* Code-bearing widget types (HTML, Shortcode, Code) are rejected and code-bearing settings (Custom CSS, Custom Attributes) are stripped; all text settings are sanitized with `wp_kses_post()`
  
 **WooCommerce** (requires WooCommerce — financial and PII tools require the `manage_woocommerce` capability)
  
