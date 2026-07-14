@@ -1,0 +1,640 @@
+{
+    "totals": {
+        "total": 70,
+        "core": 26,
+        "read": 31,
+        "write": 39
+    },
+    "abilities": [
+        {
+            "id": "wsp/get-posts",
+            "name": "Read Posts",
+            "description": "List published blog posts (title, URL, date, excerpt, categories, tags).",
+            "group": "Posts",
+            "access": "read",
+            "default": "on",
+            "requires": null
+        },
+        {
+            "id": "wsp/create-post",
+            "name": "Create Post",
+            "description": "Create a new blog post (title, content, status, categories, tags, slug).",
+            "group": "Posts",
+            "access": "write",
+            "default": "off",
+            "requires": null
+        },
+        {
+            "id": "wsp/update-post",
+            "name": "Update Post",
+            "description": "Update an existing post by ID.",
+            "group": "Posts",
+            "access": "write",
+            "default": "off",
+            "requires": null
+        },
+        {
+            "id": "wsp/delete-post",
+            "name": "Delete Post",
+            "description": "Move a post to trash by ID.",
+            "group": "Posts",
+            "access": "write",
+            "default": "off",
+            "requires": null
+        },
+        {
+            "id": "wsp/get-pages",
+            "name": "Read Pages",
+            "description": "List published pages (title, URL, parent, status).",
+            "group": "Pages",
+            "access": "read",
+            "default": "on",
+            "requires": null
+        },
+        {
+            "id": "wsp/create-page",
+            "name": "Create Page",
+            "description": "Create a new WordPress page (title, content, status, parent, slug).",
+            "group": "Pages",
+            "access": "write",
+            "default": "off",
+            "requires": null
+        },
+        {
+            "id": "wsp/update-page",
+            "name": "Update Page",
+            "description": "Update an existing page by ID.",
+            "group": "Pages",
+            "access": "write",
+            "default": "off",
+            "requires": null
+        },
+        {
+            "id": "wsp/delete-page",
+            "name": "Delete Page",
+            "description": "Move a page to trash by ID.",
+            "group": "Pages",
+            "access": "write",
+            "default": "off",
+            "requires": null
+        },
+        {
+            "id": "wsp/get-categories",
+            "name": "Read Categories",
+            "description": "List all post categories with IDs, slugs, and post counts.",
+            "group": "Taxonomy",
+            "access": "read",
+            "default": "on",
+            "requires": null
+        },
+        {
+            "id": "wsp/create-category",
+            "name": "Create Category",
+            "description": "Create a new post category.",
+            "group": "Taxonomy",
+            "access": "write",
+            "default": "off",
+            "requires": null
+        },
+        {
+            "id": "wsp/get-tags",
+            "name": "Read Tags",
+            "description": "List all post tags with IDs, slugs, and post counts.",
+            "group": "Taxonomy",
+            "access": "read",
+            "default": "on",
+            "requires": null
+        },
+        {
+            "id": "wsp/create-tag",
+            "name": "Create Tag",
+            "description": "Create a new post tag.",
+            "group": "Taxonomy",
+            "access": "write",
+            "default": "off",
+            "requires": null
+        },
+        {
+            "id": "wsp/get-comments",
+            "name": "Read Comments",
+            "description": "List comments with author, status, and content snippet.",
+            "group": "Comments",
+            "access": "read",
+            "default": "off",
+            "requires": null
+        },
+        {
+            "id": "wsp/approve-comment",
+            "name": "Approve Comment",
+            "description": "Approve a pending comment by ID.",
+            "group": "Comments",
+            "access": "write",
+            "default": "off",
+            "requires": null
+        },
+        {
+            "id": "wsp/delete-comment",
+            "name": "Delete Comment",
+            "description": "Move a comment to trash by ID.",
+            "group": "Comments",
+            "access": "write",
+            "default": "off",
+            "requires": null
+        },
+        {
+            "id": "wsp/list-media",
+            "name": "List Media",
+            "description": "Browse and search the media library by type, keyword, or date.",
+            "group": "Media",
+            "access": "read",
+            "default": "off",
+            "requires": null
+        },
+        {
+            "id": "wsp/get-media",
+            "name": "Get Media",
+            "description": "Retrieve the full metadata of a specific media file by ID.",
+            "group": "Media",
+            "access": "read",
+            "default": "off",
+            "requires": null
+        },
+        {
+            "id": "wsp/count-media",
+            "name": "Count Media",
+            "description": "Get media library counts grouped by MIME type, plus a total.",
+            "group": "Media",
+            "access": "read",
+            "default": "off",
+            "requires": null
+        },
+        {
+            "id": "wsp/update-media",
+            "name": "Update Media",
+            "description": "Update the title, alt text, caption, or description of a media file by ID.",
+            "group": "Media",
+            "access": "write",
+            "default": "off",
+            "requires": null
+        },
+        {
+            "id": "wsp/delete-media",
+            "name": "Delete Media",
+            "description": "Permanently delete a media file from the media library by ID.",
+            "group": "Media",
+            "access": "write",
+            "default": "off",
+            "requires": null
+        },
+        {
+            "id": "wsp/upload-media",
+            "name": "Upload Media",
+            "description": "Upload an image or file from a URL directly into the media library.",
+            "group": "Media",
+            "access": "write",
+            "default": "off",
+            "requires": null
+        },
+        {
+            "id": "wsp/upload-media-from-url",
+            "name": "Upload Media From URL",
+            "description": "Pull an image from any web link straight into your media library.",
+            "group": "Media",
+            "access": "write",
+            "default": "off",
+            "requires": null
+        },
+        {
+            "id": "wsp/get-users",
+            "name": "Read Users",
+            "description": "List users with display name, email, and role.",
+            "group": "Users",
+            "access": "read",
+            "default": "off",
+            "requires": null
+        },
+        {
+            "id": "wsp/search",
+            "name": "Search Content",
+            "description": "Search posts and pages by keyword.",
+            "group": "Search",
+            "access": "read",
+            "default": "on",
+            "requires": null
+        },
+        {
+            "id": "wsp/get-site-info",
+            "name": "Read Site Info",
+            "description": "Return site name, URL, tagline, WP version, and language.",
+            "group": "Site",
+            "access": "read",
+            "default": "on",
+            "requires": null
+        },
+        {
+            "id": "wsp/get-plugins",
+            "name": "Read Plugins",
+            "description": "List all active plugins with name, version, and author.",
+            "group": "Site",
+            "access": "read",
+            "default": "off",
+            "requires": null
+        },
+        {
+            "id": "wsp/yoast-get-seo",
+            "name": "Get Yoast SEO Meta",
+            "description": "Get Yoast SEO title, meta description, and focus keyphrase for a post or page.",
+            "group": "Yoast SEO",
+            "access": "read",
+            "default": "off",
+            "requires": "Yoast SEO"
+        },
+        {
+            "id": "wsp/yoast-update-seo",
+            "name": "Update Yoast SEO Meta",
+            "description": "Update Yoast SEO title, meta description, and/or focus keyphrase for a post or page.",
+            "group": "Yoast SEO",
+            "access": "write",
+            "default": "off",
+            "requires": "Yoast SEO"
+        },
+        {
+            "id": "wsp/woo-get-products",
+            "name": "List WooCommerce Products",
+            "description": "List store products with filtering and pagination.",
+            "group": "WooCommerce",
+            "access": "read",
+            "default": "off",
+            "requires": "WooCommerce"
+        },
+        {
+            "id": "wsp/woo-get-product",
+            "name": "Get Single Product",
+            "description": "Get single product details by ID.",
+            "group": "WooCommerce",
+            "access": "read",
+            "default": "off",
+            "requires": "WooCommerce"
+        },
+        {
+            "id": "wsp/woo-create-product",
+            "name": "Create WooCommerce Product",
+            "description": "Create a new simple or variable product in the store with auto-attributes.",
+            "group": "WooCommerce",
+            "access": "write",
+            "default": "off",
+            "requires": "WooCommerce"
+        },
+        {
+            "id": "wsp/woo-create-variation",
+            "name": "Create Product Variation",
+            "description": "Create a new product variation / variant.",
+            "group": "WooCommerce",
+            "access": "write",
+            "default": "off",
+            "requires": "WooCommerce"
+        },
+        {
+            "id": "wsp/woo-update-product",
+            "name": "Update WooCommerce Product",
+            "description": "Update an existing product details (prices, stock, description).",
+            "group": "WooCommerce",
+            "access": "write",
+            "default": "off",
+            "requires": "WooCommerce"
+        },
+        {
+            "id": "wsp/woo-list-orders",
+            "name": "List WooCommerce Orders",
+            "description": "List recent orders with status filtering.",
+            "group": "WooCommerce",
+            "access": "read",
+            "default": "off",
+            "requires": "WooCommerce"
+        },
+        {
+            "id": "wsp/woo-update-order-status",
+            "name": "Update WooCommerce Order",
+            "description": "Update the status of an order.",
+            "group": "WooCommerce",
+            "access": "write",
+            "default": "off",
+            "requires": "WooCommerce"
+        },
+        {
+            "id": "wsp/woo-refund-order",
+            "name": "Refund WooCommerce Order",
+            "description": "Create a full or partial refund for an order.",
+            "group": "WooCommerce",
+            "access": "write",
+            "default": "off",
+            "requires": "WooCommerce"
+        },
+        {
+            "id": "wsp/woo-create-coupon",
+            "name": "Create WooCommerce Coupon",
+            "description": "Create a new coupon code (percentage or fixed discount).",
+            "group": "WooCommerce",
+            "access": "write",
+            "default": "off",
+            "requires": "WooCommerce"
+        },
+        {
+            "id": "wsp/woo-list-coupons",
+            "name": "List WooCommerce Coupons",
+            "description": "List all active store coupons with usage stats.",
+            "group": "WooCommerce",
+            "access": "read",
+            "default": "off",
+            "requires": "WooCommerce"
+        },
+        {
+            "id": "wsp/woo-create-order-note",
+            "name": "Create Order Note",
+            "description": "Add a note to an existing order (internal or customer-facing).",
+            "group": "WooCommerce",
+            "access": "write",
+            "default": "off",
+            "requires": "WooCommerce"
+        },
+        {
+            "id": "wsp/woo-list-customers",
+            "name": "List Customers",
+            "description": "List registered customers with billing details.",
+            "group": "WooCommerce",
+            "access": "read",
+            "default": "off",
+            "requires": "WooCommerce"
+        },
+        {
+            "id": "wsp/woo-report-sales",
+            "name": "Get Sales Report",
+            "description": "Get sales, orders, net revenue, and average order value reports.",
+            "group": "WooCommerce",
+            "access": "read",
+            "default": "off",
+            "requires": "WooCommerce"
+        },
+        {
+            "id": "wsp/woo-get-low-stock",
+            "name": "Get Low Stock Alerts",
+            "description": "Inspect and list products running low on stock.",
+            "group": "WooCommerce",
+            "access": "read",
+            "default": "off",
+            "requires": "WooCommerce"
+        },
+        {
+            "id": "wsp/woo-moderate-review",
+            "name": "Moderate Product Reviews",
+            "description": "Approve, spam, trash, or reply to product reviews.",
+            "group": "WooCommerce",
+            "access": "write",
+            "default": "off",
+            "requires": "WooCommerce"
+        },
+        {
+            "id": "wsp/acf-list-field-groups",
+            "name": "List Field Groups",
+            "description": "List all registered field groups.",
+            "group": "Advanced Custom Fields",
+            "access": "read",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        },
+        {
+            "id": "wsp/acf-get-field-group",
+            "name": "Get Field Group",
+            "description": "Get detailed setup of a specific field group.",
+            "group": "Advanced Custom Fields",
+            "access": "read",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        },
+        {
+            "id": "wsp/acf-create-field-group",
+            "name": "Create Field Group",
+            "description": "Create a brand new custom field group configuration.",
+            "group": "Advanced Custom Fields",
+            "access": "write",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        },
+        {
+            "id": "wsp/acf-update-field-group",
+            "name": "Update Field Group Settings",
+            "description": "Update existing custom field group rules/configurations.",
+            "group": "Advanced Custom Fields",
+            "access": "write",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        },
+        {
+            "id": "wsp/acf-delete-field-group",
+            "name": "Delete Field Group",
+            "description": "Delete/trash a field group by its key.",
+            "group": "Advanced Custom Fields",
+            "access": "write",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        },
+        {
+            "id": "wsp/acf-import-field-groups",
+            "name": "Import Field Groups",
+            "description": "Programmatically import field groups via raw JSON parameters.",
+            "group": "Advanced Custom Fields",
+            "access": "write",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        },
+        {
+            "id": "wsp/acf-list-fields",
+            "name": "List Fields inside Group",
+            "description": "List all registered fields configs inside a specific field group.",
+            "group": "Advanced Custom Fields",
+            "access": "read",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        },
+        {
+            "id": "wsp/acf-get-field",
+            "name": "Get Field Config Details",
+            "description": "Fetch direct key attributes and parameters for a custom field.",
+            "group": "Advanced Custom Fields",
+            "access": "read",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        },
+        {
+            "id": "wsp/acf-create-field",
+            "name": "Create Field Configuration",
+            "description": "Register a new field inside an existing custom group.",
+            "group": "Advanced Custom Fields",
+            "access": "write",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        },
+        {
+            "id": "wsp/acf-update-field-config",
+            "name": "Update Field Configuration",
+            "description": "Update schema configuration for a custom field.",
+            "group": "Advanced Custom Fields",
+            "access": "write",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        },
+        {
+            "id": "wsp/acf-delete-field",
+            "name": "Delete Field Config",
+            "description": "Deletes config parameters for a custom field.",
+            "group": "Advanced Custom Fields",
+            "access": "write",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        },
+        {
+            "id": "wsp/acf-duplicate-field",
+            "name": "Duplicate Field Config",
+            "description": "Duplicate an existing field configuration key.",
+            "group": "Advanced Custom Fields",
+            "access": "write",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        },
+        {
+            "id": "wsp/acf-sync-fields",
+            "name": "Force Sync Fields JSON",
+            "description": "Force reload and sync schema settings dynamically.",
+            "group": "Advanced Custom Fields",
+            "access": "write",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        },
+        {
+            "id": "wsp/acf-get-value-deep",
+            "name": "Get Field Value Deep",
+            "description": "Dot-notation deep access to variables (e.g. repeater.0.subfield).",
+            "group": "Advanced Custom Fields",
+            "access": "read",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        },
+        {
+            "id": "wsp/acf-update-value-deep",
+            "name": "Update Field Value Deep",
+            "description": "Update specific deep metadata locations with dot-notation.",
+            "group": "Advanced Custom Fields",
+            "access": "write",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        },
+        {
+            "id": "wsp/acf-delete-value",
+            "name": "Delete Field Value",
+            "description": "Delete specific key field metadata value.",
+            "group": "Advanced Custom Fields",
+            "access": "write",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        },
+        {
+            "id": "wsp/acf-get-all-values",
+            "name": "Get All Fields Values",
+            "description": "Get all raw field values mapped on any object.",
+            "group": "Advanced Custom Fields",
+            "access": "read",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        },
+        {
+            "id": "wsp/acf-bulk-update-values",
+            "name": "Bulk Update Values",
+            "description": "Bulk update array values instantly.",
+            "group": "Advanced Custom Fields",
+            "access": "write",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        },
+        {
+            "id": "wsp/acf-get-field-object",
+            "name": "Get Value & Config Object",
+            "description": "Return both config object and mapped values.",
+            "group": "Advanced Custom Fields",
+            "access": "read",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        },
+        {
+            "id": "wsp/acf-list-post-types",
+            "name": "List Registered Post Types",
+            "description": "List post types with active register mappings.",
+            "group": "Advanced Custom Fields",
+            "access": "read",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        },
+        {
+            "id": "wsp/acf-create-post-type",
+            "name": "Create Custom Post Type",
+            "description": "Programmatically register brand new WordPress Post Type.",
+            "group": "Advanced Custom Fields",
+            "access": "write",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        },
+        {
+            "id": "wsp/acf-list-taxonomies",
+            "name": "List Registered Taxonomies",
+            "description": "List taxonomies structure.",
+            "group": "Advanced Custom Fields",
+            "access": "read",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        },
+        {
+            "id": "wsp/acf-create-taxonomy",
+            "name": "Create Custom Taxonomy",
+            "description": "Programmatically register brand new WordPress taxonomy.",
+            "group": "Advanced Custom Fields",
+            "access": "write",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        },
+        {
+            "id": "wsp/acf-list-options-pages",
+            "name": "List ACF Options Pages",
+            "description": "List registered global options views.",
+            "group": "Advanced Custom Fields",
+            "access": "read",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        },
+        {
+            "id": "wsp/acf-create-options-page",
+            "name": "Create Options Page",
+            "description": "Programmatically register global ACF Options Page.",
+            "group": "Advanced Custom Fields",
+            "access": "write",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        },
+        {
+            "id": "wsp/acf-get-option-value",
+            "name": "Get Option Value",
+            "description": "Read global option value metadata.",
+            "group": "Advanced Custom Fields",
+            "access": "read",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        },
+        {
+            "id": "wsp/acf-update-option-value",
+            "name": "Update Option Value",
+            "description": "Write option values globally.",
+            "group": "Advanced Custom Fields",
+            "access": "write",
+            "default": "off",
+            "requires": "Advanced Custom Fields"
+        }
+    ]
+}

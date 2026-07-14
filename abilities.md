@@ -8,6 +8,8 @@ The list mirrors the plugin registry at
 `wsp-mcp-ai-agents-connector/includes/registry.php` in
 [bilalnaseer/wsp-wordpress-mcp](https://github.com/bilalnaseer/wsp-wordpress-mcp).
 
+> **Generated file — do not edit by hand.** Produced by `bin/generate-abilities-md.php`; CI regenerates it whenever `registry.php` changes.
+
 **When this file changes, update the `ABILITIES` array in `abilities-directory.html` to match** (and bump the `lastmod` date for that page in `sitemap.xml`).
 
 ## Legend
@@ -18,9 +20,9 @@ The list mirrors the plugin registry at
 
 ## Totals
 
-- **79** total abilities
+- **70** total abilities
 - **26** core (always available)
-- **36** read · **43** write
+- **31** read · **39** write
 
 ---
 
@@ -122,22 +124,6 @@ The list mirrors the plugin registry at
 | `wsp/woo-report-sales` | Get Sales Report | Get sales, orders, net revenue, and average order value reports. | read | off |
 | `wsp/woo-get-low-stock` | Get Low Stock Alerts | Inspect and list products running low on stock. | read | off |
 | `wsp/woo-moderate-review` | Moderate Product Reviews | Approve, spam, trash, or reply to product reviews. | write | off |
-
----
-
-## Elementor — requires the Elementor plugin
-
-| Ability ID | Name | Description | Access | Default |
-|---|---|---|---|---|
-| `wsp/elementor-list-pages` | List Elementor Pages | List pages/posts built with Elementor (title, ID, URL, status). | read | off |
-| `wsp/elementor-get-page` | Get Page Structure | Get the element tree of an Elementor page by post ID. | read | off |
-| `wsp/elementor-get-element` | Get Element Settings | Get all settings for a specific element by post ID and element ID. | read | off |
-| `wsp/elementor-find-element` | Find Element | Find elements on a page by widget type or settings content search. | read | off |
-| `wsp/elementor-list-templates` | List Templates | List Elementor saved templates from the library. | read | off |
-| `wsp/elementor-update-element` | Update Element | Update settings for a widget or container by element ID. | write | off |
-| `wsp/elementor-add-widget` | Add Widget | Add a widget to a container or column on an Elementor page. | write | off |
-| `wsp/elementor-add-container` | Add Container | Add a layout container or section to an Elementor page. | write | off |
-| `wsp/elementor-remove-element` | Remove Element | Remove a widget or container from an Elementor page by element ID. | write | off |
 
 ---
 
