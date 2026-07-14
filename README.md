@@ -2,7 +2,7 @@
 
 > **By [WebSensePro](https://websensepro.com) — Official Shopify Partner & WordPress Agency**
 
-[![Version](https://img.shields.io/badge/Version-2.4.1-blue?style=for-the-badge)](https://github.com/bilalnaseer/wsp-wordpress-mcp/releases)
+[![Version](https://img.shields.io/badge/Version-2.5.0-blue?style=for-the-badge)](https://github.com/bilalnaseer/wsp-wordpress-mcp/releases)
 [![YouTube](https://img.shields.io/badge/YouTube-140K%2B%20Subscribers-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtube.com/websensepro)
 [![License](https://img.shields.io/badge/License-GPL%202.0-green?style=for-the-badge)](LICENSE)
 
@@ -13,6 +13,11 @@
 [![WSP WordPress MCP — Full Tutorial](https://img.youtube.com/vi/1hGSUAdRxiU/maxresdefault.jpg)](https://youtu.be/1hGSUAdRxiU)
 
 ---
+
+## ✨ What's New in v2.5.0
+
+- 🖼️ **Full Media Library Suite** — the single read-only media tool is now a complete set of seven: **List Media** (browse/search by type, keyword, or date), **Get Media** (full metadata of a single attachment by ID), **Count Media** (counts grouped by MIME type + total), **Update Media** (title, alt text, caption, description), **Delete Media** (permanent), and **Upload Media** / **Upload Media From URL** (import a file straight from any web link). All off by default and toggled from **MCP > Settings**. Reads require `upload_files`, deletes require `delete_posts`; uploads sanitize the source URL and sideload via WordPress core.
+- ⚠️ **`wsp_get_media` behavior changed** — it now returns the full metadata of a **single** attachment by ID. The old "list the library" behavior moved to the new **`wsp_list_media`** tool. If you relied on `wsp_get_media` to list media, switch to `wsp_list_media`.
 
 ## ✨ What's New in v2.4.1
 
@@ -66,7 +71,8 @@
 | Read / Create / Update / Delete Pages | read / write |
 | Read Categories & Tags / Create | read / write |
 | Read / Approve / Delete Comments | read / write |
-| Read Media Library | read |
+| List / Get / Count Media | read |
+| Update / Delete / Upload Media *(upload from URL)* | write |
 | Read Users | read |
 | Search Content | read |
 | Read Site Info & Active Plugins | read |
