@@ -18,6 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	define( 'ABSPATH', __DIR__ . '/' ); // registry.php bails without this.
 }
 if ( ! function_exists( 'wsp_yoast_is_active' ) )     { function wsp_yoast_is_active()     { return true; } }
+if ( ! function_exists( 'wsp_rankmath_is_active' ) )  { function wsp_rankmath_is_active()  { return true; } }
 if ( ! function_exists( 'wsp_elementor_is_active' ) ) { function wsp_elementor_is_active() { return true; } }
 if ( ! function_exists( 'wsp_acf_is_active' ) )       { function wsp_acf_is_active()       { return true; } }
 if ( ! class_exists( 'WooCommerce' ) )                { class WooCommerce {} }
@@ -43,6 +44,7 @@ function wsp_abilities_core_groups() {
 function wsp_abilities_plugin_sections() {
 	return array(
 		'Yoast SEO'              => 'requires the Yoast SEO plugin',
+		'Rank Math SEO'          => 'requires the Rank Math SEO plugin',
 		'WooCommerce'            => 'requires the WooCommerce plugin',
 		'Elementor'              => 'requires the Elementor plugin',
 		'Advanced Custom Fields' => 'requires the ACF plugin',
