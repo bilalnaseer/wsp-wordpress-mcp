@@ -48,6 +48,23 @@ foreach ( wsp_abilities_all() as $id => $a ) {
 }
 $array_body = "\n" . implode( ",\n", $entries ) . "\n    ";
 
+// --- Build the GROUPS map body ----------------------------------------------
+// The page's render logic looks up GROUPS[a.group] for every ability, so this
+// map must list every group the registry can emit. It is regenerated here (not
+// hand-maintained) so a newly added plugin group can never break the page.
+$group_lines = array();
+foreach ( wsp_abilities_core_groups() as $group ) {
+	$group_lines[] = sprintf( "      '%s': { core: true }", wsp_js_str( $group ) );
+}
+foreach ( array_keys( wsp_abilities_plugin_sections() ) as $group ) {
+	$group_lines[] = sprintf(
+		"      '%s': { core: false, requires: '%s' }",
+		wsp_js_str( $group ),
+		wsp_js_str( $group )
+	);
+}
+$groups_body = "\n" . implode( ",\n", $group_lines ) . "\n    ";
+
 // --- Patch abilities-directory.html -----------------------------------------
 $html = file_get_contents( $html_path );
 if ( false === $html ) {
@@ -55,31 +72,51 @@ if ( false === $html ) {
 	exit( 1 );
 }
 
-// Replace everything between `var ABILITIES = [` and the closing `];`.
-// A callback is used so the generated body is inserted literally (never
-// reinterpreted as regex backreferences or replacement metacharacters).
-$pattern  = '/(var\s+ABILITIES\s*=\s*\[)(.*?)(\]\s*;)/s';
-$count    = 0;
-$new_html = preg_replace_callback(
-	$pattern,
-	function ( $m ) use ( $array_body ) {
-		return $m[1] . $array_body . '];';
-	},
-	$html,
-	1,
-	$count
+// Replace everything between `var ABILITIES = [` and the closing `];`, and
+// likewise the `var GROUPS = { ... };` object. A callback is used so the
+// generated body is inserted literally (never reinterpreted as regex
+// backreferences or replacement metacharacters).
+$replacements = array(
+	'ABILITIES' => array(
+		'pattern' => '/(var\s+ABILITIES\s*=\s*\[)(.*?)(\]\s*;)/s',
+		'body'    => $array_body,
+		'close'   => '];',
+		'count'   => count( $entries ),
+	),
+	'GROUPS'    => array(
+		'pattern' => '/(var\s+GROUPS\s*=\s*\{)(.*?)(\}\s*;)/s',
+		'body'    => $groups_body,
+		'close'   => '};',
+		'count'   => count( $group_lines ),
+	),
 );
 
-if ( null === $new_html || 0 === $count ) {
-	fwrite( STDERR, "Error: could not locate `var ABILITIES = [ ... ];` in {$html_path}\n" );
-	exit( 1 );
+$new_html = $html;
+foreach ( $replacements as $name => $r ) {
+	$count   = 0;
+	$patched = preg_replace_callback(
+		$r['pattern'],
+		function ( $m ) use ( $r ) {
+			return $m[1] . $r['body'] . $r['close'];
+		},
+		$new_html,
+		1,
+		$count
+	);
+
+	if ( null === $patched || 0 === $count ) {
+		fwrite( STDERR, "Error: could not locate `var {$name} = ...` in {$html_path}\n" );
+		exit( 1 );
+	}
+
+	$new_html = $patched;
+	fwrite( STDERR, "Patched {$name} ({$r['count']} entries) in {$html_path}\n" );
 }
 
 if ( $new_html !== $html && false === file_put_contents( $html_path, $new_html ) ) {
 	fwrite( STDERR, "Error: could not write {$html_path}\n" );
 	exit( 1 );
 }
-fwrite( STDERR, "Patched ABILITIES array (" . count( $entries ) . " entries) in {$html_path}\n" );
 
 // --- Patch sitemap.xml lastmod (best effort, non-fatal) ---------------------
 if ( '' !== $sitemap_path && is_file( $sitemap_path ) ) {
