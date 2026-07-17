@@ -6,7 +6,8 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  *
  * Read:  wsp_execute_list_media, wsp_execute_get_media, wsp_execute_count_media
  * Write: wsp_execute_update_media, wsp_execute_delete_media,
- *        wsp_execute_upload_media, wsp_execute_upload_media_from_url
+ *        wsp_execute_upload_media, wsp_execute_upload_media_from_url,
+ *        wsp_execute_set_featured_image
  */
 
 /**
@@ -163,13 +164,39 @@ function wsp_execute_upload_media_from_url( $input ) {
         ? sanitize_file_name( $input['filename'] )
         : wp_basename( wp_parse_url( $url, PHP_URL_PATH ) );
     if ( empty( $name ) ) {
-        $name = 'upload-' . time();
+        $name = 'upload-' . time() . '.jpg';
+    }
+
+    if ( ! preg_match( '/\.(jpg|jpeg|png|gif|webp)$/i', $name ) ) {
+        $name .= '.jpg';
     }
 
     $file_array = array( 'name' => $name, 'tmp_name' => $tmp );
     $post_id    = isset( $input['post_id'] ) ? intval( $input['post_id'] ) : 0;
 
+    $mime_filter = function( $mimes ) {
+        $mimes['jpg|jpeg|jpe'] = 'image/jpeg';
+        $mimes['png'] = 'image/png';
+        $mimes['gif'] = 'image/gif';
+        $mimes['webp'] = 'image/webp';
+        return $mimes;
+    };
+
+    $filetype_filter = function( $checked, $file, $filename, $mimes ) {
+        if ( empty( $checked['type'] ) ) {
+            $checked['type'] = wp_check_filetype( $filename, $mimes )['type'];
+        }
+        return $checked;
+    };
+
+    add_filter( 'upload_mimes', $mime_filter );
+    add_filter( 'wp_check_filetype_and_ext', $filetype_filter, 10, 4 );
+
     $id = media_handle_sideload( $file_array, $post_id );
+
+    remove_filter( 'upload_mimes', $mime_filter );
+    remove_filter( 'wp_check_filetype_and_ext', $filetype_filter, 10, 4 );
+
     if ( is_wp_error( $id ) ) {
         if ( file_exists( $tmp ) ) {
             wp_delete_file( $tmp );
@@ -196,4 +223,39 @@ function wsp_execute_upload_media_from_url( $input ) {
  */
 function wsp_execute_upload_media( $input ) {
     return wsp_execute_upload_media_from_url( $input );
+}
+
+/**
+ * Set an image as the featured image (thumbnail) for a post or page.
+ */
+function wsp_execute_set_featured_image( $input ) {
+    $post_id       = isset( $input['post_id'] ) ? intval( $input['post_id'] ) : 0;
+    $attachment_id = isset( $input['attachment_id'] ) ? intval( $input['attachment_id'] ) : 0;
+
+    if ( ! $post_id ) {
+        return array( 'success' => false, 'error' => 'post_id is required.' );
+    }
+    if ( ! $attachment_id ) {
+        return array( 'success' => false, 'error' => 'attachment_id is required.' );
+    }
+
+    if ( ! get_post( $post_id ) ) {
+        return array( 'success' => false, 'error' => "Post {$post_id} not found." );
+    }
+    if ( 'attachment' !== get_post_type( $attachment_id ) ) {
+        return array( 'success' => false, 'error' => "Attachment {$attachment_id} not found or not an image." );
+    }
+
+    if ( ! wp_attachment_is_image( $attachment_id ) ) {
+        return array( 'success' => false, 'error' => 'Attachment must be an image.' );
+    }
+
+    set_post_thumbnail( $post_id, $attachment_id );
+
+    return array(
+        'success'           => true,
+        'post_id'           => $post_id,
+        'featured_image_id' => $attachment_id,
+        'message'           => "Featured image set successfully for post {$post_id}."
+    );
 }

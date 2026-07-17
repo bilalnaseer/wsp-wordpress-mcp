@@ -261,6 +261,16 @@ function wsp_mcp_register_native_tools() {
 		'capability'  => 'upload_files',
 		'enable_key'  => 'wsp/upload-media-from-url',
 	) );
+	WSP_MCP_Server::register_tool( 'wsp_set_featured_image', array(
+		'description' => 'Set an image as the featured image (thumbnail) for a post or page.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'post_id', 'attachment_id' ), 'properties' => array(
+			'post_id'       => array( 'type' => 'integer', 'description' => 'The post or page ID.' ),
+			'attachment_id' => array( 'type' => 'integer', 'description' => 'The media attachment ID to set as featured.' ),
+		) ),
+		'callback'    => 'wsp_execute_set_featured_image',
+		'capability'  => 'edit_posts',
+		'enable_key'  => 'wsp/set-featured-image',
+	) );
 
 	// ---- Users / Search / Site ----
 	WSP_MCP_Server::register_tool( 'wsp_get_users', array(
