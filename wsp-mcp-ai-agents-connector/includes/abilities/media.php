@@ -164,11 +164,15 @@ function wsp_execute_upload_media_from_url( $input ) {
         ? sanitize_file_name( $input['filename'] )
         : wp_basename( wp_parse_url( $url, PHP_URL_PATH ) );
     if ( empty( $name ) ) {
-        $name = 'upload-' . time() . '.jpg';
+        $name = 'upload-' . time();
     }
 
     if ( ! preg_match( '/\.(jpg|jpeg|png|gif|webp)$/i', $name ) ) {
-        $name .= '.jpg';
+        if ( preg_match( '/\.(jpg|jpeg|jpe|png|gif|webp)$/i', basename( $url ) ) ) {
+            $name .= substr( basename( $url ), strrpos( basename( $url ), '.' ) );
+        } else {
+            return array( 'success' => false, 'error' => 'Only image files (jpg, png, gif, webp) are supported.' );
+        }
     }
 
     $file_array = array( 'name' => $name, 'tmp_name' => $tmp );
@@ -184,7 +188,9 @@ function wsp_execute_upload_media_from_url( $input ) {
 
     $filetype_filter = function( $checked, $file, $filename, $mimes ) {
         if ( empty( $checked['type'] ) ) {
-            $checked['type'] = wp_check_filetype( $filename, $mimes )['type'];
+            $filetype_info = wp_check_filetype( $filename, $mimes );
+            $checked['type'] = $filetype_info['type'];
+            $checked['ext']  = $filetype_info['ext'];
         }
         return $checked;
     };
@@ -250,7 +256,9 @@ function wsp_execute_set_featured_image( $input ) {
         return array( 'success' => false, 'error' => 'Attachment must be an image.' );
     }
 
-    set_post_thumbnail( $post_id, $attachment_id );
+    if ( ! set_post_thumbnail( $post_id, $attachment_id ) ) {
+        return array( 'success' => false, 'error' => 'Failed to set featured image.' );
+    }
 
     return array(
         'success'           => true,
