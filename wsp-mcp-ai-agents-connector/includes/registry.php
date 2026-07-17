@@ -56,6 +56,7 @@ function wsp_mcp_ability_registry() {
         'wsp/delete-media'          => array( 'label' => 'Delete Media',         'description' => 'Permanently delete a media file from the media library by ID.',            'group' => 'Media', 'access' => 'write', 'default' => false ),
         'wsp/upload-media'          => array( 'label' => 'Upload Media',         'description' => 'Upload an image or file from a URL directly into the media library.',       'group' => 'Media', 'access' => 'write', 'default' => false ),
         'wsp/upload-media-from-url' => array( 'label' => 'Upload Media From URL', 'description' => 'Pull an image from any web link straight into your media library.',         'group' => 'Media', 'access' => 'write', 'default' => false ),
+        'wsp/set-featured-image'    => array( 'label' => 'Set Featured Image',    'description' => 'Set an image as the featured image (thumbnail) for a post or page.',        'group' => 'Media', 'access' => 'write', 'default' => false ),
         // USERS
         'wsp/get-users'       => array( 'label' => 'Read Users',      'description' => 'List users with display name, email, and role.',             'group' => 'Users',    'access' => 'read',  'default' => false ),
         // SEARCH
