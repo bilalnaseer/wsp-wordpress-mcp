@@ -477,6 +477,7 @@ function wsp_execute_gravity_create_notification( $input ) {
     $temp_name   = '_wsp_tmp_' . $notif_id . '_' . wp_rand( 1000, 9999 );
 
     $notification = array(
+        'id'      => $notif_id,
         'name'    => $temp_name,
         'isActive'=> true,
         'toType'  => isset( $input['to_type'] ) ? sanitize_text_field( wp_unslash( $input['to_type'] ) ) : 'email',
@@ -506,19 +507,9 @@ function wsp_execute_gravity_create_notification( $input ) {
         foreach ( $updated_form['notifications'] as $key => $n ) {
             if ( isset( $n['name'] ) && $n['name'] === $temp_name ) {
                 $actual_id = $key;
-                if ( '' !== $actual_id ) {
-                    $updated_form['notifications'][ $key ]['name'] = $notif_name;
-                    $updated_form['notifications'][ $key ]['id']   = $actual_id;
-                    GFAPI::update_form( $updated_form, $form_id );
-                } else {
-                    $new_key = uniqid();
-                    $n['name'] = $notif_name;
-                    $n['id']   = $new_key;
-                    unset( $updated_form['notifications'][ $key ] );
-                    $updated_form['notifications'][ $new_key ] = $n;
-                    $actual_id = $new_key;
-                    GFAPI::update_form( $updated_form, $form_id );
-                }
+                $updated_form['notifications'][ $key ]['name'] = $notif_name;
+                $updated_form['notifications'][ $key ]['id']   = $actual_id;
+                GFAPI::update_form( $updated_form, $form_id );
                 break;
             }
         }
@@ -539,7 +530,7 @@ function wsp_execute_gravity_update_notification( $input ) {
 
     $form_id = isset( $input['form_id'] ) ? intval( $input['form_id'] ) : 0;
     $notif_id = isset( $input['notification_id'] ) ? sanitize_text_field( wp_unslash( $input['notification_id'] ) ) : '';
-    if ( ! $form_id || '' === $notif_id && ! isset( $input['notification_id'] ) ) {
+    if ( ! $form_id || '' === $notif_id ) {
         return array( 'success' => false, 'error' => 'Form ID and Notification ID are required.' );
     }
 
@@ -586,7 +577,7 @@ function wsp_execute_gravity_delete_notification( $input ) {
 
     $form_id = isset( $input['form_id'] ) ? intval( $input['form_id'] ) : 0;
     $notif_id = isset( $input['notification_id'] ) ? sanitize_text_field( wp_unslash( $input['notification_id'] ) ) : '';
-    if ( ! $form_id || '' === $notif_id && ! isset( $input['notification_id'] ) ) {
+    if ( ! $form_id || '' === $notif_id ) {
         return array( 'success' => false, 'error' => 'Form ID and Notification ID are required.' );
     }
 
@@ -633,6 +624,7 @@ function wsp_execute_gravity_create_confirmation( $input ) {
     $temp_name = '_wsp_tmp_' . $conf_id . '_' . wp_rand( 1000, 9999 );
 
     $confirmation = array(
+        'id'        => $conf_id,
         'name'      => $temp_name,
         'isDefault' => isset( $input['is_default'] ) ? (bool) $input['is_default'] : false,
         'type'      => isset( $input['type'] ) ? sanitize_text_field( wp_unslash( $input['type'] ) ) : 'message',
@@ -658,19 +650,9 @@ function wsp_execute_gravity_create_confirmation( $input ) {
         foreach ( $updated_form['confirmations'] as $key => $c ) {
             if ( isset( $c['name'] ) && $c['name'] === $temp_name ) {
                 $actual_id = $key;
-                if ( '' !== $actual_id ) {
-                    $updated_form['confirmations'][ $key ]['name'] = $conf_name;
-                    $updated_form['confirmations'][ $key ]['id']   = $actual_id;
-                    GFAPI::update_form( $updated_form, $form_id );
-                } else {
-                    $new_key = uniqid();
-                    $c['name'] = $conf_name;
-                    $c['id']   = $new_key;
-                    unset( $updated_form['confirmations'][ $key ] );
-                    $updated_form['confirmations'][ $new_key ] = $c;
-                    $actual_id = $new_key;
-                    GFAPI::update_form( $updated_form, $form_id );
-                }
+                $updated_form['confirmations'][ $key ]['name'] = $conf_name;
+                $updated_form['confirmations'][ $key ]['id']   = $actual_id;
+                GFAPI::update_form( $updated_form, $form_id );
                 break;
             }
         }
@@ -691,7 +673,7 @@ function wsp_execute_gravity_update_confirmation( $input ) {
 
     $form_id = isset( $input['form_id'] ) ? intval( $input['form_id'] ) : 0;
     $conf_id = isset( $input['confirmation_id'] ) ? sanitize_text_field( wp_unslash( $input['confirmation_id'] ) ) : '';
-    if ( ! $form_id || '' === $conf_id && ! isset( $input['confirmation_id'] ) ) {
+    if ( ! $form_id || '' === $conf_id ) {
         return array( 'success' => false, 'error' => 'Form ID and Confirmation ID are required.' );
     }
 
@@ -745,7 +727,7 @@ function wsp_execute_gravity_delete_confirmation( $input ) {
 
     $form_id = isset( $input['form_id'] ) ? intval( $input['form_id'] ) : 0;
     $conf_id = isset( $input['confirmation_id'] ) ? sanitize_text_field( wp_unslash( $input['confirmation_id'] ) ) : '';
-    if ( ! $form_id || '' === $conf_id && ! isset( $input['confirmation_id'] ) ) {
+    if ( ! $form_id || '' === $conf_id ) {
         return array( 'success' => false, 'error' => 'Form ID and Confirmation ID are required.' );
     }
 

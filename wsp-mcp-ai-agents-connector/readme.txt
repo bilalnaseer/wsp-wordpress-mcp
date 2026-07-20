@@ -83,6 +83,14 @@ Every tool is individually toggleable in **MCP > Settings**, and all write tools
 * Taxonomies — manage
 * Options pages — manage
 
+**Gravity Forms** (requires Gravity Forms — reads require `gravityforms_edit_forms` or `gravityforms_view_entries`; writes require form/entry-specific Gravity Forms caps)
+
+* Forms — list (ON by default), get (ON by default), create, update, delete, update form settings
+* Entries — list, get, update (status, read/starred flags, field values), delete (trash or permanent)
+* Notifications — get, create, update, delete
+* Confirmations — get, create, update, delete
+* All 18 tools are off by default (except list-forms and get-form); only registered when Gravity Forms is active
+
 **Ultimate Addons for Elementor** (requires UAE — structural and settings writes require `edit_posts`, `publish_posts`, or `manage_options`)
 
 * Widgets — list, check usage, activate, deactivate, bulk toggle
@@ -138,6 +146,7 @@ https://youtu.be/hxhjs3IUYQE
 == Changelog ==
 
 = 2.6.1 =
+* New: Gravity Forms suite — 18 tools covering forms (list, get, create, update, delete, update settings), entries (list, get, update, delete with trash/permanent), notifications (get, create, update, delete), and confirmations (get, create, update, delete). All write tools are off by default; list-forms and get-form are on by default. Uses Gravity Forms' own granular capabilities (`gravityforms_edit_forms`, `gravityforms_create_form`, `gravityforms_view_entries`, etc.). Only registered when Gravity Forms is active (`class_exists('GFAPI')`).
 * Docs: added a video tutorial to the plugin description and three connection walkthrough videos (OpenClaw, Google Antigravity 2.0, Codex) to the FAQ.
 
 = 2.6.0 =
