@@ -1440,7 +1440,7 @@ function wsp_mcp_register_native_tools() {
 			'description' => 'Lists all WPForms with ID, title, date, status, and field count.',
 			'inputSchema' => $obj,
 			'callback'    => 'wsp_execute_wpforms_list_forms',
-			'capability'  => 'edit_posts',
+			'capability'  => 'wpforms_view_forms',
 			'enable_key'  => 'wsp/wpforms-list-forms',
 		) );
 		WSP_MCP_Server::register_tool( 'wsp_wpforms_get_form', array(
@@ -1449,14 +1449,14 @@ function wsp_mcp_register_native_tools() {
 				'id' => array( 'type' => 'integer', 'description' => 'Form ID.' ),
 			) ),
 			'callback'    => 'wsp_execute_wpforms_get_form',
-			'capability'  => 'edit_posts',
+			'capability'  => 'wpforms_view_forms',
 			'enable_key'  => 'wsp/wpforms-get-form',
 		) );
 		WSP_MCP_Server::register_tool( 'wsp_wpforms_describe_schema', array(
 			'description' => 'Returns supported field types and editable attributes to guide AI on create/update field actions.',
 			'inputSchema' => $obj,
 			'callback'    => 'wsp_execute_wpforms_describe_schema',
-			'capability'  => 'edit_posts',
+			'capability'  => 'wpforms_view_forms',
 			'enable_key'  => 'wsp/wpforms-describe-schema',
 		) );
 		WSP_MCP_Server::register_tool( 'wsp_wpforms_get_form_stats', array(
@@ -1465,7 +1465,7 @@ function wsp_mcp_register_native_tools() {
 				'id' => array( 'type' => 'integer', 'description' => 'Form ID (optional; omit for global stats).' ),
 			) ),
 			'callback'    => 'wsp_execute_wpforms_get_form_stats',
-			'capability'  => 'edit_posts',
+			'capability'  => 'wpforms_view_forms',
 			'enable_key'  => 'wsp/wpforms-get-form-stats',
 		) );
 		WSP_MCP_Server::register_tool( 'wsp_wpforms_create_form', array(
@@ -1477,7 +1477,7 @@ function wsp_mcp_register_native_tools() {
 				'submit_text' => array( 'type' => 'string', 'description' => 'Submit button text. Default: Submit.' ),
 			) ),
 			'callback'    => 'wsp_execute_wpforms_create_form',
-			'capability'  => 'edit_posts',
+			'capability'  => 'wpforms_edit_forms',
 			'enable_key'  => 'wsp/wpforms-create-form',
 		) );
 		WSP_MCP_Server::register_tool( 'wsp_wpforms_update_form_settings', array(
@@ -1492,7 +1492,7 @@ function wsp_mcp_register_native_tools() {
 				'ajax_submit'            => array( 'type' => 'boolean', 'description' => 'Enable AJAX submission.' ),
 			) ),
 			'callback'    => 'wsp_execute_wpforms_update_form_settings',
-			'capability'  => 'edit_posts',
+			'capability'  => 'wpforms_edit_forms',
 			'enable_key'  => 'wsp/wpforms-update-form-settings',
 		) );
 		WSP_MCP_Server::register_tool( 'wsp_wpforms_add_field', array(
@@ -1508,7 +1508,7 @@ function wsp_mcp_register_native_tools() {
 				'choices'     => array( 'type' => 'array', 'items' => array( 'type' => 'object' ), 'description' => 'Array of {label, value} for choice fields.' ),
 			) ),
 			'callback'    => 'wsp_execute_wpforms_add_field',
-			'capability'  => 'edit_posts',
+			'capability'  => 'wpforms_edit_forms',
 			'enable_key'  => 'wsp/wpforms-add-field',
 		) );
 		WSP_MCP_Server::register_tool( 'wsp_wpforms_update_field', array(
@@ -1524,7 +1524,7 @@ function wsp_mcp_register_native_tools() {
 				'choices'     => array( 'type' => 'array', 'items' => array( 'type' => 'object' ), 'description' => 'Array of {label, value} for choice fields.' ),
 			) ),
 			'callback'    => 'wsp_execute_wpforms_update_field',
-			'capability'  => 'edit_posts',
+			'capability'  => 'wpforms_edit_forms',
 			'enable_key'  => 'wsp/wpforms-update-field',
 		) );
 		WSP_MCP_Server::register_tool( 'wsp_wpforms_delete_form', array(
@@ -1534,7 +1534,7 @@ function wsp_mcp_register_native_tools() {
 				'permanent' => array( 'type' => 'boolean', 'description' => 'True for permanent deletion. Default false.' ),
 			) ),
 			'callback'    => 'wsp_execute_wpforms_delete_form',
-			'capability'  => 'edit_posts',
+			'capability'  => 'wpforms_edit_forms',
 			'enable_key'  => 'wsp/wpforms-delete-form',
 		) );
 		WSP_MCP_Server::register_tool( 'wsp_wpforms_list_entries', array(
@@ -1546,7 +1546,7 @@ function wsp_mcp_register_native_tools() {
 				'status'   => array( 'type' => 'string', 'description' => 'publish | trash | all.' ),
 			) ),
 			'callback'    => 'wsp_execute_wpforms_list_entries',
-			'capability'  => 'edit_posts',
+			'capability'  => 'wpforms_view_entries',
 			'enable_key'  => 'wsp/wpforms-list-entries',
 		) );
 		WSP_MCP_Server::register_tool( 'wsp_wpforms_get_entry', array(
@@ -1555,7 +1555,7 @@ function wsp_mcp_register_native_tools() {
 				'id' => array( 'type' => 'integer', 'description' => 'Entry ID.' ),
 			) ),
 			'callback'    => 'wsp_execute_wpforms_get_entry',
-			'capability'  => 'edit_posts',
+			'capability'  => 'wpforms_view_entries',
 			'enable_key'  => 'wsp/wpforms-get-entry',
 		) );
 		WSP_MCP_Server::register_tool( 'wsp_wpforms_delete_entry', array(
@@ -1565,7 +1565,7 @@ function wsp_mcp_register_native_tools() {
 				'permanent' => array( 'type' => 'boolean', 'description' => 'True for permanent deletion. Default false.' ),
 			) ),
 			'callback'    => 'wsp_execute_wpforms_delete_entry',
-			'capability'  => 'edit_posts',
+			'capability'  => 'wpforms_edit_entries',
 			'enable_key'  => 'wsp/wpforms-delete-entry',
 		) );
 	}

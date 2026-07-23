@@ -535,7 +535,7 @@ Only registered if `wsp_cf7_is_active()` (`class_exists('WPCF7_ContactForm')`).
 - `validate-form` uses the built-in `WPCF7_ConfigValidator` to check email templates and form syntax.
 - `get-integrations` reads active integration modules via `WPCF7_Integration::list_modules()` and reCAPTCHA keys from the global `wpcf7` option.
 - All callbacks gate on `class_exists('WPCF7_ContactForm')` and return `WP_Error` if CF7 is inactive.
-- The `wpcf7_edit_contact_forms` cap is used as primary; falls back to `edit_posts` for `list-forms` and `get-form`.
+- All CF7 tools use `wpcf7_edit_contact_forms` (except `delete-form`, which uses `wpcf7_delete_contact_forms`, and `get-integrations`, which uses `manage_options`).
 
 #### WPForms (`wpforms.php`)
 

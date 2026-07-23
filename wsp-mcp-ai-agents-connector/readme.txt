@@ -145,6 +145,15 @@ https://youtu.be/hxhjs3IUYQE
 
 == Changelog ==
 
+= 2.6.5 =
+* New: Elementor Advanced Design Tools — 11 tools for high-fidelity design workflows: get/update active kit, regenerate CSS, get widget schema, duplicate/move element, convert CSS to Elementor settings, get/update page settings, copy styles, and get breakpoints. All off by default under the "Elementor" group. Security: write tools run settings through `wsp_elementor_sanitize_settings()` (strips `custom_css`, `custom_attributes`, and dynamic keys); `update-active-kit` and `regenerate-css` require `manage_options`, the rest require `edit_posts`.
+
+= 2.6.4 =
+* New: WPForms suite — 12 tools (Lite and Pro) covering forms (list, get, describe-schema, get-form-stats, create, update-settings, add-field, update-field, delete) and Pro entries (list, get, delete). All write tools off by default under the "WPForms" group; only registered when WPForms is active. Uses WPForms' native capabilities: `wpforms_view_forms` / `wpforms_edit_forms` for forms and `wpforms_view_entries` / `wpforms_edit_entries` for entries.
+
+= 2.6.3 =
+* New: Contact Form 7 suite — 10 tools covering forms (list, get, create, update, delete), Flamingo entries (list, get, moderate), form validation, and integrations status. All write tools off by default under the "Contact Form 7" group; only registered when CF7 is active. Uses CF7's native capabilities `wpcf7_edit_contact_forms` and `wpcf7_delete_contact_forms`; `get-integrations` requires `manage_options`.
+
 = 2.6.2 =
 * Docs: documented the complete 18-tool Gravity Forms suite (forms, entries, notifications, confirmations) across the readme, plugin docs, and changelog; the 2.6.1 notes under-reported it as 11 tools and omitted the notification, confirmation, and form-settings write tools. Corrected the capability name to `gravityforms_create_form`. No behavioral code changes.
 

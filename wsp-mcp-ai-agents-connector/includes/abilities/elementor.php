@@ -961,6 +961,9 @@ function wsp_execute_elementor_copy_styles( $input ) {
     if ( ! $dest ) return array( 'success' => false, 'error' => 'Destination element not found.' );
 
     $source_settings = isset( $source['settings'] ) ? $source['settings'] : array();
+    // Strip disallowed keys (custom_css, custom_attributes, __dynamic__, etc.) before
+    // propagating source styles to the destination — mirrors update-active-kit / update-page-settings.
+    $source_settings = wsp_elementor_sanitize_settings( $source_settings );
 
     if ( $merge ) {
         $merged = array_merge( isset( $dest['settings'] ) ? $dest['settings'] : array(), $source_settings );
