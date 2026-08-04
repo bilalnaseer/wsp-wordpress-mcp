@@ -127,7 +127,7 @@ function wsp_geodirectory_validate_listing_fields( $fields, $create = false ) {
 		$clean['content'] = wp_kses_post( wp_unslash( (string) $fields['content'] ) );
 	}
 
-	if ( array_key_exists( 'post_category', $fields ) ) {
+	if ( array_key_exists( 'post_category', $fields ) && ( ! $create || ! empty( $fields['post_category'] ) ) ) {
 		if ( ! is_array( $fields['post_category'] ) ) {
 			return new WP_Error( 'wsp_geodirectory_invalid_field', 'post_category must be an array of positive term IDs.' );
 		}
