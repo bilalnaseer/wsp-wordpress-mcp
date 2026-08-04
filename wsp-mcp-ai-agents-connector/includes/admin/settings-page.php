@@ -190,6 +190,7 @@ function wsp_mcp_settings_page() {
         'Gravity Forms'             => '📋',
         'Contact Form 7'           => '📬',
         'WPForms'                  => '📊',
+        'GeoDirectory'             => 'GD',
     );
     $total   = count( $settings );
     $enabled = count( array_filter( $settings ) );

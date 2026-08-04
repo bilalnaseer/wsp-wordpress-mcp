@@ -44,6 +44,12 @@ if ( ! function_exists( 'wsp_wpforms_is_active' ) ) {
     }
 }
 
+if ( ! function_exists( 'wsp_geodirectory_is_active' ) ) {
+    function wsp_geodirectory_is_active() {
+        return function_exists( 'geodir_get_posttypes' ) || defined( 'GEODIRECTORY_VERSION' );
+    }
+}
+
 function wsp_mcp_ability_registry() {
     $abilities = array(
         // POSTS
@@ -82,6 +88,14 @@ function wsp_mcp_ability_registry() {
         'wsp/get-site-info'   => array( 'label' => 'Read Site Info',  'description' => 'Return site name, URL, tagline, WP version, and language.', 'group' => 'Site',     'access' => 'read',  'default' => true  ),
         'wsp/get-plugins'     => array( 'label' => 'Read Plugins',    'description' => 'List all active plugins with name, version, and author.',    'group' => 'Site',     'access' => 'read',  'default' => false ),
     );
+
+    if ( wsp_geodirectory_is_active() ) {
+        $abilities += array(
+            'wsp/geodirectory-search-listings' => array( 'label' => 'Search Listings', 'description' => 'Searches editable GeoDirectory listings and returns normalized listing fields.', 'group' => 'GeoDirectory', 'access' => 'read', 'default' => false ),
+            'wsp/geodirectory-import-listings' => array( 'label' => 'Import Listings', 'description' => 'Imports up to 50 allowlisted GeoDirectory listings with duplicate checks and per-record results.', 'group' => 'GeoDirectory', 'access' => 'write', 'default' => false ),
+            'wsp/geodirectory-update-listing'  => array( 'label' => 'Update Listing', 'description' => 'Updates allowlisted fields on one existing GeoDirectory listing.', 'group' => 'GeoDirectory', 'access' => 'write', 'default' => false ),
+        );
+    }
 
     if ( wsp_yoast_is_active() ) {
         $abilities += array(

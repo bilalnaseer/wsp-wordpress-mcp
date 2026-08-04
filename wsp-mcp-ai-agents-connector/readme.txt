@@ -4,7 +4,7 @@ Tags: mcp, ai, claude, model context protocol, woocommerce
 Requires at least: 6.9
 Tested up to: 7.0.1
 Requires PHP: 7.4
-Stable tag: 2.6.6
+Stable tag: 2.7.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -144,6 +144,9 @@ Watch the step-by-step video tutorial:
 https://youtu.be/hxhjs3IUYQE
 
 == Changelog ==
+
+= 2.7.0 =
+* New: GeoDirectory listing support with three default-off tools: search editable listings, import up to 50 listings, and update one listing. Writes accept only a fixed listing-field allowlist and go through GeoDirectory's own REST controller. Imports default to draft, support dry runs, skip duplicates using normalized title/location, street/location, or conservative coordinate matches, and return a deterministic result for every record. Existing MCP authentication and API-key handling are unchanged.
 
 = 2.6.6 =
 * New: Direct file upload for media. `wsp_upload_media` (Upload Media) now accepts base64 file content via a new `data` parameter — an MCP client can upload a file attached to the chat straight into the media library without first hosting it at a public URL. The `url` parameter still works as before; pass either one. An optional `mime_type` hint and `data:` URI prefixes are supported. Only image types (jpg, png, gif, webp) are allowed, decoded bytes are written through `media_handle_sideload()`, and the tool still requires `upload_files`. Fixes GitHub #17.

@@ -2,7 +2,7 @@
 
 > **By [WebSensePro](https://websensepro.com) — Official Shopify Partner & WordPress Agency**
 
-[![Version](https://img.shields.io/badge/Version-2.6.5-blue?style=for-the-badge)](https://github.com/bilalnaseer/wsp-wordpress-mcp/releases)
+[![Version](https://img.shields.io/badge/Version-2.7.0-blue?style=for-the-badge)](https://github.com/bilalnaseer/wsp-wordpress-mcp/releases)
 [![YouTube](https://img.shields.io/badge/YouTube-140K%2B%20Subscribers-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtube.com/websensepro)
 [![License](https://img.shields.io/badge/License-GPL%202.0-green?style=for-the-badge)](LICENSE)
 
@@ -14,6 +14,10 @@
 
 ---
 
+
+## ✨ What's New in v2.7.0
+
+- **GeoDirectory listing tools (3 tools)** — search editable listings, import up to 50 listings with dry-run and per-record results, and update one existing listing. All three are OFF by default and appear only when GeoDirectory is active. The write tools accept a fixed listing-field allowlist, use GeoDirectory's own REST controller, skip likely duplicates with explicit match reasons, default new records to draft, and enforce publish/object capabilities without changing WSP authentication or API-key access.
 
 ## ✨ What's New in v2.6.6
 

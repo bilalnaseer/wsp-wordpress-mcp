@@ -306,6 +306,48 @@ function wsp_mcp_register_native_tools() {
 		'enable_key'  => 'wsp/get-plugins',
 	) );
 
+	// ---- GeoDirectory (only when GeoDirectory is active) ----
+	if ( function_exists( 'wsp_geodirectory_is_active' ) && wsp_geodirectory_is_active() ) {
+		$listing_properties = wsp_geodirectory_listing_schema_properties();
+		WSP_MCP_Server::register_tool( 'wsp_geodirectory_search_listings', array(
+			'description' => 'Search editable GeoDirectory listings, including drafts, and return normalized listing data.',
+			'inputSchema' => array( 'type' => 'object', 'additionalProperties' => false, 'properties' => array(
+				'post_type' => array( 'type' => 'string', 'description' => 'A registered GeoDirectory post type. Default gd_place.' ),
+				'query'     => array( 'type' => 'string' ),
+				'status'    => array( 'type' => 'string', 'description' => 'any | publish | draft | pending | private. Default any.' ),
+				'city'      => array( 'type' => 'string' ),
+				'region'    => array( 'type' => 'string' ),
+				'country'   => array( 'type' => 'string' ),
+				'per_page'  => array( 'type' => 'integer', 'minimum' => 1, 'maximum' => 100 ),
+			) ),
+			'callback'    => 'wsp_execute_geodirectory_search_listings',
+			'capability'  => 'edit_posts',
+			'enable_key'  => 'wsp/geodirectory-search-listings',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_geodirectory_import_listings', array(
+			'description' => 'Create up to 50 GeoDirectory listings through GeoDirectory REST. Only the documented listing fields are accepted. Duplicate matches are skipped and every row gets a result.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'listings' ), 'additionalProperties' => false, 'properties' => array(
+				'post_type' => array( 'type' => 'string', 'description' => 'A registered GeoDirectory post type. Default gd_place.' ),
+				'dry_run'   => array( 'type' => 'boolean', 'description' => 'Validate and run duplicate checks without writing.' ),
+				'listings'  => array( 'type' => 'array', 'maxItems' => 50, 'items' => array( 'type' => 'object', 'additionalProperties' => false, 'properties' => $listing_properties ) ),
+			) ),
+			'callback'    => 'wsp_execute_geodirectory_import_listings',
+			'capability'  => 'edit_posts',
+			'enable_key'  => 'wsp/geodirectory-import-listings',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_geodirectory_update_listing', array(
+			'description' => 'Update only allowlisted fields on one existing GeoDirectory listing through GeoDirectory REST.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'id', 'fields' ), 'additionalProperties' => false, 'properties' => array(
+				'id'        => array( 'type' => 'integer', 'minimum' => 1 ),
+				'post_type' => array( 'type' => 'string', 'description' => 'Optional expected GeoDirectory post type.' ),
+				'fields'    => array( 'type' => 'object', 'minProperties' => 1, 'additionalProperties' => false, 'properties' => $listing_properties ),
+			) ),
+			'callback'    => 'wsp_execute_geodirectory_update_listing',
+			'capability'  => 'edit_posts',
+			'enable_key'  => 'wsp/geodirectory-update-listing',
+		) );
+	}
+
 	// ---- Yoast SEO (only when Yoast is active) ----
 	if ( function_exists( 'wsp_yoast_is_active' ) && wsp_yoast_is_active() ) {
 		WSP_MCP_Server::register_tool( 'wsp_yoast_get_seo', array(

@@ -31,7 +31,7 @@ These three files give you complete project understanding without touching the c
 ## What this plugin is
 
 **Plugin Name:** WSP MCP - AI Agents Connector  
-**Version:** 2.6.6
+**Version:** 2.7.0
 **Slug/prefix:** `wsp`  
 **WP option key:** `wsp_mcp_abilities`  
 **Constant prefix:** `WSP_MCP_`
@@ -76,7 +76,8 @@ registry key driving the admin toggle). Add-ons can hook `do_action('wsp_mcp_reg
 `enable_key` uses the slash form (`wsp/get-posts`). The native server only advertises tools whose
 `enable_key` is enabled via `wsp_mcp_is_enabled()`, so **MCP > Settings controls both transports**.
 Yoast tools register only if `wsp_yoast_is_active()`; Elementor tools only if `wsp_elementor_is_active()`;
-WooCommerce tools only if `class_exists('WooCommerce')`; ACF tools only if `wsp_acf_is_active()`.
+WooCommerce tools only if `class_exists('WooCommerce')`; ACF tools only if `wsp_acf_is_active()`;
+GeoDirectory tools only if `wsp_geodirectory_is_active()`.
 
 **Admin:** `includes/admin/connection-page.php` adds **MCP > Connection** (endpoint URL, API key +
 regenerate, and per-client tabbed config snippets for Claude Desktop / Cursor / Codex / Antigravity /
@@ -181,7 +182,7 @@ wsp-wordpress-mcp/                        ← repo root (NOT the plugin — dev 
         │   └── connection-page.php  ← native endpoint + API key + per-client tabs (MCP > Connection)
         └── abilities/           ← wsp_execute_* logic (called by the native server)
             ├── posts.php  pages.php  taxonomy.php  comments.php  media.php
-            ├── users.php  search.php  site.php  yoast.php  elementor.php
+            ├── users.php  search.php  site.php  geodirectory.php  yoast.php  elementor.php
             ├── woocommerce.php  acf.php
 ```
 
@@ -193,7 +194,7 @@ wsp-wordpress-mcp/                        ← repo root (NOT the plugin — dev 
 
 | Constant | Value |
 |---|---|
-| `WSP_MCP_VERSION` | `'2.6.6'` |
+| `WSP_MCP_VERSION` | `'2.7.0'` |
 | `WSP_MCP_OPTION` | `'wsp_mcp_abilities'` (per-ability on/off toggles) |
 | `WSP_MCP_DIR` | `plugin_dir_path(__FILE__)` |
 
@@ -234,7 +235,8 @@ Deactivation (`wsp_mcp_deactivate`): clear cron.
 ```
 Elementor abilities are only appended if `\Elementor\Plugin` class exists; WooCommerce abilities if
 `class_exists('WooCommerce')`; ACF abilities if `wsp_acf_is_active()`
-(`class_exists('ACF') || function_exists('get_field')`).
+(`class_exists('ACF') || function_exists('get_field')`); GeoDirectory abilities if
+`wsp_geodirectory_is_active()` (`geodir_get_posttypes()` or `GEODIRECTORY_VERSION`).
 
 **`wsp_mcp_get_settings()`** — merges saved option with registry defaults. Returns `['wsp/key' => bool]`.
 
@@ -339,6 +341,31 @@ admin toggle for each is driven by its entry in `wsp_mcp_ability_registry()` (`r
 
 - `get-site-info` returns: `name`, `url`, `tagline`, `admin_email`, `wp_version`, `language`.
 - `get-plugins` loads `wp-admin/includes/plugin.php` if needed, then intersects all plugins with active list.
+
+#### GeoDirectory (`geodirectory.php`)
+
+Only registered while GeoDirectory is active. All three tools are OFF by default and have a native
+`edit_posts` gate. Publish transitions additionally require the selected GeoDirectory CPT's
+`publish_posts` capability; updates also require `edit_post` for the target ID.
+
+| Ability key | Label | Access | Default | Inputs |
+|---|---|---|---|---|
+| `wsp/geodirectory-search-listings` | Search Listings | read | OFF | `post_type`, `query`, `status`, `city`, `region`, `country`, `per_page` |
+| `wsp/geodirectory-import-listings` | Import Listings | write | OFF | `post_type`, `dry_run`, `listings`* (max 50) |
+| `wsp/geodirectory-update-listing` | Update Listing | write | OFF | `id`*, `post_type`, `fields`* |
+
+- The write allowlist is fixed to title/content/tags/categories, address and coordinates, website,
+  business hours, six named dog-park amenity flags, slug, status, and featured media. Unknown keys
+  fail; arbitrary meta, author, date, password, comment, and REST-route inputs are not exposed.
+- Creates and updates use internal `WP_REST_Request` objects dispatched to GeoDirectory's own
+  registered collection/item controller. No GeoDirectory detail-table or arbitrary post-meta writes.
+- Create defaults: `status=draft`, `post_tags=Dog Park`. Required: title, street, country, region,
+  city, latitude, longitude. Imports return one deterministic result per row plus summary counts.
+- Duplicate candidates include editable non-trash statuses and match normalized title+city+region,
+  street+city+region, or coordinates within 0.00001 degrees. Duplicate results include ID, status,
+  URL, and every match reason.
+- `tests/geodirectory-playground.php` runs the focused integration suite against a mounted real
+  GeoDirectory checkout.
 
 #### Yoast SEO (`yoast.php`)
 
@@ -634,7 +661,7 @@ Only registered if `wsp_uae_is_active()`. Adds 45 tools to manipulate UAE widget
 
 **ON by default:** `get-posts`, `get-pages`, `get-categories`, `get-tags`, `search`, `get-site-info`
 
-**OFF by default:** everything else (all write abilities, comments, media, users, plugins, all Elementor abilities)
+**OFF by default:** everything else (all write abilities, comments, media, users, plugins, all Elementor and GeoDirectory abilities)
 
 ---
 
