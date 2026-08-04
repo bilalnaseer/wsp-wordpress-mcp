@@ -363,7 +363,8 @@ Only registered while GeoDirectory is active. All three tools are OFF by default
   city, latitude, longitude. Imports return one deterministic result per row plus summary counts.
 - Duplicate candidates include editable non-trash statuses and match normalized title+city+region,
   street+city+region, or coordinates within 0.00001 degrees. Duplicate results include ID, status,
-  URL, and every match reason.
+  URL, and every match reason for existing records. Dry runs also detect duplicates within the
+  incoming batch and identify the earlier row with `duplicate_of_index`.
 - `tests/geodirectory-playground.php` runs the focused integration suite against a mounted real
   GeoDirectory checkout.
 

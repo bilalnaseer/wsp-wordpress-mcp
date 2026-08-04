@@ -484,19 +484,29 @@ function wsp_execute_geodirectory_import_listings( $input ) {
 		$duplicate = wsp_geodirectory_find_duplicate( $fields, $candidates );
 		if ( $duplicate ) {
 			$summary['skipped_duplicates']++;
-			$results[] = array(
+			$result = array(
 				'index'         => $index,
 				'action'        => 'skipped_duplicate',
-				'id'            => $duplicate['candidate']['id'],
-				'status'        => $duplicate['candidate']['status'],
-				'url'           => $duplicate['candidate']['url'],
 				'match_reasons' => $duplicate['reasons'],
 			);
+			if ( isset( $duplicate['candidate']['_batch_index'] ) ) {
+				$result['duplicate_of_index'] = (int) $duplicate['candidate']['_batch_index'];
+			} else {
+				$result['id'] = $duplicate['candidate']['id'];
+				$result['status'] = $duplicate['candidate']['status'];
+				$result['url'] = $duplicate['candidate']['url'];
+			}
+			$results[] = $result;
 			continue;
 		}
 		if ( $dry_run ) {
 			$summary['would_create']++;
 			$results[] = array( 'index' => $index, 'action' => 'would_create', 'title' => $fields['title'], 'status' => $fields['status'] );
+			$virtual_candidate = $fields;
+			$virtual_candidate['id'] = 0;
+			$virtual_candidate['url'] = '';
+			$virtual_candidate['_batch_index'] = $index;
+			$candidates[] = $virtual_candidate;
 			continue;
 		}
 

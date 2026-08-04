@@ -209,6 +209,30 @@ wsp_test_run( 'continues after row errors and dry-run writes nothing', function 
 	wsp_test_assert_same( $before->draft, $after->draft, 'Dry-run created a draft.' );
 } );
 
+wsp_test_run( 'dry-run detects duplicates within the incoming batch', function () {
+	$listing = array(
+		'title'     => 'WSP Repeated Dry Run Park',
+		'street'    => '101 Repeat Avenue',
+		'country'   => 'United States',
+		'region'    => 'Illinois',
+		'city'      => 'Chicago',
+		'latitude'  => 41.90002,
+		'longitude' => -87.65002,
+	);
+	$result = wsp_execute_geodirectory_import_listings(
+		array(
+			'dry_run' => true,
+			'listings' => array( $listing, $listing ),
+		)
+	);
+	wsp_test_assert( ! is_wp_error( $result ), 'Dry-run duplicate check returned a top-level error.' );
+	wsp_test_assert_same( 1, $result['summary']['would_create'], 'The first new row should be would_create.' );
+	wsp_test_assert_same( 1, $result['summary']['skipped_duplicates'], 'The repeated row should be skipped during dry-run.' );
+	wsp_test_assert_same( 'would_create', $result['results'][0]['action'], 'Wrong first-row dry-run action.' );
+	wsp_test_assert_same( 'skipped_duplicate', $result['results'][1]['action'], 'Wrong repeated-row dry-run action.' );
+	wsp_test_assert_same( 0, $result['results'][1]['duplicate_of_index'], 'Dry-run duplicate did not identify its earlier batch row.' );
+} );
+
 wsp_test_run( 'uses a conservative coordinate duplicate threshold', function () {
 	wsp_test_assert( wsp_geodirectory_coordinates_match( 41.000000, -87.000000, 41.000009, -87.000009 ), 'Coordinates within 0.00001 degrees should match.' );
 	wsp_test_assert( ! wsp_geodirectory_coordinates_match( 41.000000, -87.000000, 41.000020, -87.000000 ), 'Coordinates outside 0.00001 degrees should not match.' );
