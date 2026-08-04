@@ -345,8 +345,10 @@ admin toggle for each is driven by its entry in `wsp_mcp_ability_registry()` (`r
 #### GeoDirectory (`geodirectory.php`)
 
 Only registered while GeoDirectory is active. All three tools are OFF by default and have a native
-`edit_posts` gate. Publish transitions additionally require the selected GeoDirectory CPT's
-`publish_posts` capability; updates also require `edit_post` for the target ID.
+`edit_posts` gate. Creates additionally require the selected GeoDirectory CPT's `create_posts`
+capability; publish/private transitions require `publish_posts`; updates also require `edit_post`
+for the target ID. Category/tag assignment and new-tag creation use the registered taxonomy
+capabilities, and featured media must resolve to an image attachment.
 
 | Ability key | Label | Access | Default | Inputs |
 |---|---|---|---|---|
@@ -361,6 +363,9 @@ Only registered while GeoDirectory is active. All three tools are OFF by default
   registered collection/item controller. No GeoDirectory detail-table or arbitrary post-meta writes.
 - Create defaults: `status=draft`, `post_tags=Dog Park`. Required: title, street, country, region,
   city, latitude, longitude. Imports return one deterministic result per row plus summary counts.
+  If GeoDirectory reports an error after WordPress inserted the post, the row is returned as
+  `partial_create` with its ID and `requires_review=true`; candidate state is refreshed before the
+  next row. `partial_creates` are also included in the summary's `errors` count.
 - Duplicate candidates include editable non-trash statuses and match normalized title+city+region,
   street+city+region, or coordinates within 0.00001 degrees. Duplicate results include ID, status,
   URL, and every match reason for existing records. Dry runs also detect duplicates within the

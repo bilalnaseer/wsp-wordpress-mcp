@@ -17,7 +17,7 @@
 
 ## ✨ What's New in v2.7.0
 
-- **GeoDirectory listing tools (3 tools)** — search editable listings, import up to 50 listings with dry-run and per-record results, and update one existing listing. All three are OFF by default and appear only when GeoDirectory is active. The write tools accept a fixed listing-field allowlist, use GeoDirectory's own REST controller, skip likely duplicates with explicit match reasons, default new records to draft, and enforce publish/object capabilities without changing WSP authentication or API-key access.
+- **GeoDirectory listing tools (3 tools)** — search editable listings, import up to 50 listings with dry-run and per-record results, and update one existing listing. All three are OFF by default and appear only when GeoDirectory is active. The write tools accept a fixed listing-field allowlist, use GeoDirectory's own REST controller, skip likely duplicates with explicit match reasons, default new records to draft, preflight create/publish/taxonomy/media permissions, and flag partial creates for review without changing WSP authentication or API-key access.
 
 ## ✨ What's New in v2.6.6
 

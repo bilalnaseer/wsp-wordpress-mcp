@@ -294,6 +294,9 @@ wsp_test_run( 'search returns normalized listings and respects filters', functio
 } );
 
 wsp_test_run( 'enforces edit, object, and publish capabilities on updates', function () use ( &$wsp_created_listing_id ) {
+	$category = wp_insert_term( 'WSP Capability Test', 'gd_placecategory' );
+	wsp_test_assert( ! is_wp_error( $category ), 'Could not create the capability-test category.' );
+	$category_id = (int) $category['term_id'];
 	$regular_post = wp_insert_post( array( 'post_title' => 'Not a listing', 'post_type' => 'post', 'post_status' => 'draft' ) );
 	$wrong_type = wsp_execute_geodirectory_update_listing(
 		array(
@@ -343,8 +346,126 @@ wsp_test_run( 'enforces edit, object, and publish capabilities on updates', func
 		)
 	);
 	wsp_test_assert_same( 'wsp_geodirectory_cannot_publish', $publish_denied['results'][0]['error']['code'], 'Publish capability was not enforced.' );
+	$private_denied = wsp_execute_geodirectory_import_listings(
+		array(
+			'dry_run' => true,
+			'listings' => array(
+				array(
+					'title'     => 'Contributor Private Attempt',
+					'street'    => '301 Private Street',
+					'country'   => 'United States',
+					'region'    => 'Illinois',
+					'city'      => 'Chicago',
+					'latitude'  => 41.9201,
+					'longitude' => -87.6701,
+					'status'    => 'private',
+				),
+			),
+		)
+	);
+	wsp_test_assert_same( 'wsp_geodirectory_cannot_publish', $private_denied['results'][0]['error']['code'], 'Private status did not enforce publish capability.' );
+
+	$post_type_object = get_post_type_object( 'gd_place' );
+	$original_create_capability = $post_type_object->cap->create_posts;
+	$post_type_object->cap->create_posts = 'create_restricted_gd_places';
+	$create_denied = wsp_execute_geodirectory_import_listings(
+		array(
+			'dry_run' => true,
+			'listings' => array(
+				array(
+					'title'     => 'Contributor Create Attempt',
+					'street'    => '302 Create Street',
+					'country'   => 'United States',
+					'region'    => 'Illinois',
+					'city'      => 'Chicago',
+					'latitude'  => 41.9202,
+					'longitude' => -87.6702,
+				),
+			),
+		)
+	);
+	$post_type_object->cap->create_posts = $original_create_capability;
+	wsp_test_assert_same( 'wsp_geodirectory_cannot_create', $create_denied['results'][0]['error']['code'], 'CPT create capability was not enforced.' );
+
+	$taxonomy_object = get_taxonomy( 'gd_placecategory' );
+	$original_assign_capability = $taxonomy_object->cap->assign_terms;
+	$taxonomy_object->cap->assign_terms = 'assign_restricted_gd_place_categories';
+	$term_denied = wsp_execute_geodirectory_import_listings(
+		array(
+			'dry_run' => true,
+			'listings' => array(
+				array(
+					'title'         => 'Contributor Term Attempt',
+					'street'        => '303 Term Street',
+					'country'       => 'United States',
+					'region'        => 'Illinois',
+					'city'          => 'Chicago',
+					'latitude'      => 41.9203,
+					'longitude'     => -87.6703,
+					'post_category' => array( $category_id ),
+				),
+			),
+		)
+	);
+	$taxonomy_object->cap->assign_terms = $original_assign_capability;
+	wsp_test_assert_same( 'wsp_geodirectory_cannot_assign_terms', $term_denied['results'][0]['error']['code'], 'Taxonomy assignment capability was not enforced.' );
+	$new_tag_denied = wsp_execute_geodirectory_import_listings(
+		array(
+			'dry_run' => true,
+			'listings' => array(
+				array(
+					'title'     => 'Contributor New Tag Attempt',
+					'street'    => '303 New Tag Street',
+					'country'   => 'United States',
+					'region'    => 'Illinois',
+					'city'      => 'Chicago',
+					'latitude'  => 41.92031,
+					'longitude' => -87.67031,
+					'post_tags' => 'Never Existing Restricted Tag',
+				),
+			),
+		)
+	);
+	wsp_test_assert_same( 'wsp_geodirectory_cannot_create_terms', $new_tag_denied['results'][0]['error']['code'], 'New tag creation capability was not enforced.' );
 
 	wp_set_current_user( 1 );
+	$invalid_category = wsp_execute_geodirectory_import_listings(
+		array(
+			'dry_run' => true,
+			'listings' => array(
+				array(
+					'title'         => 'Invalid Category Attempt',
+					'street'        => '303 Invalid Category Street',
+					'country'       => 'United States',
+					'region'        => 'Illinois',
+					'city'          => 'Chicago',
+					'latitude'      => 41.92032,
+					'longitude'     => -87.67032,
+					'post_category' => array( 999999 ),
+				),
+			),
+		)
+	);
+	wsp_test_assert_same( 'wsp_geodirectory_invalid_category', $invalid_category['results'][0]['error']['code'], 'Missing category terms were not rejected during dry-run.' );
+	$invalid_media = wsp_execute_geodirectory_import_listings(
+		array(
+			'dry_run' => true,
+			'listings' => array(
+				array(
+					'title'          => 'Invalid Featured Media Attempt',
+					'street'         => '304 Media Street',
+					'country'        => 'United States',
+					'region'         => 'Illinois',
+					'city'           => 'Chicago',
+					'latitude'       => 41.9204,
+					'longitude'      => -87.6704,
+					'featured_media' => 999999,
+				),
+			),
+		)
+	);
+	wsp_test_assert_same( 'wsp_geodirectory_invalid_featured_media', $invalid_media['results'][0]['error']['code'], 'Invalid featured media was not rejected during dry-run.' );
+
 	$updated = wsp_execute_geodirectory_update_listing(
 		array(
 			'id'     => $wsp_created_listing_id,
@@ -357,6 +478,38 @@ wsp_test_run( 'enforces edit, object, and publish capabilities on updates', func
 	wsp_test_assert( ! is_wp_error( $updated ), is_wp_error( $updated ) ? $updated->get_error_message() : 'Admin update failed.' );
 	wsp_test_assert_same( 'publish', $updated['status'], 'Draft was not published.' );
 	wsp_test_assert_same( array( 'title', 'status' ), $updated['updated_fields'], 'Updated field keys are not deterministic.' );
+} );
+
+wsp_test_run( 'reports a partial create and refreshes duplicate candidates after a REST error', function () {
+	$forced_once = false;
+	$route = wsp_geodirectory_rest_route( 'gd_place' );
+	wsp_test_assert( ! is_wp_error( $route ), 'GeoDirectory test route is unavailable.' );
+	$force_error = function ( $response, $handler, $request ) use ( &$forced_once, $route ) {
+		if ( ! $forced_once && 'POST' === $request->get_method() && $route === $request->get_route() && 'WSP Forced Partial Park' === $request->get_param( 'title' ) ) {
+			$forced_once = true;
+			return new WP_Error( 'wsp_test_forced_after_create', 'Forced response error after create.' );
+		}
+		return $response;
+	};
+	add_filter( 'rest_request_after_callbacks', $force_error, 10, 3 );
+	$listing = array(
+		'title'     => 'WSP Forced Partial Park',
+		'street'    => '400 Recovery Road',
+		'country'   => 'United States',
+		'region'    => 'Illinois',
+		'city'      => 'Chicago',
+		'latitude'  => 41.9301,
+		'longitude' => -87.6801,
+	);
+	$result = wsp_execute_geodirectory_import_listings( array( 'listings' => array( $listing, $listing ) ) );
+	remove_filter( 'rest_request_after_callbacks', $force_error, 10 );
+	wsp_test_assert( ! is_wp_error( $result ), 'Partial-create recovery returned a top-level error.' );
+	wsp_test_assert_same( 1, $result['summary']['partial_creates'], 'Partial create was not counted: ' . wp_json_encode( $result ) );
+	wsp_test_assert_same( 1, $result['summary']['skipped_duplicates'], 'Candidate refresh did not protect the repeated row.' );
+	wsp_test_assert_same( 'partial_create', $result['results'][0]['action'], 'REST error after insert was not identified as partial_create.' );
+	wsp_test_assert( $result['results'][0]['id'] > 0, 'Partial-create result omitted its inserted ID.' );
+	wsp_test_assert_same( 'wsp_test_forced_after_create', $result['results'][0]['error']['code'], 'Partial-create result omitted the REST error.' );
+	wsp_test_assert_same( 'skipped_duplicate', $result['results'][1]['action'], 'Repeated row was not skipped after partial-create recovery.' );
 } );
 
 wsp_test_run( 'search and import callbacks require edit_posts', function () {

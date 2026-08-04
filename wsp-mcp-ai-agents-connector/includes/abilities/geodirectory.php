@@ -320,6 +320,7 @@ function wsp_geodirectory_rest_listings( $post_type, $search = '' ) {
 		$request->set_param( 'status', array( 'any' ) );
 		$request->set_param( 'per_page', 100 );
 		$request->set_param( 'page', $page );
+		$request->set_param( '_fields', implode( ',', array_merge( array( 'id', 'link' ), wsp_geodirectory_allowed_listing_fields() ) ) );
 		if ( '' !== $search ) $request->set_param( 'search', $search );
 		$response = rest_do_request( $request );
 		$error = wsp_geodirectory_rest_error( $response );
@@ -385,6 +386,63 @@ function wsp_geodirectory_can_publish( $post_type ) {
 	return $object && current_user_can( $object->cap->publish_posts );
 }
 
+/** Preflight create/status, taxonomy, and featured-media requirements. */
+function wsp_geodirectory_validate_write_requirements( $fields, $post_type, $create = false ) {
+	$object = get_post_type_object( $post_type );
+	if ( ! $object ) {
+		return new WP_Error( 'wsp_geodirectory_invalid_post_type', 'The GeoDirectory post type is unavailable.' );
+	}
+	if ( $create ) {
+		$create_capability = ! empty( $object->cap->create_posts ) ? $object->cap->create_posts : $object->cap->edit_posts;
+		if ( ! current_user_can( $create_capability ) ) {
+			return new WP_Error( 'wsp_geodirectory_cannot_create', 'You are not allowed to create this GeoDirectory post type.' );
+		}
+	}
+	if ( isset( $fields['status'] ) && in_array( $fields['status'], array( 'publish', 'private' ), true ) && ! wsp_geodirectory_can_publish( $post_type ) ) {
+		return new WP_Error( 'wsp_geodirectory_cannot_publish', 'You are not allowed to publish or make private listings of this GeoDirectory post type.' );
+	}
+
+	if ( array_key_exists( 'post_category', $fields ) ) {
+		$taxonomy = get_taxonomy( $post_type . 'category' );
+		if ( ! $taxonomy ) {
+			return new WP_Error( 'wsp_geodirectory_invalid_category', 'The GeoDirectory category taxonomy is unavailable.' );
+		}
+		if ( ! current_user_can( $taxonomy->cap->assign_terms ) ) {
+			return new WP_Error( 'wsp_geodirectory_cannot_assign_terms', 'You are not allowed to assign GeoDirectory categories.' );
+		}
+		foreach ( $fields['post_category'] as $term_id ) {
+			if ( ! term_exists( $term_id, $taxonomy->name ) ) {
+				return new WP_Error( 'wsp_geodirectory_invalid_category', 'A requested GeoDirectory category does not exist.', array( 'term_id' => (int) $term_id ) );
+			}
+		}
+	}
+
+	if ( ! empty( $fields['post_tags'] ) ) {
+		$taxonomy = get_taxonomy( $post_type . '_tags' );
+		if ( ! $taxonomy ) {
+			return new WP_Error( 'wsp_geodirectory_invalid_tags', 'The GeoDirectory tag taxonomy is unavailable.' );
+		}
+		if ( ! current_user_can( $taxonomy->cap->assign_terms ) ) {
+			return new WP_Error( 'wsp_geodirectory_cannot_assign_terms', 'You are not allowed to assign GeoDirectory tags.' );
+		}
+		$tags = array_filter( array_map( 'trim', explode( ',', $fields['post_tags'] ) ) );
+		foreach ( $tags as $tag ) {
+			if ( ! term_exists( $tag, $taxonomy->name ) && ! current_user_can( $taxonomy->cap->manage_terms ) ) {
+				return new WP_Error( 'wsp_geodirectory_cannot_create_terms', 'You are not allowed to create a requested GeoDirectory tag.', array( 'tag' => $tag ) );
+			}
+		}
+	}
+
+	if ( ! empty( $fields['featured_media'] ) ) {
+		$attachment = get_post( $fields['featured_media'] );
+		if ( ! $attachment || 'attachment' !== $attachment->post_type || ! wp_attachment_is_image( $attachment ) ) {
+			return new WP_Error( 'wsp_geodirectory_invalid_featured_media', 'featured_media must reference an existing image attachment.' );
+		}
+	}
+
+	return true;
+}
+
 /** Convert an internal WP_Error to a deterministic per-row result. */
 function wsp_geodirectory_row_error( $index, $error ) {
 	return array(
@@ -412,12 +470,6 @@ function wsp_execute_geodirectory_search_listings( $input ) {
 		return new WP_Error( 'wsp_geodirectory_invalid_search', 'query must be a string.' );
 	}
 	$query = isset( $input['query'] ) ? sanitize_text_field( wp_unslash( $input['query'] ) ) : '';
-	// Retrieve through GeoDirectory REST, then apply the small administrative
-	// result filter in PHP. This avoids database-specific full-text behavior
-	// while preserving GeoDirectory as the read source.
-	$items = wsp_geodirectory_rest_listings( $post_type );
-	if ( is_wp_error( $items ) ) return $items;
-
 	if ( isset( $input['status'] ) && ! is_scalar( $input['status'] ) ) {
 		return new WP_Error( 'wsp_geodirectory_invalid_status', 'status must be a string.' );
 	}
@@ -433,6 +485,13 @@ function wsp_execute_geodirectory_search_listings( $input ) {
 		}
 		if ( isset( $input[ $field ] ) && '' !== $input[ $field ] ) $filters[ $field ] = wsp_geodirectory_comparison_value( $input[ $field ] );
 	}
+	$per_page = isset( $input['per_page'] ) ? min( 100, max( 1, (int) $input['per_page'] ) ) : 20;
+	// Retrieve through GeoDirectory REST, then apply the small administrative
+	// result filter in PHP. This avoids database-specific full-text behavior
+	// while preserving GeoDirectory as the read source.
+	$items = wsp_geodirectory_rest_listings( $post_type );
+	if ( is_wp_error( $items ) ) return $items;
+
 	$items = array_values( array_filter( $items, function ( $item ) use ( $status, $filters, $query_value ) {
 		if ( ! in_array( $status, array( 'any', 'all' ), true ) && $item['status'] !== $status ) return false;
 		if ( $query_value ) {
@@ -444,7 +503,6 @@ function wsp_execute_geodirectory_search_listings( $input ) {
 		}
 		return true;
 	} ) );
-	$per_page = isset( $input['per_page'] ) ? min( 100, max( 1, (int) $input['per_page'] ) ) : 20;
 	return array( 'items' => array_slice( $items, 0, $per_page ), 'total' => count( $items ), 'per_page' => $per_page );
 }
 
@@ -467,7 +525,7 @@ function wsp_execute_geodirectory_import_listings( $input ) {
 	$route = wsp_geodirectory_rest_route( $post_type );
 	if ( is_wp_error( $route ) ) return $route;
 
-	$summary = array( 'total' => count( $input['listings'] ), 'created' => 0, 'skipped_duplicates' => 0, 'would_create' => 0, 'errors' => 0 );
+	$summary = array( 'total' => count( $input['listings'] ), 'created' => 0, 'partial_creates' => 0, 'skipped_duplicates' => 0, 'would_create' => 0, 'errors' => 0 );
 	$results = array();
 	foreach ( array_values( $input['listings'] ) as $index => $listing ) {
 		$fields = wsp_geodirectory_validate_listing_fields( $listing, true );
@@ -476,9 +534,10 @@ function wsp_execute_geodirectory_import_listings( $input ) {
 			$results[] = wsp_geodirectory_row_error( $index, $fields );
 			continue;
 		}
-		if ( 'publish' === $fields['status'] && ! wsp_geodirectory_can_publish( $post_type ) ) {
+		$requirements = wsp_geodirectory_validate_write_requirements( $fields, $post_type, true );
+		if ( is_wp_error( $requirements ) ) {
 			$summary['errors']++;
-			$results[] = wsp_geodirectory_row_error( $index, new WP_Error( 'wsp_geodirectory_cannot_publish', 'You are not allowed to publish this GeoDirectory post type.' ) );
+			$results[] = wsp_geodirectory_row_error( $index, $requirements );
 			continue;
 		}
 		$duplicate = wsp_geodirectory_find_duplicate( $fields, $candidates );
@@ -512,11 +571,47 @@ function wsp_execute_geodirectory_import_listings( $input ) {
 
 		$request = new WP_REST_Request( 'POST', $route );
 		wsp_geodirectory_set_rest_params( $request, $fields );
+		$inserted_id = 0;
+		$capture_insert = function ( $post_id, $post, $update ) use ( &$inserted_id, $post_type ) {
+			if ( ! $update && $post && $post_type === $post->post_type ) {
+				$inserted_id = (int) $post_id;
+			}
+		};
+		add_action( 'wp_insert_post', $capture_insert, 10, 3 );
 		$response = rest_do_request( $request );
+		remove_action( 'wp_insert_post', $capture_insert, 10 );
 		$error = wsp_geodirectory_rest_error( $response );
 		if ( $error ) {
 			$summary['errors']++;
-			$results[] = wsp_geodirectory_row_error( $index, $error );
+			if ( $inserted_id ) {
+				$post = get_post( $inserted_id );
+				$partial_candidate = $fields;
+				$partial_candidate['id'] = $inserted_id;
+				$partial_candidate['status'] = $post ? $post->post_status : $fields['status'];
+				$partial_candidate['url'] = get_permalink( $inserted_id );
+				$refreshed = wsp_geodirectory_rest_listings( $post_type );
+				$candidates = is_wp_error( $refreshed ) ? $candidates : $refreshed;
+				$known_ids = wp_list_pluck( $candidates, 'id' );
+				if ( ! in_array( $inserted_id, $known_ids, true ) ) {
+					$candidates[] = $partial_candidate;
+				}
+				$summary['partial_creates']++;
+				$results[] = array(
+					'index'           => $index,
+					'action'          => 'partial_create',
+					'id'              => $inserted_id,
+					'status'          => $partial_candidate['status'],
+					'url'             => $partial_candidate['url'],
+					'requires_review' => true,
+					'error'           => array(
+						'code'    => $error->get_error_code(),
+						'message' => $error->get_error_message(),
+						'data'    => $error->get_error_data(),
+					),
+				);
+			} else {
+				$results[] = wsp_geodirectory_row_error( $index, $error );
+			}
 			continue;
 		}
 		$item = wsp_geodirectory_normalize_item( $response->get_data() );
@@ -548,9 +643,8 @@ function wsp_execute_geodirectory_update_listing( $input ) {
 	}
 	$fields = wsp_geodirectory_validate_listing_fields( $input['fields'], false );
 	if ( is_wp_error( $fields ) ) return $fields;
-	if ( isset( $fields['status'] ) && 'publish' === $fields['status'] && ! wsp_geodirectory_can_publish( $post_type ) ) {
-		return new WP_Error( 'wsp_geodirectory_cannot_publish', 'You are not allowed to publish this GeoDirectory post type.' );
-	}
+	$requirements = wsp_geodirectory_validate_write_requirements( $fields, $post_type, false );
+	if ( is_wp_error( $requirements ) ) return $requirements;
 	$route = wsp_geodirectory_rest_route( $post_type, $id );
 	if ( is_wp_error( $route ) ) return $route;
 	$request = new WP_REST_Request( 'POST', $route );

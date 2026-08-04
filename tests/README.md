@@ -21,5 +21,6 @@ npx.cmd --yes @wp-playground/cli@latest php `
 The test covers the allowlist, sanitization and validation, batch cap and
 per-row continuation, dry-run behavior, duplicate reasons and coordinate
 threshold, within-batch dry-run duplicates, post-type checks, capability
-guards, normalized search results, and draft-to-publish updates through
-GeoDirectory's own REST controller.
+guards, taxonomy/media preflight, partial-create recovery, normalized search
+results, and draft-to-publish updates through GeoDirectory's own REST
+controller.
