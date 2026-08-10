@@ -67,20 +67,42 @@ class WSP_MCP_Session_Store {
 	 * @param string $session_id Session identifier.
 	 * @return bool True if the session exists and has not expired.
 	 */
+	
+	
+	// public static function touch_session( $session_id ) {
+	// 	global $wpdb;
+	// 	// Built inline from $wpdb->prefix (safe source) so static analysis can verify the table name.
+	// 	$table = $wpdb->prefix . 'wsp_mcp_sessions';
+	// 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
+	// 	$updated = $wpdb->query( $wpdb->prepare(
+	// 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is built from $wpdb->prefix (no user input); values are bound via prepare().
+	// 		"UPDATE {$table} SET expires_at = %s WHERE session_id = %s AND expires_at > %s",
+	// 		gmdate( 'Y-m-d H:i:s', time() + self::TTL ),
+	// 		$session_id,
+	// 		current_time( 'mysql', true )
+	// 	) );
+	// 	return (bool) $updated;
+	// }
+
+
 	public static function touch_session( $session_id ) {
-		global $wpdb;
-		// Built inline from $wpdb->prefix (safe source) so static analysis can verify the table name.
-		$table = $wpdb->prefix . 'wsp_mcp_sessions';
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
-		$updated = $wpdb->query( $wpdb->prepare(
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is built from $wpdb->prefix (no user input); values are bound via prepare().
-			"UPDATE {$table} SET expires_at = %s WHERE session_id = %s AND expires_at > %s",
-			gmdate( 'Y-m-d H:i:s', time() + self::TTL ),
-			$session_id,
-			current_time( 'mysql', true )
-		) );
-		return (bool) $updated;
-	}
+    global $wpdb;
+    $table = $wpdb->prefix . 'wsp_mcp_sessions';
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.DB.DirectDatabaseQuery.DirectQuery
+    $updated = $wpdb->query( $wpdb->prepare(
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is built from $wpdb->prefix (not user input).
+        "UPDATE {$table} SET expires_at = %s WHERE session_id = %s AND expires_at > %s",
+        gmdate( 'Y-m-d H:i:s', time() + self::TTL ),
+        $session_id,
+        current_time( 'mysql', true )
+    ) );
+    
+    // Remote DB latency ke liye chhota sa wait
+    if ( $updated === false ) {
+        usleep( 100000 ); // 0.1 second delay
+    }
+    return (bool) $updated;
+}
 
 	/**
 	 * Return the credential fingerprint bound to a session.
