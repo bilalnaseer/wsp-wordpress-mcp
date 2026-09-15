@@ -8,6 +8,30 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2.8.1] — 2026-09-14
+
+### Added — Read Single Post tool (`includes/abilities/posts.php`, `includes/abilities/guard.php`)
+
+- **`wsp_get_post`** (`wsp/get-post`, read, ON by default): fetches one post by ID — full raw
+  `content`, `title`, `status`, `slug`, `url`, `date`/`modified`, `author` (id + display name),
+  `categories`/`tags` (names), `featured_image` (id + URL), `comment_status`/`comment_count`, and
+  every non-protected custom field (post meta), matching `wsp_get_posts`' "full metadata" promise
+  but for a single object instead of a list.
+- Works on drafts and private posts, not just `publish` — gated by a new
+  `wsp_mcp_guard_read_post()` in `guard.php`, the read-side counterpart to the existing
+  `wsp_mcp_guard_edit_post()` / `wsp_mcp_guard_delete_post()` write guards. It calls
+  `current_user_can( 'read_post', $id )`, WordPress core's own `read_post` meta capability, so the
+  permission matrix (public post → base `read` cap; your own draft/pending → `edit_post`; someone
+  else's private post → `read_private_posts`) is enforced by WordPress itself rather than
+  re-implemented here.
+- Registered in `native-tools.php` with `capability: ''` at the tool level (like `wsp_get_posts`) —
+  the real check happens in the guard, not before the callback runs.
+- Added to `wsp_mcp_ability_registry()` in `registry.php` (group "Posts", default ON) so it appears
+  as a normal toggle in **MCP > Settings** and picks up the website-sync automation like every other
+  ability.
+
+---
+
 ## [2.8.0] — 2026-09-11
 
 First release since 2.7.1. Consolidates every change made since then: the versions numbered

@@ -131,10 +131,12 @@ exists because its absence is an exploitable bug, not a style preference.
    a plugin update must not publish login endpoints on a site that didn't ask for them.
 2. **Consent requires a real capability, not just a login.** `handle_authorize()` checks
    `wsp_mcp_oauth_min_capability()` (default `edit_posts`, filterable) before rendering *or*
-   accepting the consent form. Login alone is not enough: six tools register with
+   accepting the consent form. Login alone is not enough: seven tools register with
    `'capability' => ''`, and `wsp_get_posts` with `status=all` returns every draft/pending/scheduled
    post with no author filter — so on a site with open registration, "any logged-in user" would mean
-   any visitor who signs up can read unpublished content through Claude.
+   any visitor who signs up can read unpublished content through Claude. (`wsp_get_post` is one of
+   the seven, but its object-level guard still requires `read_private_posts` for someone else's
+   private post — see the Posts ability table below.)
 3. **The consent screen must name the destination.** `client_name` comes from the unauthenticated
    registration endpoint — it is a self-assigned label, not an identity. `render_consent_page()`
    therefore shows the redirect **host** and full URI prominently and states in the page that the
@@ -352,12 +354,21 @@ admin toggle for each is driven by its entry in `wsp_mcp_ability_registry()` (`r
 | Ability key | Label | Access | Default | Permission | Inputs |
 |---|---|---|---|---|---|
 | `wsp/get-posts` | Get Blog Posts | read | ON | `__return_true` | `per_page` (int), `status` (publish\|draft\|all) |
+| `wsp/get-post` | Read Single Post | read | ON | `__return_true` + `wsp_mcp_guard_read_post()` (`read_post` meta cap) | `id`* |
 | `wsp/create-post` | Create Post | write | OFF | `publish_posts` | `title`*, `content`*, `status`, `categories[]`, `tags[]`, `excerpt`, `slug` |
 | `wsp/update-post` | Update Post | write | OFF | `edit_posts` | `id`*, `title`, `content`, `status`, `categories[]`, `tags[]` |
 | `wsp/delete-post` | Delete Post | write | OFF | `delete_posts` | `id`* |
 
 - Delete moves to trash, not permanent deletion.
 - `status=all` expands to `['publish','draft','pending','future']`.
+- `wsp/get-post` returns the full raw `content`, `title`, `status`, dates, author, categories/tags,
+  featured image, comment info, and non-protected post meta for a single post by ID. Registered
+  with `capability: ''` (authenticated only) at the tool level — like `wsp/get-posts` — because the
+  real per-object check is `wsp_mcp_guard_read_post()`, which calls `current_user_can('read_post', $id)`.
+  That's WordPress core's own `read_post` meta capability: it resolves to `read_private_posts` for
+  someone else's private post, `edit_post`/`edit_others_posts` for a draft/pending post, and the
+  type's base `read` cap once the post is publicly viewable — so a Contributor can fetch their own
+  draft but not an Administrator's private post, without this plugin re-deriving that matrix.
 
 #### Pages (`pages.php`)
 

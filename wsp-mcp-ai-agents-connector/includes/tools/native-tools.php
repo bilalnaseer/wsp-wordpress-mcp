@@ -30,6 +30,15 @@ function wsp_mcp_register_native_tools() {
 		'capability'  => '',
 		'enable_key'  => 'wsp/get-posts',
 	) );
+	WSP_MCP_Server::register_tool( 'wsp_get_post', array(
+		'description' => 'Retrieve the full content, title, status, and standard metadata of a single post by ID — including drafts and private posts the caller is permitted to view.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'id' ), 'properties' => array(
+			'id' => array( 'type' => 'integer', 'description' => 'Post ID.' ),
+		) ),
+		'callback'    => 'wsp_execute_get_post',
+		'capability'  => '',
+		'enable_key'  => 'wsp/get-post',
+	) );
 	WSP_MCP_Server::register_tool( 'wsp_create_post', array(
 		'description' => 'Creates a new blog post.',
 		'inputSchema' => array( 'type' => 'object', 'required' => array( 'title', 'content' ), 'properties' => array(

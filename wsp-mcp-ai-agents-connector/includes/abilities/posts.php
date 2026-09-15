@@ -23,6 +23,41 @@ function wsp_execute_get_posts( $input ) {
     return array( 'posts' => $posts, 'total' => $q->found_posts );
 }
 
+function wsp_execute_get_post( $input ) {
+    $post = wsp_mcp_guard_read_post( isset( $input['id'] ) ? $input['id'] : 0, 'post' );
+    if ( is_wp_error( $post ) ) return $post;
+
+    $thumbnail_id = get_post_thumbnail_id( $post->ID );
+    $raw_meta     = get_post_meta( $post->ID );
+    $meta         = array();
+    foreach ( $raw_meta as $key => $values ) {
+        if ( is_protected_meta( $key, 'post' ) ) continue; // Skip internal "_"-prefixed keys.
+        $meta[ $key ] = 1 === count( $values ) ? $values[0] : $values;
+    }
+
+    return array(
+        'id'             => $post->ID,
+        'title'          => $post->post_title,
+        'content'        => $post->post_content,
+        'excerpt'        => has_excerpt( $post->ID ) ? get_the_excerpt( $post ) : wp_trim_words( $post->post_content, 55 ),
+        'status'         => $post->post_status,
+        'slug'           => $post->post_name,
+        'url'            => get_permalink( $post->ID ),
+        'date'           => get_the_date( 'Y-m-d H:i:s', $post->ID ),
+        'modified'       => get_the_modified_date( 'Y-m-d H:i:s', $post->ID ),
+        'author'         => array(
+            'id'   => intval( $post->post_author ),
+            'name' => get_the_author_meta( 'display_name', $post->post_author ),
+        ),
+        'categories'     => wp_get_post_categories( $post->ID, array( 'fields' => 'names' ) ),
+        'tags'           => wp_get_post_tags( $post->ID, array( 'fields' => 'names' ) ),
+        'featured_image' => $thumbnail_id ? array( 'id' => $thumbnail_id, 'url' => wp_get_attachment_url( $thumbnail_id ) ) : null,
+        'comment_status' => $post->comment_status,
+        'comment_count'  => intval( $post->comment_count ),
+        'meta'           => $meta,
+    );
+}
+
 function wsp_execute_create_post( $input ) {
     $args = array(
         'post_title'   => sanitize_text_field( wp_unslash( $input['title'] ) ),

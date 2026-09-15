@@ -4,7 +4,7 @@ Tags: mcp, ai, claude, model context protocol, woocommerce
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.8.0
+Stable tag: 2.8.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -148,6 +148,9 @@ Watch the step-by-step video tutorial:
 https://youtu.be/hxhjs3IUYQE
 
 == Changelog ==
+
+= 2.8.1 =
+* New: **Read Single Post** tool (`wsp_get_post`). Fetches the full raw content, title, status, slug, dates, author, categories/tags, featured image, comment info, and non-protected custom fields for one post by ID — including your own drafts and, if your account has `read_private_posts`, other users' private posts. Same object-level permission model as Update Post: on by default (read-only), gated per-post through WordPress's own `read_post` capability check rather than a single broad permission.
 
 = 2.8.0 =
 * New: One-click Claude Connector sign-in. The plugin now runs its own OAuth 2.1 authorization server, so you can connect Claude by pasting only the server URL into Customize > Connectors > Add custom connector — no config file, no API key, no request header. Claude sends you to this site's own login page; whoever clicks Allow connects as themselves, and Claude can then do only what that WordPress account is permitted to do. **Off by default** — enable it from MCP > Connection. The existing API key and Application Password methods are unchanged and do not require it.
