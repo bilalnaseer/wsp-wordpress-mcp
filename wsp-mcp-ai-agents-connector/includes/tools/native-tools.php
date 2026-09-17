@@ -30,6 +30,15 @@ function wsp_mcp_register_native_tools() {
 		'capability'  => '',
 		'enable_key'  => 'wsp/get-posts',
 	) );
+	WSP_MCP_Server::register_tool( 'wsp_get_post', array(
+		'description' => 'Gets a single post by ID with full content, any status (draft/publish/etc).',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'id' ), 'properties' => array(
+			'id' => array( 'type' => 'integer' ),
+		) ),
+		'callback'    => 'wsp_execute_get_post',
+		'capability'  => 'edit_posts',
+		'enable_key'  => 'wsp/get-post',
+	) );
 	WSP_MCP_Server::register_tool( 'wsp_create_post', array(
 		'description' => 'Creates a new blog post.',
 		'inputSchema' => array( 'type' => 'object', 'required' => array( 'title', 'content' ), 'properties' => array(
@@ -304,6 +313,96 @@ function wsp_mcp_register_native_tools() {
 		'callback'    => 'wsp_execute_get_plugins',
 		'capability'  => 'activate_plugins',
 		'enable_key'  => 'wsp/get-plugins',
+	) );
+
+	// ---- Menus ----
+	WSP_MCP_Server::register_tool( 'wsp_get_menus', array(
+		'description' => 'Lists all navigation menus with item counts and assigned theme locations.',
+		'inputSchema' => $obj,
+		'callback'    => 'wsp_execute_get_menus',
+		'capability'  => 'edit_theme_options',
+		'enable_key'  => 'wsp/get-menus',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_get_menu_items', array(
+		'description' => 'Lists the items inside a specific navigation menu.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'menu' ), 'properties' => array(
+			'menu' => array( 'type' => array( 'integer', 'string' ), 'description' => 'Menu ID, slug, or name.' ),
+		) ),
+		'callback'    => 'wsp_execute_get_menu_items',
+		'capability'  => 'edit_theme_options',
+		'enable_key'  => 'wsp/get-menu-items',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_create_menu', array(
+		'description' => 'Creates a new navigation menu.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'name' ), 'properties' => array(
+			'name' => array( 'type' => 'string' ),
+		) ),
+		'callback'    => 'wsp_execute_create_menu',
+		'capability'  => 'edit_theme_options',
+		'enable_key'  => 'wsp/create-menu',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_delete_menu', array(
+		'description' => 'Deletes a navigation menu.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'menu' ), 'properties' => array(
+			'menu' => array( 'type' => array( 'integer', 'string' ), 'description' => 'Menu ID, slug, or name.' ),
+		) ),
+		'callback'    => 'wsp_execute_delete_menu',
+		'capability'  => 'edit_theme_options',
+		'enable_key'  => 'wsp/delete-menu',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_add_menu_item', array(
+		'description' => "Adds an item (custom link, post, page, or category) to a navigation menu.",
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'menu', 'type' ), 'properties' => array(
+			'menu'      => array( 'type' => array( 'integer', 'string' ), 'description' => 'Menu ID, slug, or name.' ),
+			'type'      => array( 'type' => 'string', 'description' => "custom | post | page | category." ),
+			'title'     => array( 'type' => 'string', 'description' => 'Required for custom; optional label override otherwise.' ),
+			'url'       => array( 'type' => 'string', 'description' => 'Required when type is custom.' ),
+			'object_id' => array( 'type' => 'integer', 'description' => 'Post/page/category ID. Required when type is post, page, or category.' ),
+			'parent'    => array( 'type' => 'integer', 'description' => 'Parent menu item ID, for a sub-item.' ),
+			'order'     => array( 'type' => 'integer', 'description' => 'Menu order position.' ),
+		) ),
+		'callback'    => 'wsp_execute_add_menu_item',
+		'capability'  => 'edit_theme_options',
+		'enable_key'  => 'wsp/add-menu-item',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_update_menu_item', array(
+		'description' => "Updates a menu item's title, URL, parent, or order.",
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'item_id' ), 'properties' => array(
+			'item_id' => array( 'type' => 'integer' ),
+			'title'   => array( 'type' => 'string' ),
+			'url'     => array( 'type' => 'string' ),
+			'parent'  => array( 'type' => 'integer' ),
+			'order'   => array( 'type' => 'integer' ),
+		) ),
+		'callback'    => 'wsp_execute_update_menu_item',
+		'capability'  => 'edit_theme_options',
+		'enable_key'  => 'wsp/update-menu-item',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_delete_menu_item', array(
+		'description' => 'Removes an item from a navigation menu.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'item_id' ), 'properties' => array(
+			'item_id' => array( 'type' => 'integer' ),
+		) ),
+		'callback'    => 'wsp_execute_delete_menu_item',
+		'capability'  => 'edit_theme_options',
+		'enable_key'  => 'wsp/delete-menu-item',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_get_menu_locations', array(
+		'description' => 'Lists theme menu locations and which menu is assigned to each.',
+		'inputSchema' => $obj,
+		'callback'    => 'wsp_execute_get_menu_locations',
+		'capability'  => 'edit_theme_options',
+		'enable_key'  => 'wsp/get-menu-locations',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_assign_menu_location', array(
+		'description' => 'Assigns (or unassigns, when menu is omitted) a navigation menu to a theme location.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'location' ), 'properties' => array(
+			'location' => array( 'type' => 'string', 'description' => 'Theme location slug, from wsp_get_menu_locations.' ),
+			'menu'     => array( 'type' => 'integer', 'description' => 'Menu ID to assign. Omit or 0 to unassign.' ),
+		) ),
+		'callback'    => 'wsp_execute_assign_menu_location',
+		'capability'  => 'edit_theme_options',
+		'enable_key'  => 'wsp/assign-menu-location',
 	) );
 
 	// ---- Yoast SEO (only when Yoast is active) ----

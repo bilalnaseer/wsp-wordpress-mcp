@@ -48,6 +48,7 @@ function wsp_mcp_ability_registry() {
     $abilities = array(
         // POSTS
         'wsp/get-posts'    => array( 'label' => 'Read Posts',    'description' => 'List published blog posts (title, URL, date, excerpt, categories, tags).', 'group' => 'Posts',    'access' => 'read',  'default' => true  ),
+        'wsp/get-post'     => array( 'label' => 'Read Post',     'description' => 'Get a single post by ID with full content, any status (draft/publish/etc).', 'group' => 'Posts',    'access' => 'read',  'default' => false ),
         'wsp/create-post'  => array( 'label' => 'Create Post',   'description' => 'Create a new blog post (title, content, status, categories, tags, slug).', 'group' => 'Posts',    'access' => 'write', 'default' => false ),
         'wsp/update-post'  => array( 'label' => 'Update Post',   'description' => 'Update an existing post by ID.',                                            'group' => 'Posts',    'access' => 'write', 'default' => false ),
         'wsp/delete-post'  => array( 'label' => 'Delete Post',   'description' => 'Move a post to trash by ID.',                                               'group' => 'Posts',    'access' => 'write', 'default' => false ),
@@ -81,6 +82,16 @@ function wsp_mcp_ability_registry() {
         // SITE
         'wsp/get-site-info'   => array( 'label' => 'Read Site Info',  'description' => 'Return site name, URL, tagline, WP version, and language.', 'group' => 'Site',     'access' => 'read',  'default' => true  ),
         'wsp/get-plugins'     => array( 'label' => 'Read Plugins',    'description' => 'List all active plugins with name, version, and author.',    'group' => 'Site',     'access' => 'read',  'default' => false ),
+        // MENUS
+        'wsp/get-menus'            => array( 'label' => 'Read Menus',           'description' => 'List all navigation menus with item counts and assigned locations.', 'group' => 'Menus', 'access' => 'read',  'default' => false ),
+        'wsp/get-menu-items'       => array( 'label' => 'Read Menu Items',      'description' => 'List the items inside a specific navigation menu.',                  'group' => 'Menus', 'access' => 'read',  'default' => false ),
+        'wsp/create-menu'          => array( 'label' => 'Create Menu',          'description' => 'Create a new navigation menu.',                                      'group' => 'Menus', 'access' => 'write', 'default' => false ),
+        'wsp/delete-menu'          => array( 'label' => 'Delete Menu',          'description' => 'Delete a navigation menu.',                                          'group' => 'Menus', 'access' => 'write', 'default' => false ),
+        'wsp/add-menu-item'        => array( 'label' => 'Add Menu Item',        'description' => 'Add a custom link, post, page, or category to a navigation menu.', 'group' => 'Menus', 'access' => 'write', 'default' => false ),
+        'wsp/update-menu-item'     => array( 'label' => 'Update Menu Item',     'description' => "Update a menu item's title, URL, parent, or order.",                'group' => 'Menus', 'access' => 'write', 'default' => false ),
+        'wsp/delete-menu-item'     => array( 'label' => 'Delete Menu Item',     'description' => 'Remove an item from a navigation menu.',                             'group' => 'Menus', 'access' => 'write', 'default' => false ),
+        'wsp/get-menu-locations'   => array( 'label' => 'Read Menu Locations',  'description' => 'List theme menu locations and which menu is assigned to each.',     'group' => 'Menus', 'access' => 'read',  'default' => false ),
+        'wsp/assign-menu-location' => array( 'label' => 'Assign Menu Location', 'description' => 'Assign (or unassign) a navigation menu to a theme location.',       'group' => 'Menus', 'access' => 'write', 'default' => false ),
     );
 
     if ( wsp_yoast_is_active() ) {
