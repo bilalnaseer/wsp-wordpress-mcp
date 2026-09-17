@@ -31,7 +31,7 @@ These three files give you complete project understanding without touching the c
 ## What this plugin is
 
 **Plugin Name:** WSP MCP - AI Agents Connector  
-**Version:** 2.8.0
+**Version:** 2.9.0
 **Slug/prefix:** `wsp`  
 **WP option key:** `wsp_mcp_abilities`  
 **Constant prefix:** `WSP_MCP_`
@@ -53,7 +53,7 @@ enforced inside the handler). Speaks Streamable HTTP + JSON-RPC 2.0: `initialize
 client's `protocolVersion` if recognized; supported = `2024-11-05`/`2025-03-26`/`2025-06-18`/`2025-11-25`),
 `notifications/initialized`, `tools/list`, `tools/call`, `ping`, empty `resources/list` & `prompts/list`.
 
-**`includes/response-guard.php` (v2.7.3, required before every other include):** a site running
+**`includes/response-guard.php` (v2.8.0, required before every other include):** a site running
 this plugin can have any number of *other* plugins active, of any quality — this plugin can't
 control that. `wsp_mcp_output_guard_start()` opens an output buffer the instant this file is
 `require`d (top of the main plugin file, before anything else loads) whenever
@@ -248,7 +248,7 @@ wsp-wordpress-mcp/                        ← repo root (NOT the plugin — dev 
     ├── readme.txt              ← WP.org readme (v2.0)
     ├── uninstall.php           ← deletes wsp_mcp_* options + drops sessions table
     └── includes/
-        ├── response-guard.php  ← output-buffer guard (v2.7.3): swallows stray output from other
+        ├── response-guard.php  ← output-buffer guard (v2.8.0): swallows stray output from other
         │                          active plugins/themes on this plugin's own MCP/OAuth requests so
         │                          it can never corrupt the JSON response — required first, started
         │                          before any other include
@@ -266,7 +266,7 @@ wsp-wordpress-mcp/                        ← repo root (NOT the plugin — dev 
         │   └── connection-page.php  ← native endpoint + API key + per-client tabs (MCP > Connection)
         └── abilities/           ← wsp_execute_* logic (called by the native server)
             ├── posts.php  pages.php  taxonomy.php  comments.php  media.php
-            ├── users.php  search.php  site.php  yoast.php  elementor.php
+            ├── users.php  search.php  site.php  menus.php  yoast.php  elementor.php
             ├── woocommerce.php  acf.php
 ```
 
@@ -278,7 +278,7 @@ wsp-wordpress-mcp/                        ← repo root (NOT the plugin — dev 
 
 | Constant | Value |
 |---|---|
-| `WSP_MCP_VERSION` | `'2.8.0'` |
+| `WSP_MCP_VERSION` | `'2.9.0'` |
 | `WSP_MCP_OPTION` | `'wsp_mcp_abilities'` (per-ability on/off toggles) |
 | `WSP_MCP_DIR` | `plugin_dir_path(__FILE__)` |
 
@@ -352,12 +352,14 @@ admin toggle for each is driven by its entry in `wsp_mcp_ability_registry()` (`r
 | Ability key | Label | Access | Default | Permission | Inputs |
 |---|---|---|---|---|---|
 | `wsp/get-posts` | Get Blog Posts | read | ON | `__return_true` | `per_page` (int), `status` (publish\|draft\|all) |
+| `wsp/get-post` | Read Post | read | OFF | `edit_posts` + `read_post` (object) | `id`* |
 | `wsp/create-post` | Create Post | write | OFF | `publish_posts` | `title`*, `content`*, `status`, `categories[]`, `tags[]`, `excerpt`, `slug` |
 | `wsp/update-post` | Update Post | write | OFF | `edit_posts` | `id`*, `title`, `content`, `status`, `categories[]`, `tags[]` |
 | `wsp/delete-post` | Delete Post | write | OFF | `delete_posts` | `id`* |
 
 - Delete moves to trash, not permanent deletion.
 - `status=all` expands to `['publish','draft','pending','future']`.
+- `get-post` (v2.9.0) returns one post in **any** status (including trash) with full `post_content`, pinned to `post_type === 'post'`. Not-found and forbidden return `WP_Error( 'not_found' | 'forbidden' )` — never a plain array — so `do_tools_call()` logs them as error/denied rather than success.
 
 #### Pages (`pages.php`)
 
@@ -428,6 +430,28 @@ admin toggle for each is driven by its entry in `wsp_mcp_ability_registry()` (`r
 
 - `get-site-info` returns: `name`, `url`, `tagline`, `admin_email`, `wp_version`, `language`.
 - `get-plugins` loads `wp-admin/includes/plugin.php` if needed, then intersects all plugins with active list.
+
+#### Menus (`menus.php`) — added v2.9.0
+
+All nine require `edit_theme_options` (the capability WP core's menu editor and REST menus controller use). Menus are site-wide, not per-user content, so there is no object-level guard. All OFF by default. Settings-page icon: 🧭.
+
+| Ability key | Label | Access | Inputs |
+|---|---|---|---|
+| `wsp/get-menus` | Read Menus | read | none |
+| `wsp/get-menu-items` | Read Menu Items | read | `menu`* (id\|slug\|name) |
+| `wsp/create-menu` | Create Menu | write | `name`* |
+| `wsp/delete-menu` | Delete Menu | write | `menu`* |
+| `wsp/add-menu-item` | Add Menu Item | write | `menu`*, `type`* (custom\|post\|page\|category), `title`, `url`, `object_id`, `parent`, `order` |
+| `wsp/update-menu-item` | Update Menu Item | write | `item_id`*, `title`, `url`, `parent`, `order` |
+| `wsp/delete-menu-item` | Delete Menu Item | write | `item_id`* |
+| `wsp/get-menu-locations` | Read Menu Locations | read | none |
+| `wsp/assign-menu-location` | Assign Menu Location | write | `location`*, `menu` (id; omit or 0 to unassign) |
+
+- `menu` is resolved with `wp_get_nav_menu_object()`, so ID, slug, or name all work.
+- `add-menu-item`: `custom` needs `title` + `url`; `post`/`page`/`category` need `object_id`. For `post`/`page` the resolved `post_type` **must equal** the requested `type` or the tool returns `object_id: {type} not found.` — a `page` type with a blog-post ID is rejected, not silently stored.
+- `update-menu-item` reads the current item via `wp_setup_nav_menu_item()` and only overrides the fields supplied; `type`/`object`/`object_id` are preserved.
+- `delete-menu-item` calls `wp_delete_post( $id, true )` (force-delete, no trash).
+- `assign-menu-location` writes the `nav_menu_locations` theme mod directly; unknown location slugs are rejected against `get_registered_nav_menus()`.
 
 #### Yoast SEO (`yoast.php`)
 
@@ -698,7 +722,7 @@ Only registered if `wsp_uae_is_active()`. Adds 45 tools to manipulate UAE widget
   copy-to-clipboard snippets, all pointing at the native endpoint with the **API key hardcoded into
   the auth header** (no `${VAR}` env interpolation — avoids the mcp-remote "missing env var"
   failure). Server name auto-derives as `wsp-<host>`:
-  - **Claude Connectors (v2.11.0, default-active tab, `#wsp-tab-claudeweb`):** not a config-file
+  - **Claude Connectors (v2.8.0, default-active tab, `#wsp-tab-claudeweb`):** not a config-file
     snippet at all — Claude's **Customize > Connectors > Add custom connector** screen (a different
     product surface from `claude_desktop_config.json`, shared by claude.ai/Desktop/mobile) takes a
     bare **Remote MCP server URL** + a **Request header** instead of a file to edit. The tab shows
@@ -725,7 +749,7 @@ Only registered if `wsp_uae_is_active()`. Adds 45 tools to manipulate UAE widget
   Clipboard API is undefined on plain-HTTP hosts (e.g. `http://*.local` dev sites), where the old
   direct call threw synchronously and the buttons silently did nothing.
 - Same `.wsp-layout` / `.wsp-main` / `.wsp-side` two-column shell as the Settings page (v2.6.7).
-- **Configuration Generator (v2.9.0):** a new `.wsp-gen-box` section sits between the facts table and
+- **Configuration Generator (v2.8.0):** a new `.wsp-gen-box` section sits between the facts table and
   the six static tabs. Tool `<select>` + a 3-way auth-method pill group (`API Key` / `Application
   Password` / `OAuth`) drive a live, client-side-only preview (`#wsp-gen-code`) with its own copy
   button (`#wsp-gen-copy`), re-rendered on every `change`/`input` event — no page reload, no server
@@ -752,7 +776,7 @@ Only registered if `wsp_uae_is_active()`. Adds 45 tools to manipulate UAE widget
     box for a "coming soon" notice (`#wsp-gen-oauth-note`) and disables the copy button. If OAuth
     support is ever added to `WSP_MCP_Auth`, wire a real branch into `buildSnippet()`/`authHeader()`
     here instead of leaving the placeholder.
-- **One-Click Automated Connector (v2.10.0):** removes the manual copy-paste step entirely, on both
+- **One-Click Automated Connector (v2.8.0):** removes the manual copy-paste step entirely, on both
   the six static tabs and the live generator.
   - **Download button:** every `.wsp-config-header` now wraps its buttons in a `.wsp-config-actions`
     flex row — a new **Download** button sits beside **Copy**. Client-side `downloadFile(filename,

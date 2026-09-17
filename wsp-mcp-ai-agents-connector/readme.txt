@@ -4,7 +4,7 @@ Tags: mcp, ai, claude, model context protocol, woocommerce
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.8.0
+Stable tag: 2.9.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,7 +20,7 @@ Built and maintained by the [WebSensePro](https://websensepro.com/) team. For do
 
 = Video tutorial =
 
-https://youtu.be/1hGSUAdRxiU
+https://youtu.be/kD2FSvL7EE0
 
 = Key features =
  
@@ -149,6 +149,12 @@ https://youtu.be/hxhjs3IUYQE
 
 == Changelog ==
 
+= 2.9.0 =
+* New: Navigation Menus ability group — nine tools to list menus and their items, create and delete menus, add/update/remove menu items (custom links, posts, pages, categories), list theme menu locations, and assign or unassign a menu to a location. All require `edit_theme_options` (the same capability the WordPress menu editor needs) and are OFF by default. Contributed by @dulaj44.
+* New: Read Post tool (`wsp_get_post`) — fetch a single post by ID in any status (draft, pending, private, trash) with its full content, so an AI agent can review a draft before updating it. Requires `edit_posts` plus per-post read permission; a Contributor cannot read another author's private post. OFF by default. Contributed by @dulaj44 (closes #38).
+* Fixed: Permission-denied and not-found results from the new Read Post tool were being recorded as successful calls in the Audit Log; they are now logged as denied/error like every other tool.
+* Fixed: Add Menu Item now rejects an `object_id` whose post type does not match the requested `type` (e.g. `type: page` with a blog post ID) instead of silently storing it.
+
 = 2.8.0 =
 * New: One-click Claude Connector sign-in. The plugin now runs its own OAuth 2.1 authorization server, so you can connect Claude by pasting only the server URL into Customize > Connectors > Add custom connector — no config file, no API key, no request header. Claude sends you to this site's own login page; whoever clicks Allow connects as themselves, and Claude can then do only what that WordPress account is permitted to do. **Off by default** — enable it from MCP > Connection. The existing API key and Application Password methods are unchanged and do not require it.
 * New: Analytics & Performance Dashboard in **MCP > Analytics** — summary cards for total requests, most-used tool, average response time, and error rate; a per-category tool-usage breakdown with lightweight CSS progress bars; and a recent-requests performance log. Built entirely on the existing Audit Log database (`wp_wsp_mcp_audit_log`), which now also records each request's ability category and execution duration in milliseconds — no external service involved. Restricted to administrators (`manage_options`).
@@ -250,6 +256,9 @@ https://youtu.be/hxhjs3IUYQE
 * Elementor abilities, modular architecture, auto config generator.
 
 == Upgrade Notice ==
+
+= 2.9.0 =
+Adds a Navigation Menus tool group (9 tools) and a single-post Read Post tool. All new tools are OFF by default — enable them from MCP > Settings if you want them. No action needed otherwise.
 
 = 2.8.0 =
 Adds one-click Claude Connector sign-in (OAuth), an Analytics dashboard, and a configuration generator. OAuth is OFF by default and must be enabled from MCP > Connection. No action needed if you connect with an API key or Application Password.

@@ -2,7 +2,7 @@
 
 > **By [WebSensePro](https://websensepro.com) — Official Shopify Partner & WordPress Agency**
 
-[![Version](https://img.shields.io/badge/Version-2.8.0-blue?style=for-the-badge)](https://github.com/bilalnaseer/wsp-wordpress-mcp/releases)
+[![Version](https://img.shields.io/badge/Version-2.9.0-blue?style=for-the-badge)](https://github.com/bilalnaseer/wsp-wordpress-mcp/releases)
 [![YouTube](https://img.shields.io/badge/YouTube-140K%2B%20Subscribers-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtube.com/websensepro)
 [![License](https://img.shields.io/badge/License-GPL%202.0-green?style=for-the-badge)](LICENSE)
 
@@ -10,9 +10,16 @@
 
 ## 🎬 Watch the Tutorial
 
-[![WSP WordPress MCP — Full Tutorial](https://img.youtube.com/vi/1hGSUAdRxiU/maxresdefault.jpg)](https://youtu.be/1hGSUAdRxiU)
+[![WSP WordPress MCP — Full Tutorial](https://img.youtube.com/vi/kD2FSvL7EE0/maxresdefault.jpg)](https://youtu.be/kD2FSvL7EE0)
 
 ---
+
+## ✨ What's New in v2.9.0
+
+- 🧭 **Navigation Menus tool group** — nine new tools to list menus and their items, create and delete menus, add / update / remove menu items (custom links, posts, pages, categories), list your theme's menu locations, and assign or unassign a menu to a location. All require `edit_theme_options` (the same capability the WordPress menu editor needs) and are **off by default**. Contributed by [@dulaj44](https://github.com/dulaj44) in [#41](https://github.com/bilalnaseer/wsp-wordpress-mcp/pull/41).
+- 📄 **Read Post tool** (`wsp_get_post`) — fetch a single post by ID in **any** status (draft, pending, private, trash) with its full content, so an agent can review a draft before `wsp_update_post` overwrites it. Requires `edit_posts` plus per-post read permission — a Contributor cannot read another author's private post. **Off by default.** Closes [#38](https://github.com/bilalnaseer/wsp-wordpress-mcp/issues/38).
+- 🐛 **Audit Log accuracy** — permission-denied and not-found results from the new Read Post tool were being recorded as successful calls; they are now logged as denied / error like every other tool.
+- 🐛 **Add Menu Item validation** — an `object_id` whose post type does not match the requested `type` (e.g. `type: page` with a blog-post ID) is now rejected instead of silently stored.
 
 ## ✨ What's New in v2.8.0
 
@@ -128,7 +135,7 @@ New: Direct file upload for media. wsp_upload_media (Upload Media) now accepts b
 ### Core WordPress
 | Ability | Access |
 |---------|--------|
-| Read / Create / Update / Delete Posts | read / write |
+| Read / Get / Create / Update / Delete Posts | read / write |
 | Read / Create / Update / Delete Pages | read / write |
 | Read Categories & Tags / Create | read / write |
 | Read / Approve / Delete Comments | read / write |
@@ -137,6 +144,8 @@ New: Direct file upload for media. wsp_upload_media (Upload Media) now accepts b
 | Read Users | read |
 | Search Content | read |
 | Read Site Info & Active Plugins | read |
+| Read Menus / Menu Items / Menu Locations | read |
+| Create / Delete Menu, Add / Update / Delete Menu Item, Assign Location | write |
 
 ### Yoast SEO *(requires Yoast SEO plugin)*
 | Ability | Access |

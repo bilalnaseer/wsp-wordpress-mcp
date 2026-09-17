@@ -8,6 +8,49 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2.9.0] — 2026-09-17
+
+### Added — Navigation Menus ability group (`includes/abilities/menus.php` — new file)
+
+- Nine tools for reading and editing WordPress navigation menus: `wsp_get_menus`,
+  `wsp_get_menu_items`, `wsp_create_menu`, `wsp_delete_menu`, `wsp_add_menu_item`,
+  `wsp_update_menu_item`, `wsp_delete_menu_item`, `wsp_get_menu_locations`, and
+  `wsp_assign_menu_location`. All gated by `edit_theme_options` — the same capability WP core's
+  own menu editor and REST menus controller require. Menus are a site-wide structure with no
+  per-item ownership, so no additional object-level guard is needed. All nine are OFF by default.
+- `wsp_add_menu_item` accepts `type` of `custom` (needs `title` + `url`), `post`, `page`, or
+  `category` (needs `object_id`), plus optional `parent` and `order`. The `menu` argument on every
+  tool accepts an ID, slug, or name (via `wp_get_nav_menu_object()`).
+- Contributed by [@dulaj44](https://github.com/dulaj44) in [#41](https://github.com/bilalnaseer/wsp-wordpress-mcp/pull/41).
+
+### Added — `wsp_get_post` (`includes/abilities/posts.php`)
+
+- Reads one post by ID in any status (draft, pending, private, trash, …) and returns its full
+  `content` alongside title, URL, status, date, author, categories, tags, and excerpt. Closes
+  [#38](https://github.com/bilalnaseer/wsp-wordpress-mcp/issues/38): `wsp_update_post` could
+  already write to any post by ID, but `wsp_get_posts` is a published-only list with excerpts, so
+  there was no way to read a draft back before overwriting it.
+- Registered with the `edit_posts` primitive capability, then enforces the per-object `read_post`
+  meta capability inside the callback, so a Contributor cannot read another author's private or
+  draft post. OFF by default. Contributed by [@dulaj44](https://github.com/dulaj44).
+
+### Fixed
+
+- **`wsp_get_post` audit-log classification.** The not-found and permission-denied paths returned
+  a plain `array( 'success' => false, … )` instead of a `WP_Error`, so `do_tools_call()` in
+  `class-mcp-server.php` fell through to the success branch and recorded every denied read as
+  `STATUS_SUCCESS` in the Audit Log. They now return `WP_Error( 'not_found', … )` and
+  `WP_Error( 'forbidden', … )` like every other object-level guard in the plugin, so denials are
+  logged as `STATUS_DENIED` and surface correctly in **MCP > Audit Log** and **MCP > Analytics**.
+- **`wsp_add_menu_item` type/object mismatch.** With `type: page`, an `object_id` pointing at a
+  blog post (or vice versa) was accepted and silently stored under the object's real post type. The
+  resolved post type must now match the requested `type`, otherwise the tool returns
+  `object_id: page not found.` / `object_id: post not found.`
+
+### Changed
+
+- README and readme.txt now point to the updated full tutorial video.
+
 ## [2.8.0] — 2026-09-11
 
 First release since 2.7.1. Consolidates every change made since then: the versions numbered
