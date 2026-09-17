@@ -30,6 +30,15 @@ function wsp_mcp_register_native_tools() {
 		'capability'  => '',
 		'enable_key'  => 'wsp/get-posts',
 	) );
+	WSP_MCP_Server::register_tool( 'wsp_get_post', array(
+		'description' => 'Gets a single post by ID with full content, any status (draft/publish/etc).',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'id' ), 'properties' => array(
+			'id' => array( 'type' => 'integer' ),
+		) ),
+		'callback'    => 'wsp_execute_get_post',
+		'capability'  => 'edit_posts',
+		'enable_key'  => 'wsp/get-post',
+	) );
 	WSP_MCP_Server::register_tool( 'wsp_create_post', array(
 		'description' => 'Creates a new blog post.',
 		'inputSchema' => array( 'type' => 'object', 'required' => array( 'title', 'content' ), 'properties' => array(

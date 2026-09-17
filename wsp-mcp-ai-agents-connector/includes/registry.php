@@ -48,6 +48,7 @@ function wsp_mcp_ability_registry() {
     $abilities = array(
         // POSTS
         'wsp/get-posts'    => array( 'label' => 'Read Posts',    'description' => 'List published blog posts (title, URL, date, excerpt, categories, tags).', 'group' => 'Posts',    'access' => 'read',  'default' => true  ),
+        'wsp/get-post'     => array( 'label' => 'Read Post',     'description' => 'Get a single post by ID with full content, any status (draft/publish/etc).', 'group' => 'Posts',    'access' => 'read',  'default' => false ),
         'wsp/create-post'  => array( 'label' => 'Create Post',   'description' => 'Create a new blog post (title, content, status, categories, tags, slug).', 'group' => 'Posts',    'access' => 'write', 'default' => false ),
         'wsp/update-post'  => array( 'label' => 'Update Post',   'description' => 'Update an existing post by ID.',                                            'group' => 'Posts',    'access' => 'write', 'default' => false ),
         'wsp/delete-post'  => array( 'label' => 'Delete Post',   'description' => 'Move a post to trash by ID.',                                               'group' => 'Posts',    'access' => 'write', 'default' => false ),

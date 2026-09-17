@@ -23,6 +23,25 @@ function wsp_execute_get_posts( $input ) {
     return array( 'posts' => $posts, 'total' => $q->found_posts );
 }
 
+function wsp_execute_get_post( $input ) {
+    $id   = isset( $input['id'] ) ? intval( $input['id'] ) : 0;
+    $post = $id ? get_post( $id ) : null;
+    if ( ! $post || 'post' !== $post->post_type ) return array( 'success' => false, 'error' => 'Post not found.' );
+    if ( ! current_user_can( 'read_post', $id ) ) return array( 'success' => false, 'error' => 'You do not have permission to read object ' . $id . '.' );
+    return array(
+        'id'         => $post->ID,
+        'title'      => $post->post_title,
+        'content'    => $post->post_content,
+        'url'        => get_permalink( $post->ID ),
+        'status'     => $post->post_status,
+        'date'       => get_the_date( 'Y-m-d', $post->ID ),
+        'author'     => get_the_author_meta( 'display_name', $post->post_author ),
+        'categories' => wp_get_post_categories( $post->ID, array( 'fields' => 'names' ) ),
+        'tags'       => wp_get_post_tags( $post->ID, array( 'fields' => 'names' ) ),
+        'excerpt'    => has_excerpt( $post->ID ) ? get_the_excerpt( $post ) : wp_trim_words( $post->post_content, 40 ),
+    );
+}
+
 function wsp_execute_create_post( $input ) {
     $args = array(
         'post_title'   => sanitize_text_field( wp_unslash( $input['title'] ) ),
