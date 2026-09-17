@@ -93,7 +93,7 @@ function wsp_execute_add_menu_item( $input ) {
 	} elseif ( in_array( $type, array( 'post', 'page' ), true ) ) {
 		$object_id = ! empty( $input['object_id'] ) ? intval( $input['object_id'] ) : 0;
 		$post      = $object_id ? get_post( $object_id ) : null;
-		if ( ! $post ) return array( 'success' => false, 'error' => 'object_id: post not found.' );
+		if ( ! $post || $post->post_type !== $type ) return array( 'success' => false, 'error' => "object_id: {$type} not found." );
 		$args['menu-item-type']      = 'post_type';
 		$args['menu-item-object']    = $post->post_type;
 		$args['menu-item-object-id'] = $post->ID;

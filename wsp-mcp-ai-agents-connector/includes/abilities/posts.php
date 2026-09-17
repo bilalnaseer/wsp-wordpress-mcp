@@ -26,8 +26,8 @@ function wsp_execute_get_posts( $input ) {
 function wsp_execute_get_post( $input ) {
     $id   = isset( $input['id'] ) ? intval( $input['id'] ) : 0;
     $post = $id ? get_post( $id ) : null;
-    if ( ! $post || 'post' !== $post->post_type ) return array( 'success' => false, 'error' => 'Post not found.' );
-    if ( ! current_user_can( 'read_post', $id ) ) return array( 'success' => false, 'error' => 'You do not have permission to read object ' . $id . '.' );
+    if ( ! $post || 'post' !== $post->post_type ) return new WP_Error( 'not_found', 'Post not found.' );
+    if ( ! current_user_can( 'read_post', $id ) ) return new WP_Error( 'forbidden', 'You do not have permission to read object ' . $id . '.' );
     return array(
         'id'         => $post->ID,
         'title'      => $post->post_title,
