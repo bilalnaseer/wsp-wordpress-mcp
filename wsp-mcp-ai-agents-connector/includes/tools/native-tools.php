@@ -636,6 +636,64 @@ function wsp_mcp_register_native_tools() {
 			'capability'  => 'edit_posts',
 			'enable_key'  => 'wsp/woo-moderate-review',
 		) );
+		WSP_MCP_Server::register_tool( 'wsp_woo_list_shipping_zones', array(
+			'description' => 'List shipping zones, their locations, and shipping methods.',
+			'inputSchema' => array( 'type' => 'object', 'properties' => new stdClass() ),
+			'callback'    => 'wsp_execute_woo_list_shipping_zones',
+			'capability'  => 'manage_woocommerce',
+			'enable_key'  => 'wsp/woo-list-shipping-zones',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_woo_create_shipping_zone', array(
+			'description' => 'Create a new shipping zone with optional locations.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'name' ), 'properties' => array(
+				'name'      => array( 'type' => 'string', 'description' => 'Zone name.' ),
+				'locations' => array( 'type' => 'array', 'description' => 'Optional list of {code, type} where type is country | state | continent | postcode.', 'items' => array( 'type' => 'object' ) ),
+			) ),
+			'callback'    => 'wsp_execute_woo_create_shipping_zone',
+			'capability'  => 'manage_woocommerce',
+			'enable_key'  => 'wsp/woo-create-shipping-zone',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_woo_delete_shipping_zone', array(
+			'description' => 'Delete a shipping zone.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'zone_id' ), 'properties' => array(
+				'zone_id' => array( 'type' => 'integer' ),
+			) ),
+			'callback'    => 'wsp_execute_woo_delete_shipping_zone',
+			'capability'  => 'manage_woocommerce',
+			'enable_key'  => 'wsp/woo-delete-shipping-zone',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_woo_add_shipping_method', array(
+			'description' => 'Add a shipping method (flat_rate | free_shipping | local_pickup) to a zone.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'zone_id', 'method_id' ), 'properties' => array(
+				'zone_id'    => array( 'type' => 'integer', 'description' => 'Use 0 for "Locations not covered by your other zones".' ),
+				'method_id'  => array( 'type' => 'string', 'description' => 'flat_rate | free_shipping | local_pickup (or any other registered shipping method id).' ),
+				'settings'   => array( 'type' => 'object', 'description' => 'Optional initial settings, e.g. { "title": "Standard", "cost": "5.00" }.' ),
+			) ),
+			'callback'    => 'wsp_execute_woo_add_shipping_method',
+			'capability'  => 'manage_woocommerce',
+			'enable_key'  => 'wsp/woo-add-shipping-method',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_woo_update_shipping_method', array(
+			'description' => 'Update a shipping method\'s settings (e.g. cost, title) or enabled status.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'instance_id' ), 'properties' => array(
+				'instance_id' => array( 'type' => 'integer' ),
+				'settings'    => array( 'type' => 'object', 'description' => 'Settings to change, e.g. { "cost": "7.50" }.' ),
+				'enabled'     => array( 'type' => 'boolean' ),
+			) ),
+			'callback'    => 'wsp_execute_woo_update_shipping_method',
+			'capability'  => 'manage_woocommerce',
+			'enable_key'  => 'wsp/woo-update-shipping-method',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_woo_delete_shipping_method', array(
+			'description' => 'Remove a shipping method from a zone.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'zone_id', 'instance_id' ), 'properties' => array(
+				'zone_id'     => array( 'type' => 'integer' ),
+				'instance_id' => array( 'type' => 'integer' ),
+			) ),
+			'callback'    => 'wsp_execute_woo_delete_shipping_method',
+			'capability'  => 'manage_woocommerce',
+			'enable_key'  => 'wsp/woo-delete-shipping-method',
+		) );
 	}
 
 	// ---- Elementor (only when Elementor is active) ----
