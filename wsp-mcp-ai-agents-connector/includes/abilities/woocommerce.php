@@ -586,4 +586,161 @@ function wsp_execute_woo_refund_order( $input ) {
         'reason'    => $reason,
     );
 }
+
+function wsp_execute_woo_list_shipping_zones( $input ) {
+    if ( ! class_exists( 'WC_Shipping_Zones' ) ) return array( 'success' => false, 'error' => 'WooCommerce shipping is not available.' );
+
+    $result = array();
+    foreach ( WC_Shipping_Zones::get_zones() as $zone_data ) {
+        $zone    = new WC_Shipping_Zone( $zone_data['id'] );
+        $methods = array();
+        foreach ( $zone->get_shipping_methods() as $method ) {
+            $method->init_instance_settings();
+            $methods[] = array(
+                'instance_id' => $method->instance_id,
+                'method_id'   => $method->id,
+                'title'       => $method->instance_settings['title'] ?? $method->method_title,
+                'enabled'     => 'yes' === $method->enabled,
+                'cost'        => $method->instance_settings['cost'] ?? null,
+            );
+        }
+        $result[] = array(
+            'id'        => $zone->get_id(),
+            'name'      => $zone->get_zone_name(),
+            'order'     => $zone->get_zone_order(),
+            'locations' => $zone->get_zone_locations(),
+            'methods'   => $methods,
+        );
+    }
+
+    // "Locations not covered by your other zones" (id 0), read-only in WooCommerce itself.
+    $rest_of_world = new WC_Shipping_Zone( 0 );
+    $rest_methods  = array();
+    foreach ( $rest_of_world->get_shipping_methods() as $method ) {
+        $method->init_instance_settings();
+        $rest_methods[] = array(
+            'instance_id' => $method->instance_id,
+            'method_id'   => $method->id,
+            'title'       => $method->instance_settings['title'] ?? $method->method_title,
+            'enabled'     => 'yes' === $method->enabled,
+            'cost'        => $method->instance_settings['cost'] ?? null,
+        );
+    }
+    $result[] = array( 'id' => 0, 'name' => 'Locations not covered by your other zones', 'order' => 0, 'locations' => array(), 'methods' => $rest_methods );
+
+    return array( 'success' => true, 'zones' => $result );
+}
+
+function wsp_execute_woo_create_shipping_zone( $input ) {
+    if ( empty( $input['name'] ) ) return array( 'success' => false, 'error' => 'name is required.' );
+    if ( ! class_exists( 'WC_Shipping_Zone' ) ) return array( 'success' => false, 'error' => 'WooCommerce shipping is not available.' );
+
+    $zone = new WC_Shipping_Zone();
+    $zone->set_zone_name( sanitize_text_field( wp_unslash( $input['name'] ) ) );
+
+    if ( ! empty( $input['locations'] ) && is_array( $input['locations'] ) ) {
+        $locations = array();
+        foreach ( $input['locations'] as $loc ) {
+            if ( empty( $loc['code'] ) || empty( $loc['type'] ) ) continue;
+            $locations[] = array( 'code' => sanitize_text_field( $loc['code'] ), 'type' => sanitize_text_field( $loc['type'] ) );
+        }
+        $zone->set_locations( $locations );
+    }
+
+    $zone_id = $zone->save();
+    return array( 'success' => true, 'id' => $zone_id, 'name' => $zone->get_zone_name() );
+}
+
+function wsp_execute_woo_delete_shipping_zone( $input ) {
+    if ( empty( $input['zone_id'] ) ) return array( 'success' => false, 'error' => 'zone_id is required.' );
+    if ( ! class_exists( 'WC_Shipping_Zones' ) ) return array( 'success' => false, 'error' => 'WooCommerce shipping is not available.' );
+
+    $zone_id = intval( $input['zone_id'] );
+    $zone    = WC_Shipping_Zones::get_zone( $zone_id );
+    if ( ! $zone ) return array( 'success' => false, 'error' => 'Shipping zone not found.' );
+
+    $zone->delete();
+    return array( 'success' => true, 'id' => $zone_id );
+}
+
+function wsp_execute_woo_add_shipping_method( $input ) {
+    if ( empty( $input['zone_id'] ) && '0' !== (string) ( $input['zone_id'] ?? '' ) ) return array( 'success' => false, 'error' => 'zone_id is required.' );
+    if ( empty( $input['method_id'] ) ) return array( 'success' => false, 'error' => 'method_id is required, e.g. flat_rate, free_shipping, local_pickup.' );
+    if ( ! class_exists( 'WC_Shipping_Zones' ) ) return array( 'success' => false, 'error' => 'WooCommerce shipping is not available.' );
+
+    $zone_id   = intval( $input['zone_id'] );
+    $method_id = sanitize_key( $input['method_id'] );
+    $zone      = WC_Shipping_Zones::get_zone( $zone_id );
+    if ( ! $zone ) return array( 'success' => false, 'error' => 'Shipping zone not found.' );
+
+    $instance_id = $zone->add_shipping_method( $method_id );
+    if ( ! $instance_id ) return array( 'success' => false, 'error' => 'Unknown or unsupported method_id: ' . $method_id );
+
+    if ( ! empty( $input['settings'] ) && is_array( $input['settings'] ) ) {
+        $result = wsp_woo_update_shipping_method_instance( $instance_id, $input['settings'], null );
+        if ( is_wp_error( $result ) ) return array( 'success' => false, 'error' => $result->get_error_message() );
+    }
+
+    return array( 'success' => true, 'zone_id' => $zone_id, 'instance_id' => $instance_id, 'method_id' => $method_id );
+}
+
+function wsp_execute_woo_update_shipping_method( $input ) {
+    if ( empty( $input['instance_id'] ) ) return array( 'success' => false, 'error' => 'instance_id is required.' );
+
+    $instance_id = intval( $input['instance_id'] );
+    $settings    = ! empty( $input['settings'] ) && is_array( $input['settings'] ) ? $input['settings'] : array();
+    $enabled     = isset( $input['enabled'] ) ? (bool) $input['enabled'] : null;
+
+    $result = wsp_woo_update_shipping_method_instance( $instance_id, $settings, $enabled );
+    if ( is_wp_error( $result ) ) return array( 'success' => false, 'error' => $result->get_error_message() );
+
+    return array( 'success' => true, 'instance_id' => $instance_id );
+}
+
+function wsp_execute_woo_delete_shipping_method( $input ) {
+    if ( empty( $input['zone_id'] ) && '0' !== (string) ( $input['zone_id'] ?? '' ) ) return array( 'success' => false, 'error' => 'zone_id is required.' );
+    if ( empty( $input['instance_id'] ) ) return array( 'success' => false, 'error' => 'instance_id is required.' );
+    if ( ! class_exists( 'WC_Shipping_Zones' ) ) return array( 'success' => false, 'error' => 'WooCommerce shipping is not available.' );
+
+    $zone = WC_Shipping_Zones::get_zone( intval( $input['zone_id'] ) );
+    if ( ! $zone ) return array( 'success' => false, 'error' => 'Shipping zone not found.' );
+
+    $zone->delete_shipping_method( intval( $input['instance_id'] ) );
+    return array( 'success' => true, 'instance_id' => intval( $input['instance_id'] ) );
+}
+
+/**
+ * Shared helper: applies settings/enabled changes to a shipping method instance.
+ * Mirrors WooCommerce's own REST API update path (WC_REST_Shipping_Zone_Methods_V2_Controller::update_fields)
+ * since WC_Data_Store exposes no public method for this.
+ */
+function wsp_woo_update_shipping_method_instance( $instance_id, $settings, $enabled ) {
+    global $wpdb;
+
+    $method_type = $wpdb->get_var( $wpdb->prepare( "SELECT method_id FROM {$wpdb->prefix}woocommerce_shipping_zone_methods WHERE instance_id = %d", $instance_id ) );
+    if ( ! $method_type ) return new WP_Error( 'not_found', 'Shipping method instance not found: ' . $instance_id );
+
+    $classes = WC_Shipping::instance()->get_shipping_method_class_names();
+    if ( ! isset( $classes[ $method_type ] ) ) return new WP_Error( 'not_found', 'Unknown shipping method type: ' . $method_type );
+
+    $method = new $classes[ $method_type ]( $instance_id );
+
+    if ( ! empty( $settings ) ) {
+        $method->init_instance_settings();
+        $instance_settings = $method->instance_settings;
+        foreach ( $method->get_instance_form_fields() as $key => $field ) {
+            if ( isset( $settings[ $key ] ) ) {
+                $instance_settings[ $key ] = sanitize_text_field( wp_unslash( (string) $settings[ $key ] ) );
+            }
+        }
+        update_option( $method->get_instance_option_key(), $instance_settings );
+    }
+
+    if ( null !== $enabled ) {
+        $wpdb->update( "{$wpdb->prefix}woocommerce_shipping_zone_methods", array( 'is_enabled' => $enabled ? 1 : 0 ), array( 'instance_id' => $instance_id ) );
+    }
+
+    WC_Cache_Helper::get_transient_version( 'shipping', true );
+    return true;
+}
 ?>

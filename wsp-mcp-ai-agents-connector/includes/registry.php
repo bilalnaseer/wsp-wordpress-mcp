@@ -128,6 +128,12 @@ function wsp_mcp_ability_registry() {
             'wsp/woo-report-sales'        => array( 'label' => 'Get Sales Report',            'description' => 'Get sales, orders, net revenue, and average order value reports.', 'group' => 'WooCommerce', 'access' => 'read',  'default' => false ),
             'wsp/woo-get-low-stock'       => array( 'label' => 'Get Low Stock Alerts',        'description' => 'Inspect and list products running low on stock.',    'group' => 'WooCommerce', 'access' => 'read',  'default' => false ),
             'wsp/woo-moderate-review'     => array( 'label' => 'Moderate Product Reviews',    'description' => 'Approve, spam, trash, or reply to product reviews.',  'group' => 'WooCommerce', 'access' => 'write', 'default' => false ),
+            'wsp/woo-list-shipping-zones'    => array( 'label' => 'List Shipping Zones',      'description' => 'List shipping zones, their locations, and shipping methods.', 'group' => 'WooCommerce', 'access' => 'read',  'default' => false ),
+            'wsp/woo-create-shipping-zone'   => array( 'label' => 'Create Shipping Zone',     'description' => 'Create a new shipping zone with optional locations.', 'group' => 'WooCommerce', 'access' => 'write', 'default' => false ),
+            'wsp/woo-delete-shipping-zone'   => array( 'label' => 'Delete Shipping Zone',     'description' => 'Delete a shipping zone.',                             'group' => 'WooCommerce', 'access' => 'write', 'default' => false ),
+            'wsp/woo-add-shipping-method'    => array( 'label' => 'Add Shipping Method',      'description' => 'Add a shipping method (flat rate, free shipping, local pickup) to a zone.', 'group' => 'WooCommerce', 'access' => 'write', 'default' => false ),
+            'wsp/woo-update-shipping-method' => array( 'label' => 'Update Shipping Method',   'description' => 'Update a shipping method\'s settings (e.g. cost) or enabled status.', 'group' => 'WooCommerce', 'access' => 'write', 'default' => false ),
+            'wsp/woo-delete-shipping-method' => array( 'label' => 'Delete Shipping Method',   'description' => 'Remove a shipping method from a zone.',              'group' => 'WooCommerce', 'access' => 'write', 'default' => false ),
         );
     }
 
