@@ -192,6 +192,7 @@ function wsp_mcp_settings_page() {
         'Search'                 => '🔍',
         'Site'                   => '🌐',
         'Menus'                  => '🧭',
+        'Custom Post Types'      => '🗂️',
         'Elementor'              => '⚡',
         'Ultimate Addons Elementor'=> '🚀',
         'Yoast SEO'              => '🔎',

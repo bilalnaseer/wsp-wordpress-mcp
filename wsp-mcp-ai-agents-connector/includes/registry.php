@@ -82,6 +82,12 @@ function wsp_mcp_ability_registry() {
         // SITE
         'wsp/get-site-info'   => array( 'label' => 'Read Site Info',  'description' => 'Return site name, URL, tagline, WP version, and language.', 'group' => 'Site',     'access' => 'read',  'default' => true  ),
         'wsp/get-plugins'     => array( 'label' => 'Read Plugins',    'description' => 'List all active plugins with name, version, and author.',    'group' => 'Site',     'access' => 'read',  'default' => false ),
+        // CUSTOM POST TYPES
+        'wsp/get-post-types' => array( 'label' => 'Read Post Types',  'description' => 'List registered custom post types (excludes built-in Posts/Pages).', 'group' => 'Custom Post Types', 'access' => 'read',  'default' => false ),
+        'wsp/get-cpt-items'  => array( 'label' => 'Read CPT Items',   'description' => 'List items of a given custom post type.',                            'group' => 'Custom Post Types', 'access' => 'read',  'default' => false ),
+        'wsp/create-cpt-item'=> array( 'label' => 'Create CPT Item',  'description' => 'Create a new item of a given custom post type.',                     'group' => 'Custom Post Types', 'access' => 'write', 'default' => false ),
+        'wsp/update-cpt-item'=> array( 'label' => 'Update CPT Item',  'description' => 'Update an existing custom post type item by ID.',                    'group' => 'Custom Post Types', 'access' => 'write', 'default' => false ),
+        'wsp/delete-cpt-item'=> array( 'label' => 'Delete CPT Item',  'description' => 'Move a custom post type item to trash by ID.',                       'group' => 'Custom Post Types', 'access' => 'write', 'default' => false ),
         // MENUS
         'wsp/get-menus'            => array( 'label' => 'Read Menus',           'description' => 'List all navigation menus with item counts and assigned locations.', 'group' => 'Menus', 'access' => 'read',  'default' => false ),
         'wsp/get-menu-items'       => array( 'label' => 'Read Menu Items',      'description' => 'List the items inside a specific navigation menu.',                  'group' => 'Menus', 'access' => 'read',  'default' => false ),
