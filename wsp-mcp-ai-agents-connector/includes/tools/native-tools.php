@@ -315,6 +315,62 @@ function wsp_mcp_register_native_tools() {
 		'enable_key'  => 'wsp/get-plugins',
 	) );
 
+	// ---- Custom Post Types ----
+	WSP_MCP_Server::register_tool( 'wsp_get_post_types', array(
+		'description' => 'List registered custom post types (excludes built-in Posts/Pages).',
+		'inputSchema' => $obj,
+		'callback'    => 'wsp_execute_get_post_types',
+		'capability'  => 'edit_posts',
+		'enable_key'  => 'wsp/get-post-types',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_get_cpt_items', array(
+		'description' => 'List items of a given custom post type.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'post_type' ), 'properties' => array(
+			'post_type' => array( 'type' => 'string' ),
+			'per_page'  => array( 'type' => 'integer' ),
+			'status'    => array( 'type' => 'string' ),
+		) ),
+		'callback'    => 'wsp_execute_get_cpt_items',
+		'capability'  => 'edit_posts',
+		'enable_key'  => 'wsp/get-cpt-items',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_create_cpt_item', array(
+		'description' => 'Create a new item of a given custom post type.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'post_type', 'title' ), 'properties' => array(
+			'post_type' => array( 'type' => 'string' ),
+			'title'     => array( 'type' => 'string' ),
+			'content'   => array( 'type' => 'string' ),
+			'status'    => array( 'type' => 'string' ),
+			'slug'      => array( 'type' => 'string' ),
+		) ),
+		'callback'    => 'wsp_execute_create_cpt_item',
+		'capability'  => 'publish_posts',
+		'enable_key'  => 'wsp/create-cpt-item',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_update_cpt_item', array(
+		'description' => 'Update an existing custom post type item by ID.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'post_type', 'id' ), 'properties' => array(
+			'post_type' => array( 'type' => 'string' ),
+			'id'        => array( 'type' => 'integer' ),
+			'title'     => array( 'type' => 'string' ),
+			'content'   => array( 'type' => 'string' ),
+			'status'    => array( 'type' => 'string' ),
+		) ),
+		'callback'    => 'wsp_execute_update_cpt_item',
+		'capability'  => 'edit_posts',
+		'enable_key'  => 'wsp/update-cpt-item',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_delete_cpt_item', array(
+		'description' => 'Move a custom post type item to trash by ID.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'post_type', 'id' ), 'properties' => array(
+			'post_type' => array( 'type' => 'string' ),
+			'id'        => array( 'type' => 'integer' ),
+		) ),
+		'callback'    => 'wsp_execute_delete_cpt_item',
+		'capability'  => 'delete_posts',
+		'enable_key'  => 'wsp/delete-cpt-item',
+	) );
+
 	// ---- Menus ----
 	WSP_MCP_Server::register_tool( 'wsp_get_menus', array(
 		'description' => 'Lists all navigation menus with item counts and assigned theme locations.',
