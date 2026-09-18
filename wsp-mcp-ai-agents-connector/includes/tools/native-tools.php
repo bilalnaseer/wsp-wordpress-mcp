@@ -314,6 +314,16 @@ function wsp_mcp_register_native_tools() {
 		'capability'  => 'activate_plugins',
 		'enable_key'  => 'wsp/get-plugins',
 	) );
+	WSP_MCP_Server::register_tool( 'wsp_install_plugin', array(
+		'description' => 'Installs a plugin from the WordPress.org plugin repository by slug, optionally activating it.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'slug' ), 'properties' => array(
+			'slug'     => array( 'type' => 'string', 'description' => 'The plugin\'s WordPress.org slug, e.g. "advanced-custom-fields".' ),
+			'activate' => array( 'type' => 'boolean' ),
+		) ),
+		'callback'    => 'wsp_execute_install_plugin',
+		'capability'  => 'install_plugins',
+		'enable_key'  => 'wsp/install-plugin',
+	) );
 
 	// ---- Menus ----
 	WSP_MCP_Server::register_tool( 'wsp_get_menus', array(
