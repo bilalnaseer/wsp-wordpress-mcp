@@ -77,11 +77,21 @@ function wsp_mcp_ability_registry() {
         'wsp/set-featured-image'    => array( 'label' => 'Set Featured Image',    'description' => 'Set an image as the featured image (thumbnail) for a post or page.',        'group' => 'Media', 'access' => 'write', 'default' => false ),
         // USERS
         'wsp/get-users'       => array( 'label' => 'Read Users',      'description' => 'List users with display name, email, and role.',             'group' => 'Users',    'access' => 'read',  'default' => false ),
+        'wsp/create-user'     => array( 'label' => 'Create User',     'description' => 'Create a new WordPress user account.',                       'group' => 'Users',    'access' => 'write', 'default' => false ),
+        'wsp/update-user'     => array( 'label' => 'Update User',     'description' => "Update a user's email, display name, role, or password.",    'group' => 'Users',    'access' => 'write', 'default' => false ),
+        'wsp/delete-user'     => array( 'label' => 'Delete User',     'description' => 'Delete a user account.',                                     'group' => 'Users',    'access' => 'write', 'default' => false ),
         // SEARCH
         'wsp/search'          => array( 'label' => 'Search Content',  'description' => 'Search posts and pages by keyword.',                         'group' => 'Search',   'access' => 'read',  'default' => true  ),
         // SITE
         'wsp/get-site-info'   => array( 'label' => 'Read Site Info',  'description' => 'Return site name, URL, tagline, WP version, and language.', 'group' => 'Site',     'access' => 'read',  'default' => true  ),
         'wsp/get-plugins'     => array( 'label' => 'Read Plugins',    'description' => 'List all active plugins with name, version, and author.',    'group' => 'Site',     'access' => 'read',  'default' => false ),
+        'wsp/update-site-info'           => array( 'label' => 'Update Site Info',           'description' => 'Update the site title, tagline, and/or admin email.', 'group' => 'Site', 'access' => 'write', 'default' => false ),
+        'wsp/update-permalink-structure' => array( 'label' => 'Update Permalink Structure', 'description' => 'Change the site permalink structure.',                'group' => 'Site', 'access' => 'write', 'default' => false ),
+        'wsp/activate-plugin'            => array( 'label' => 'Activate Plugin',            'description' => 'Activate an installed plugin by file path.',          'group' => 'Site', 'access' => 'write', 'default' => false ),
+        'wsp/deactivate-plugin'          => array( 'label' => 'Deactivate Plugin',          'description' => 'Deactivate an active plugin by file path.',           'group' => 'Site', 'access' => 'write', 'default' => false ),
+        // THEMES
+        'wsp/get-themes'   => array( 'label' => 'Read Themes',  'description' => 'List installed themes and which one is active.', 'group' => 'Themes', 'access' => 'read',  'default' => false ),
+        'wsp/switch-theme' => array( 'label' => 'Switch Theme', 'description' => 'Activate a different installed theme.',          'group' => 'Themes', 'access' => 'write', 'default' => false ),
         // MENUS
         'wsp/get-menus'            => array( 'label' => 'Read Menus',           'description' => 'List all navigation menus with item counts and assigned locations.', 'group' => 'Menus', 'access' => 'read',  'default' => false ),
         'wsp/get-menu-items'       => array( 'label' => 'Read Menu Items',      'description' => 'List the items inside a specific navigation menu.',                  'group' => 'Menus', 'access' => 'read',  'default' => false ),
