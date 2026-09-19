@@ -314,6 +314,16 @@ function wsp_mcp_register_native_tools() {
 		'capability'  => 'activate_plugins',
 		'enable_key'  => 'wsp/get-plugins',
 	) );
+	WSP_MCP_Server::register_tool( 'wsp_get_debug_log', array(
+		'description' => 'Read recent lines from wp-content/debug.log, optionally filtered by search text.',
+		'inputSchema' => array( 'type' => 'object', 'properties' => array(
+			'lines'  => array( 'type' => 'integer', 'description' => 'Number of most recent matching lines to return (default 100, max 500).' ),
+			'search' => array( 'type' => 'string', 'description' => 'Only return lines containing this text (case-insensitive).' ),
+		) ),
+		'callback'    => 'wsp_execute_get_debug_log',
+		'capability'  => 'manage_options',
+		'enable_key'  => 'wsp/get-debug-log',
+	) );
 
 	// ---- Menus ----
 	WSP_MCP_Server::register_tool( 'wsp_get_menus', array(
