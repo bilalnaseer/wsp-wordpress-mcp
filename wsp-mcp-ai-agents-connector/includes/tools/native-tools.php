@@ -325,6 +325,16 @@ function wsp_mcp_register_native_tools() {
 		'enable_key'  => 'wsp/get-debug-log',
 	) );
 
+	WSP_MCP_Server::register_tool( 'wsp_set_debug_log', array(
+		'description' => 'Enable or disable WP_DEBUG/WP_DEBUG_LOG in wp-config.php. Backs up wp-config.php before editing.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'enabled' ), 'properties' => array(
+			'enabled' => array( 'type' => 'boolean', 'description' => 'true to enable WP_DEBUG + WP_DEBUG_LOG (display off), false to disable both.' ),
+		) ),
+		'callback'    => 'wsp_execute_set_debug_log',
+		'capability'  => 'manage_options',
+		'enable_key'  => 'wsp/set-debug-log',
+	) );
+
 	// ---- Menus ----
 	WSP_MCP_Server::register_tool( 'wsp_get_menus', array(
 		'description' => 'Lists all navigation menus with item counts and assigned theme locations.',
