@@ -60,6 +60,7 @@ require_once WSP_MCP_DIR . 'includes/abilities/uae.php'; // Included UAE Abiliti
 require_once WSP_MCP_DIR . 'includes/abilities/gravityforms.php'; // Included Gravity Forms Abilities
 require_once WSP_MCP_DIR . 'includes/abilities/cf7.php'; // Included Contact Form 7 Abilities
 require_once WSP_MCP_DIR . 'includes/abilities/wpforms.php'; // Included WPForms Abilities
+require_once WSP_MCP_DIR . 'includes/abilities/litespeed.php'; // Included LiteSpeed Cache Abilities
 
 add_action( 'admin_menu',                       'wsp_mcp_add_menu' );
 add_action( 'admin_init',                       'wsp_mcp_register_settings' );

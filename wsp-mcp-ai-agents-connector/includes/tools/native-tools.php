@@ -1671,6 +1671,50 @@ function wsp_mcp_register_native_tools() {
 		) );
 	}
 
+	if ( function_exists( 'wsp_litespeed_is_active' ) && wsp_litespeed_is_active() ) {
+		WSP_MCP_Server::register_tool( 'wsp_litespeed_get_cache_status', array(
+			'description' => 'Check whether LiteSpeed page caching is enabled.',
+			'inputSchema' => $obj,
+			'callback'    => 'wsp_execute_litespeed_get_cache_status',
+			'capability'  => 'manage_options',
+			'enable_key'  => 'wsp/litespeed-get-cache-status',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_litespeed_set_cache_status', array(
+			'description' => 'Enable or disable LiteSpeed page caching.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'enabled' ), 'properties' => array(
+				'enabled' => array( 'type' => 'boolean', 'description' => 'true to enable page caching, false to disable.' ),
+			) ),
+			'callback'    => 'wsp_execute_litespeed_set_cache_status',
+			'capability'  => 'manage_options',
+			'enable_key'  => 'wsp/litespeed-set-cache-status',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_litespeed_purge_all', array(
+			'description' => 'Purge all LiteSpeed caches (page, CSS/JS, object, opcache).',
+			'inputSchema' => $obj,
+			'callback'    => 'wsp_execute_litespeed_purge_all',
+			'capability'  => 'manage_options',
+			'enable_key'  => 'wsp/litespeed-purge-all',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_litespeed_purge_url', array(
+			'description' => 'Purge the cached page for a specific URL.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'url' ), 'properties' => array(
+				'url' => array( 'type' => 'string', 'description' => 'Full URL to purge from cache.' ),
+			) ),
+			'callback'    => 'wsp_execute_litespeed_purge_url',
+			'capability'  => 'manage_options',
+			'enable_key'  => 'wsp/litespeed-purge-url',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_litespeed_purge_post', array(
+			'description' => 'Purge the cached page(s) related to a specific post/page ID.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'post_id' ), 'properties' => array(
+				'post_id' => array( 'type' => 'integer', 'description' => 'Post or page ID to purge.' ),
+			) ),
+			'callback'    => 'wsp_execute_litespeed_purge_post',
+			'capability'  => 'manage_options',
+			'enable_key'  => 'wsp/litespeed-purge-post',
+		) );
+	}
+
 	/**
 	 * Allow add-ons to register additional native MCP tools.
 	 *
