@@ -298,6 +298,17 @@ function wsp_mcp_ability_registry() {
             'wsp/wpforms-delete-entry'       => array( 'label' => 'Delete Entry',           'description' => 'Trashes or permanently deletes a submission entry (Pro).',                    'group' => $wpf_g, 'access' => 'write', 'default' => false ),
         );
     }
+
+    if ( wsp_litespeed_is_active() ) {
+        $ls_g = 'LiteSpeed Cache';
+        $abilities += array(
+            'wsp/litespeed-get-cache-status' => array( 'label' => 'Get Cache Status',  'description' => 'Check whether LiteSpeed page caching is enabled.',              'group' => $ls_g, 'access' => 'read',  'default' => false ),
+            'wsp/litespeed-set-cache-status' => array( 'label' => 'Set Cache Status',  'description' => 'Enable or disable LiteSpeed page caching.',                     'group' => $ls_g, 'access' => 'write', 'default' => false ),
+            'wsp/litespeed-purge-all'        => array( 'label' => 'Purge All Cache',   'description' => 'Purge all LiteSpeed caches (page, CSS/JS, object, opcache).',   'group' => $ls_g, 'access' => 'write', 'default' => false ),
+            'wsp/litespeed-purge-url'        => array( 'label' => 'Purge URL',         'description' => 'Purge the cached page for a specific URL.',                     'group' => $ls_g, 'access' => 'write', 'default' => false ),
+            'wsp/litespeed-purge-post'       => array( 'label' => 'Purge Post',        'description' => 'Purge the cached page(s) related to a specific post/page ID.', 'group' => $ls_g, 'access' => 'write', 'default' => false ),
+        );
+    }
     return $abilities;
 }
 
