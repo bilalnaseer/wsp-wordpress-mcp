@@ -291,6 +291,42 @@ function wsp_mcp_register_native_tools() {
 		'capability'  => 'list_users',
 		'enable_key'  => 'wsp/get-users',
 	) );
+	WSP_MCP_Server::register_tool( 'wsp_create_user', array(
+		'description' => 'Create a new WordPress user account.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'username', 'email' ), 'properties' => array(
+			'username'     => array( 'type' => 'string' ),
+			'email'        => array( 'type' => 'string' ),
+			'password'     => array( 'type' => 'string', 'description' => 'Optional; auto-generated if omitted.' ),
+			'role'         => array( 'type' => 'string', 'description' => 'Defaults to subscriber.' ),
+			'display_name' => array( 'type' => 'string' ),
+		) ),
+		'callback'    => 'wsp_execute_create_user',
+		'capability'  => 'create_users',
+		'enable_key'  => 'wsp/create-user',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_update_user', array(
+		'description' => "Update a user's email, display name, role, or password.",
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'id' ), 'properties' => array(
+			'id'           => array( 'type' => 'integer' ),
+			'email'        => array( 'type' => 'string' ),
+			'display_name' => array( 'type' => 'string' ),
+			'role'         => array( 'type' => 'string' ),
+			'password'     => array( 'type' => 'string' ),
+		) ),
+		'callback'    => 'wsp_execute_update_user',
+		'capability'  => 'edit_users',
+		'enable_key'  => 'wsp/update-user',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_delete_user', array(
+		'description' => 'Delete a user account.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'id' ), 'properties' => array(
+			'id'        => array( 'type' => 'integer' ),
+			'reassign'  => array( 'type' => 'integer', 'description' => 'Optional user ID to reassign the deleted user\'s posts to.' ),
+		) ),
+		'callback'    => 'wsp_execute_delete_user',
+		'capability'  => 'delete_users',
+		'enable_key'  => 'wsp/delete-user',
+	) );
 	WSP_MCP_Server::register_tool( 'wsp_search', array(
 		'description' => 'Search posts and pages by keyword.',
 		'inputSchema' => array( 'type' => 'object', 'required' => array( 'query' ), 'properties' => array(
@@ -313,6 +349,63 @@ function wsp_mcp_register_native_tools() {
 		'callback'    => 'wsp_execute_get_plugins',
 		'capability'  => 'activate_plugins',
 		'enable_key'  => 'wsp/get-plugins',
+	) );
+
+	WSP_MCP_Server::register_tool( 'wsp_update_site_info', array(
+		'description' => 'Update the site title, tagline, and/or admin email.',
+		'inputSchema' => array( 'type' => 'object', 'properties' => array(
+			'name'        => array( 'type' => 'string' ),
+			'tagline'     => array( 'type' => 'string' ),
+			'admin_email' => array( 'type' => 'string' ),
+		) ),
+		'callback'    => 'wsp_execute_update_site_info',
+		'capability'  => 'manage_options',
+		'enable_key'  => 'wsp/update-site-info',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_update_permalink_structure', array(
+		'description' => 'Change the site permalink structure.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'structure' ), 'properties' => array(
+			'structure' => array( 'type' => 'string', 'description' => 'e.g. /%postname%/, or empty string for plain.' ),
+		) ),
+		'callback'    => 'wsp_execute_update_permalink_structure',
+		'capability'  => 'manage_options',
+		'enable_key'  => 'wsp/update-permalink-structure',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_activate_plugin', array(
+		'description' => 'Activate an installed plugin by file path.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'file' ), 'properties' => array(
+			'file' => array( 'type' => 'string', 'description' => 'Plugin file path, e.g. akismet/akismet.php.' ),
+		) ),
+		'callback'    => 'wsp_execute_activate_plugin',
+		'capability'  => 'activate_plugins',
+		'enable_key'  => 'wsp/activate-plugin',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_deactivate_plugin', array(
+		'description' => 'Deactivate an active plugin by file path.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'file' ), 'properties' => array(
+			'file' => array( 'type' => 'string' ),
+		) ),
+		'callback'    => 'wsp_execute_deactivate_plugin',
+		'capability'  => 'activate_plugins',
+		'enable_key'  => 'wsp/deactivate-plugin',
+	) );
+
+	// ---- Themes ----
+	WSP_MCP_Server::register_tool( 'wsp_get_themes', array(
+		'description' => 'List installed themes and which one is active.',
+		'inputSchema' => $obj,
+		'callback'    => 'wsp_execute_get_themes',
+		'capability'  => 'switch_themes',
+		'enable_key'  => 'wsp/get-themes',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_switch_theme', array(
+		'description' => 'Activate a different installed theme.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'theme' ), 'properties' => array(
+			'theme' => array( 'type' => 'string', 'description' => 'Theme stylesheet slug.' ),
+		) ),
+		'callback'    => 'wsp_execute_switch_theme',
+		'capability'  => 'switch_themes',
+		'enable_key'  => 'wsp/switch-theme',
 	) );
 
 	// ---- Menus ----
