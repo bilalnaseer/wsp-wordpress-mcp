@@ -8,6 +8,19 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased]
+
+### Removed — Website sync automation (repo dev tooling only; plugin unchanged)
+
+- Deleted `.github/workflows/sync-abilities.yml` and the `bin/` generators (`lib-abilities.php`,
+  `generate-abilities-md.php`, `patch-website.php`). freewordpressmcp.com is being rebuilt and its
+  tool list is no longer generated from `registry.php`, so pushes to `main` no longer open PRs on
+  the website repo. Dropped the now-unused `abilities.md` / `abilities.json` `.gitignore` entries
+  and the "Website sync automation" section of `AGENTS.md`.
+- Nothing in the shipped plugin zip changed — no version bump.
+
+---
+
 ## [2.9.0] — 2026-09-17
 
 ### Added — Navigation Menus ability group (`includes/abilities/menus.php` — new file)
