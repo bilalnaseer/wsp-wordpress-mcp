@@ -16,6 +16,18 @@ function wsp_execute_get_pages( $input ) {
     return array( 'pages' => $result );
 }
 
+function wsp_execute_get_page_templates( $input ) {
+    if ( ! function_exists( 'get_page_templates' ) ) {
+        require_once ABSPATH . 'wp-admin/includes/theme.php';
+    }
+    $templates = get_page_templates();
+    $result    = array( array( 'name' => 'Default', 'file' => 'default' ) );
+    foreach ( $templates as $name => $file ) {
+        $result[] = array( 'name' => $name, 'file' => $file );
+    }
+    return array( 'templates' => $result );
+}
+
 function wsp_execute_create_page( $input ) {
     $args = array(
         'post_title'   => sanitize_text_field( wp_unslash( $input['title'] ) ),
@@ -23,8 +35,9 @@ function wsp_execute_create_page( $input ) {
         'post_status'  => isset( $input['status'] ) ? sanitize_text_field( wp_unslash( $input['status'] ) ) : 'draft',
         'post_type'    => 'page',
     );
-    if ( ! empty( $input['parent'] ) ) $args['post_parent'] = intval( $input['parent'] );
-    if ( ! empty( $input['slug'] ) )   $args['post_name']   = sanitize_title( $input['slug'] );
+    if ( ! empty( $input['parent'] ) )   $args['post_parent']   = intval( $input['parent'] );
+    if ( ! empty( $input['slug'] ) )     $args['post_name']     = sanitize_title( $input['slug'] );
+    if ( ! empty( $input['template'] ) ) $args['page_template'] = sanitize_text_field( wp_unslash( $input['template'] ) );
     $id = wp_insert_post( $args, true );
     if ( is_wp_error( $id ) ) return array( 'success' => false, 'error' => $id->get_error_message() );
 
@@ -48,6 +61,7 @@ function wsp_execute_update_page( $input ) {
     if ( isset( $input['title'] ) )   $args['post_title']   = sanitize_text_field( wp_unslash( $input['title'] ) );
     if ( isset( $input['content'] ) ) $args['post_content'] = wp_kses_post( wp_unslash( $input['content'] ) );
     if ( isset( $input['status'] ) )  $args['post_status']  = sanitize_text_field( wp_unslash( $input['status'] ) );
+    if ( isset( $input['template'] ) ) $args['page_template'] = sanitize_text_field( wp_unslash( $input['template'] ) );
     $id = wp_update_post( $args, true );
     if ( is_wp_error( $id ) ) return array( 'success' => false, 'error' => $id->get_error_message() );
     return array( 'success' => true, 'id' => $id, 'url' => get_permalink( $id ) );
