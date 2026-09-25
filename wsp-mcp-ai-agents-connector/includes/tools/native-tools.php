@@ -317,16 +317,6 @@ function wsp_mcp_register_native_tools() {
 		'capability'  => 'edit_users',
 		'enable_key'  => 'wsp/update-user',
 	) );
-	WSP_MCP_Server::register_tool( 'wsp_delete_user', array(
-		'description' => 'Delete a user account.',
-		'inputSchema' => array( 'type' => 'object', 'required' => array( 'id' ), 'properties' => array(
-			'id'        => array( 'type' => 'integer' ),
-			'reassign'  => array( 'type' => 'integer', 'description' => 'Optional user ID to reassign the deleted user\'s posts to.' ),
-		) ),
-		'callback'    => 'wsp_execute_delete_user',
-		'capability'  => 'delete_users',
-		'enable_key'  => 'wsp/delete-user',
-	) );
 	WSP_MCP_Server::register_tool( 'wsp_search', array(
 		'description' => 'Search posts and pages by keyword.',
 		'inputSchema' => array( 'type' => 'object', 'required' => array( 'query' ), 'properties' => array(

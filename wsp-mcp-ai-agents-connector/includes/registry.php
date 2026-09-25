@@ -79,7 +79,6 @@ function wsp_mcp_ability_registry() {
         'wsp/get-users'       => array( 'label' => 'Read Users',      'description' => 'List users with display name, email, and role.',             'group' => 'Users',    'access' => 'read',  'default' => false ),
         'wsp/create-user'     => array( 'label' => 'Create User',     'description' => 'Create a new WordPress user account.',                       'group' => 'Users',    'access' => 'write', 'default' => false ),
         'wsp/update-user'     => array( 'label' => 'Update User',     'description' => "Update a user's email, display name, role, or password.",    'group' => 'Users',    'access' => 'write', 'default' => false ),
-        'wsp/delete-user'     => array( 'label' => 'Delete User',     'description' => 'Delete a user account.',                                     'group' => 'Users',    'access' => 'write', 'default' => false ),
         // SEARCH
         'wsp/search'          => array( 'label' => 'Search Content',  'description' => 'Search posts and pages by keyword.',                         'group' => 'Search',   'access' => 'read',  'default' => true  ),
         // SITE
