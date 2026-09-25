@@ -174,9 +174,9 @@ exists because its absence is an exploitable bug, not a style preference.
    admin toggle exists; set `default`).
 4. Enable it in MCP > Settings, then **reconnect the client** (see gotcha below).
 
-> The public tool list on **freewordpressmcp.com** updates itself — see
-> **"## Website sync automation"** below. You do **not** hand-edit the site's `abilities.md`
-> or `abilities-directory.html`; pushing your `registry.php` change to `main` regenerates them.
+> The public tool list on **freewordpressmcp.com** is maintained separately in the website repo —
+> it is **not** generated from this repo. (The old `bin/` generators + `sync-abilities.yml` GitHub
+> Action were removed; see CHANGELOG `[Unreleased]`.)
 
 ### Gotcha: client tool-list caching
 
@@ -185,64 +185,10 @@ must **reconnect** (fully restart Claude Desktop, not just open a new chat) befo
 
 ---
 
-## Website sync automation
-
-The public **[freewordpressmcp.com](https://freewordpressmcp.com/abilities-directory)** tool
-directory is generated **from this repo's `registry.php`** — it is never hand-edited. When the
-tool list changes, a GitHub Action regenerates the site content and opens a PR on the website repo.
-
-**Single source of truth:** `wsp-mcp-ai-agents-connector/includes/registry.php`. Everything the
-website shows is derived from it. Generated artifacts live **only** in the website repo, never here
-(`abilities.md` / `abilities.json` are `.gitignore`d in this repo on purpose).
-
-**Tooling (`bin/`, dev-only — never shipped in the plugin zip):**
-- `bin/lib-abilities.php` — loads `registry.php` in a minimal WP stub (defines `ABSPATH`, stubs
-  `wsp_yoast_is_active()` / `wsp_rankmath_is_active()` / `wsp_elementor_is_active()` /
-  `wsp_acf_is_active()` / `wsp_uae_is_active()` / `wsp_gravity_is_active()` / `wsp_cf7_is_active()` /
-  `wsp_wpforms_is_active()` / a `WooCommerce` class so **all** plugin-gated groups render), then
-  exposes the registry + totals. **When you add a plugin-gated group to `registry.php`, you MUST add
-  its active-check stub here too** — otherwise the registry's real check returns false in the
-  generator environment and the whole group is silently dropped from the website (this is exactly
-  what happened to the Contact Form 7 + WPForms groups — they shipped in `registry.php` for v2.6.6
-  but never reached the site until the stubs were added here).
-- `bin/generate-abilities-md.php` — prints `abilities.md` (default) or `abilities.json` (`--json`).
-- `bin/patch-website.php <html> <sitemap>` — rewrites the `var ABILITIES = [ … ];` array inside
-  the site's `abilities-directory.html` in place, and bumps the `<lastmod>` for that page in
-  `sitemap.xml`. Exits non-zero if the array marker isn't found (so CI stops rather than committing
-  a half-patched page).
-
-**Workflow (`.github/workflows/sync-abilities.yml`):** triggers on push to `main` touching
-`registry.php`, `bin/**`, or the workflow file (plus manual `workflow_dispatch`). It:
-1. Regenerates `abilities.md` + `abilities.json` (ephemeral — **not** committed to this repo).
-2. Checks out the website repo `bilalnaseer/freewordpressmcp.com` using the `WEBSITE_REPO_TOKEN` secret.
-3. Copies the docs in and runs `patch-website.php`.
-4. Opens/updates a PR (`peter-evans/create-pull-request`, branch `sync/abilities-from-plugin`,
-   `delete-branch: true`) on the website repo.
-
-**The one-time setup (already done, documented so it can be recreated):**
-- **Secret:** `WEBSITE_REPO_TOKEN` on *this* repo (Settings → Secrets → Actions) — a fine-grained
-  PAT scoped to `freewordpressmcp.com` with **Contents: Read and write** + **Pull requests: Read
-  and write**. Bad/expired token → the "Checkout website repo" step fails with `Bad credentials`.
-- **Website repo ruleset:** the "block force pushes" ruleset must target **only the default branch
-  (`main`)**, not all branches. The PR action force-pushes its own `sync/…` branch each run; if the
-  rule covers all branches the push is rejected with `GH013 … Cannot force-push to this branch`.
-
-**Normal loop for a contributor:** edit `registry.php` → push to `main` → the workflow opens a
-website PR → **review the diff and merge it**. The `sync/abilities-from-plugin` branch auto-deletes
-on merge. Do not delete that branch without merging its PR first — that discards the update.
-
----
-
 ## Directory structure
 
 ```
-wsp-wordpress-mcp/                        ← repo root (NOT the plugin — dev tooling lives here)
-├── bin/                       ← dev-only tooling (see "Website sync automation"); never in the zip
-│   ├── lib-abilities.php       ← loads registry.php in a WP stub
-│   ├── generate-abilities-md.php ← emits abilities.md / abilities.json
-│   └── patch-website.php       ← patches the website's HTML + sitemap
-├── .github/workflows/
-│   └── sync-abilities.yml      ← regenerates the website tool list, opens a PR on the site repo
+wsp-wordpress-mcp/                        ← repo root (NOT the plugin — docs live here)
 └── wsp-mcp-ai-agents-connector/          ← plugin root (the installable folder)
     ├── wsp-mcp-ai-agents-connector.php   ← main file: constants, requires, hooks, activation/migration
     ├── readme.txt              ← WP.org readme (v2.0)
