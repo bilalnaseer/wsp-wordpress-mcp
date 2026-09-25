@@ -59,17 +59,3 @@ function wsp_execute_update_user( $input ) {
     if ( is_wp_error( $result ) ) return array( 'success' => false, 'error' => $result->get_error_message() );
     return array( 'success' => true, 'id' => $id );
 }
-
-function wsp_execute_delete_user( $input ) {
-    if ( empty( $input['id'] ) ) return array( 'success' => false, 'error' => 'id is required.' );
-    $id = intval( $input['id'] );
-    if ( $id === get_current_user_id() ) return array( 'success' => false, 'error' => 'Cannot delete the currently authenticated user.' );
-    if ( ! get_userdata( $id ) ) return array( 'success' => false, 'error' => 'User not found.' );
-
-    if ( ! function_exists( 'wp_delete_user' ) ) {
-        require_once ABSPATH . 'wp-admin/includes/user.php';
-    }
-    $reassign = ! empty( $input['reassign'] ) ? intval( $input['reassign'] ) : null;
-    if ( ! wp_delete_user( $id, $reassign ) ) return array( 'success' => false, 'error' => 'Delete failed.' );
-    return array( 'success' => true, 'id' => $id );
-}

@@ -356,8 +356,14 @@ admin toggle for each is driven by its entry in `wsp_mcp_ability_registry()` (`r
 | Ability key | Label | Access | Default | Permission | Inputs |
 |---|---|---|---|---|---|
 | `wsp/get-users` | Get Users | read | OFF | `list_users` | none |
+| `wsp/create-user` | Create User | write | OFF | `create_users` | `username`*, `email`*, `password` (auto-generated if omitted), `role` (default `subscriber`), `display_name` |
+| `wsp/update-user` | Update User | write | OFF | `edit_users` | `id`*, `email`, `display_name`, `role`, `password` |
 
-- Returns: `id`, `display_name`, `email`, `roles[]`, `registered`.
+- `get-users` returns: `id`, `display_name`, `email`, `roles[]`, `registered`.
+- `create-user` / `update-user` added via PR #42. Errors come back as `array( 'success' => false, 'error' => … )`, not `WP_Error`.
+- **No delete-user tool.** `wsp/delete-user` shipped in PR #42 but failed in testing, so its callback,
+  native-tool registration, and registry entry were all removed before release. Don't reintroduce it
+  without testing it end to end.
 
 #### Search (`search.php`)
 
@@ -373,9 +379,23 @@ admin toggle for each is driven by its entry in `wsp_mcp_ability_registry()` (`r
 |---|---|---|---|---|---|
 | `wsp/get-site-info` | Get Site Info | read | ON | `__return_true` | none |
 | `wsp/get-plugins` | Read Plugins | read | OFF | `activate_plugins` | none |
+| `wsp/update-site-info` | Update Site Info | write | OFF | `manage_options` | `name`, `tagline`, `admin_email` |
+| `wsp/update-permalink-structure` | Update Permalink Structure | write | OFF | `manage_options` | `structure`* (e.g. `/%postname%/`; empty string = plain) |
+| `wsp/activate-plugin` | Activate Plugin | write | OFF | `activate_plugins` | `file`* (e.g. `akismet/akismet.php`) |
+| `wsp/deactivate-plugin` | Deactivate Plugin | write | OFF | `activate_plugins` | `file`* |
 
 - `get-site-info` returns: `name`, `url`, `tagline`, `admin_email`, `wp_version`, `language`.
 - `get-plugins` loads `wp-admin/includes/plugin.php` if needed, then intersects all plugins with active list.
+- `deactivate-plugin` refuses to deactivate this plugin itself. Otherwise the MCP connection would cut itself off.
+
+#### Themes (`themes.php`)
+
+| Ability key | Label | Access | Default | Permission | Inputs |
+|---|---|---|---|---|---|
+| `wsp/get-themes` | Read Themes | read | OFF | `switch_themes` | none |
+| `wsp/switch-theme` | Switch Theme | write | OFF | `switch_themes` | `theme`* (stylesheet slug) |
+
+- `switch-theme` checks the slug against `wp_get_themes()` before calling `switch_theme()`. Settings-page icon: 🎨.
 
 #### Menus (`menus.php`) — added v2.9.0
 

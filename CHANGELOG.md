@@ -10,6 +10,21 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added — Users, Themes, Site settings, and Plugin activation abilities (PR #42)
+
+- Eight new tools, all OFF by default:
+  - Users: `wsp_create_user` (`create_users`) and `wsp_update_user` (`edit_users`).
+  - Site: `wsp_update_site_info` and `wsp_update_permalink_structure` (`manage_options`).
+  - Plugins: `wsp_activate_plugin` and `wsp_deactivate_plugin` (`activate_plugins`). `wsp_deactivate_plugin` refuses to deactivate this plugin.
+  - Themes (new `includes/abilities/themes.php`): `wsp_get_themes` and `wsp_switch_theme` (`switch_themes`).
+- Contributed by [@dulaj44](https://github.com/dulaj44) in [#42](https://github.com/bilalnaseer/wsp-wordpress-mcp/pull/42).
+
+### Removed — `wsp_delete_user`
+
+- PR #42 also added `wsp_delete_user`, but it failed in testing. Its callback (`wsp_execute_delete_user()`),
+  native-tool registration, and `wsp/delete-user` registry entry are removed, so the toggle no longer
+  appears under MCP > Settings > Users. Any saved toggle value for the old key is ignored.
+
 ### Removed — Website sync automation (repo dev tooling only; plugin unchanged)
 
 - Deleted `.github/workflows/sync-abilities.yml` and the `bin/` generators (`lib-abilities.php`,
