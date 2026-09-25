@@ -477,15 +477,34 @@ function wsp_execute_acf_create_post_type( $input ) {
     $singular       = sanitize_text_field( $input['singular_name'] );
     $plural         = sanitize_text_field( $input['plural_name'] );
 
+    if ( strlen( $post_type_slug ) > 20 ) {
+        return array( 'success' => false, 'error' => 'post_type_slug must be 20 characters or fewer (WordPress limit).' );
+    }
+
     if ( function_exists( 'acf_update_post_type' ) ) {
         $config = array(
-            'key'           => 'post_type_' . $post_type_slug,
-            'post_type'     => $post_type_slug,
-            'title'         => $plural,
-            'singular_name' => $singular,
-            'plural_name'   => $plural,
-            'active'        => true,
-            'public'        => true,
+            'key'                => 'post_type_' . $post_type_slug,
+            'post_type'          => $post_type_slug,
+            'title'              => $plural,
+            'singular_name'      => $singular,
+            'plural_name'        => $plural,
+            'active'             => true,
+            'public'             => true,
+            'show_in_menu'       => true,
+            'menu_icon'          => array( 'type' => 'dashicons', 'value' => 'dashicons-admin-post' ),
+            'supports'           => array( 'title', 'editor', 'thumbnail' ),
+            'has_archive'        => true,
+            'labels'             => array(
+                'name'          => $plural,
+                'singular_name' => $singular,
+                'menu_name'     => $plural,
+                'all_items'     => $plural,
+                'add_new_item'  => 'Add New ' . $singular,
+                'edit_item'     => 'Edit ' . $singular,
+                'view_item'     => 'View ' . $singular,
+                'search_items'  => 'Search ' . $plural,
+                'not_found'     => 'No ' . $plural . ' found',
+            ),
         );
         acf_update_post_type( $config );
         return array( 'success' => true, 'message' => sprintf( 'CPT "%s" created successfully.', $post_type_slug ), 'config' => $config );
