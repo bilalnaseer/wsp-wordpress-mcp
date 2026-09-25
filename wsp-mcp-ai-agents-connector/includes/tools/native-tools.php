@@ -636,6 +636,49 @@ function wsp_mcp_register_native_tools() {
 			'capability'  => 'edit_posts',
 			'enable_key'  => 'wsp/woo-moderate-review',
 		) );
+		WSP_MCP_Server::register_tool( 'wsp_woo_get_categories', array(
+			'description' => 'List all WooCommerce product categories with their image.',
+			'inputSchema' => array( 'type' => 'object', 'properties' => new stdClass() ),
+			'callback'    => 'wsp_execute_woo_get_categories',
+			'capability'  => 'manage_woocommerce',
+			'enable_key'  => 'wsp/woo-get-categories',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_woo_create_category', array(
+			'description' => 'Create a new WooCommerce product category.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'name' ), 'properties' => array(
+				'name'        => array( 'type' => 'string' ),
+				'description' => array( 'type' => 'string' ),
+				'parent'      => array( 'type' => 'integer', 'description' => 'Parent category ID, for a subcategory.' ),
+				'slug'        => array( 'type' => 'string' ),
+				'image_url'   => array( 'type' => 'string', 'description' => 'Direct image URL to download and set as the category image.' ),
+			) ),
+			'callback'    => 'wsp_execute_woo_create_category',
+			'capability'  => 'manage_woocommerce',
+			'enable_key'  => 'wsp/woo-create-category',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_woo_update_category', array(
+			'description' => 'Update an existing WooCommerce product category, including its image.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'id' ), 'properties' => array(
+				'id'          => array( 'type' => 'integer' ),
+				'name'        => array( 'type' => 'string' ),
+				'description' => array( 'type' => 'string' ),
+				'parent'      => array( 'type' => 'integer' ),
+				'slug'        => array( 'type' => 'string' ),
+				'image_url'   => array( 'type' => 'string', 'description' => 'Direct image URL to download and replace the category image.' ),
+			) ),
+			'callback'    => 'wsp_execute_woo_update_category',
+			'capability'  => 'manage_woocommerce',
+			'enable_key'  => 'wsp/woo-update-category',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_woo_delete_category', array(
+			'description' => 'Delete a WooCommerce product category.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'id' ), 'properties' => array(
+				'id' => array( 'type' => 'integer' ),
+			) ),
+			'callback'    => 'wsp_execute_woo_delete_category',
+			'capability'  => 'manage_woocommerce',
+			'enable_key'  => 'wsp/woo-delete-category',
+		) );
 	}
 
 	// ---- Elementor (only when Elementor is active) ----

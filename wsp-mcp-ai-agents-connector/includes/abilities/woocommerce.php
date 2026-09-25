@@ -586,4 +586,81 @@ function wsp_execute_woo_refund_order( $input ) {
         'reason'    => $reason,
     );
 }
+
+function wsp_woo_format_category( $term ) {
+    $thumbnail_id = get_term_meta( $term->term_id, 'thumbnail_id', true );
+    return array(
+        'id'          => $term->term_id,
+        'name'        => $term->name,
+        'slug'        => $term->slug,
+        'description' => $term->description,
+        'parent'      => $term->parent,
+        'count'       => $term->count,
+        'image_id'    => $thumbnail_id ? intval( $thumbnail_id ) : 0,
+        'image_url'   => $thumbnail_id ? wp_get_attachment_url( $thumbnail_id ) : '',
+    );
+}
+
+function wsp_execute_woo_get_categories( $input ) {
+    $terms = get_terms( array( 'taxonomy' => 'product_cat', 'hide_empty' => false ) );
+    if ( is_wp_error( $terms ) ) return array( 'success' => false, 'error' => $terms->get_error_message() );
+
+    return array( 'categories' => array_map( 'wsp_woo_format_category', $terms ) );
+}
+
+function wsp_execute_woo_create_category( $input ) {
+    if ( empty( $input['name'] ) ) return array( 'success' => false, 'error' => 'name is required.' );
+
+    $args = array();
+    if ( isset( $input['description'] ) ) $args['description'] = wp_kses_post( wp_unslash( $input['description'] ) );
+    if ( ! empty( $input['parent'] ) )     $args['parent']      = intval( $input['parent'] );
+    if ( ! empty( $input['slug'] ) )       $args['slug']        = sanitize_title( $input['slug'] );
+
+    $result = wp_insert_term( sanitize_text_field( wp_unslash( $input['name'] ) ), 'product_cat', $args );
+    if ( is_wp_error( $result ) ) return array( 'success' => false, 'error' => $result->get_error_message() );
+
+    $term_id = $result['term_id'];
+    if ( ! empty( $input['image_url'] ) ) {
+        $img_id = wsp_woo_sideload_image_by_url( $input['image_url'], 0 );
+        if ( $img_id ) update_term_meta( $term_id, 'thumbnail_id', $img_id );
+    }
+
+    return array( 'success' => true, 'category' => wsp_woo_format_category( get_term( $term_id, 'product_cat' ) ) );
+}
+
+function wsp_execute_woo_update_category( $input ) {
+    if ( empty( $input['id'] ) ) return array( 'success' => false, 'error' => 'id is required.' );
+    $term_id = intval( $input['id'] );
+    $term    = get_term( $term_id, 'product_cat' );
+    if ( ! $term || is_wp_error( $term ) ) return array( 'success' => false, 'error' => 'Category not found.' );
+
+    $args = array();
+    if ( isset( $input['name'] ) )        $args['name']        = sanitize_text_field( wp_unslash( $input['name'] ) );
+    if ( isset( $input['description'] ) ) $args['description'] = wp_kses_post( wp_unslash( $input['description'] ) );
+    if ( isset( $input['parent'] ) )      $args['parent']      = intval( $input['parent'] );
+    if ( ! empty( $input['slug'] ) )      $args['slug']        = sanitize_title( $input['slug'] );
+
+    if ( ! empty( $args ) ) {
+        $result = wp_update_term( $term_id, 'product_cat', $args );
+        if ( is_wp_error( $result ) ) return array( 'success' => false, 'error' => $result->get_error_message() );
+    }
+
+    if ( ! empty( $input['image_url'] ) ) {
+        $img_id = wsp_woo_sideload_image_by_url( $input['image_url'], 0 );
+        if ( $img_id ) update_term_meta( $term_id, 'thumbnail_id', $img_id );
+    }
+
+    return array( 'success' => true, 'category' => wsp_woo_format_category( get_term( $term_id, 'product_cat' ) ) );
+}
+
+function wsp_execute_woo_delete_category( $input ) {
+    if ( empty( $input['id'] ) ) return array( 'success' => false, 'error' => 'id is required.' );
+    $term_id = intval( $input['id'] );
+
+    $result = wp_delete_term( $term_id, 'product_cat' );
+    if ( is_wp_error( $result ) ) return array( 'success' => false, 'error' => $result->get_error_message() );
+    if ( ! $result ) return array( 'success' => false, 'error' => 'Category not found.' );
+
+    return array( 'success' => true, 'message' => "Category {$term_id} deleted." );
+}
 ?>

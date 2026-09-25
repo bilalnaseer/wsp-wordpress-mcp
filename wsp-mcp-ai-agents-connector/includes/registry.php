@@ -128,6 +128,10 @@ function wsp_mcp_ability_registry() {
             'wsp/woo-report-sales'        => array( 'label' => 'Get Sales Report',            'description' => 'Get sales, orders, net revenue, and average order value reports.', 'group' => 'WooCommerce', 'access' => 'read',  'default' => false ),
             'wsp/woo-get-low-stock'       => array( 'label' => 'Get Low Stock Alerts',        'description' => 'Inspect and list products running low on stock.',    'group' => 'WooCommerce', 'access' => 'read',  'default' => false ),
             'wsp/woo-moderate-review'     => array( 'label' => 'Moderate Product Reviews',    'description' => 'Approve, spam, trash, or reply to product reviews.',  'group' => 'WooCommerce', 'access' => 'write', 'default' => false ),
+            'wsp/woo-get-categories'      => array( 'label' => 'List Product Categories',    'description' => 'List all WooCommerce product categories with their image.', 'group' => 'WooCommerce', 'access' => 'read',  'default' => false ),
+            'wsp/woo-create-category'     => array( 'label' => 'Create Product Category',    'description' => 'Create a new WooCommerce product category.',         'group' => 'WooCommerce', 'access' => 'write', 'default' => false ),
+            'wsp/woo-update-category'     => array( 'label' => 'Update Product Category',    'description' => 'Update an existing product category, including its image.', 'group' => 'WooCommerce', 'access' => 'write', 'default' => false ),
+            'wsp/woo-delete-category'     => array( 'label' => 'Delete Product Category',    'description' => 'Delete a WooCommerce product category.',             'group' => 'WooCommerce', 'access' => 'write', 'default' => false ),
         );
     }
 
