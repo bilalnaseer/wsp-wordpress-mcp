@@ -86,6 +86,13 @@ function wsp_mcp_register_native_tools() {
 		'capability'  => '',
 		'enable_key'  => 'wsp/get-pages',
 	) );
+	WSP_MCP_Server::register_tool( 'wsp_get_page_templates', array(
+		'description' => 'Lists page templates available in the active theme.',
+		'inputSchema' => $obj,
+		'callback'    => 'wsp_execute_get_page_templates',
+		'capability'  => '',
+		'enable_key'  => 'wsp/get-page-templates',
+	) );
 	WSP_MCP_Server::register_tool( 'wsp_create_page', array(
 		'description' => 'Creates a new page (optionally Elementor-initialized).',
 		'inputSchema' => array( 'type' => 'object', 'required' => array( 'title', 'content' ), 'properties' => array(
@@ -94,6 +101,7 @@ function wsp_mcp_register_native_tools() {
 			'status'    => array( 'type' => 'string' ),
 			'parent'    => array( 'type' => 'integer' ),
 			'slug'      => array( 'type' => 'string' ),
+			'template'  => array( 'type' => 'string', 'description' => 'Page template file, from wsp_get_page_templates (e.g. "templates/full-width.php" or "default").' ),
 			'elementor' => array( 'type' => 'boolean' ),
 		) ),
 		'callback'    => 'wsp_execute_create_page',
@@ -103,10 +111,11 @@ function wsp_mcp_register_native_tools() {
 	WSP_MCP_Server::register_tool( 'wsp_update_page', array(
 		'description' => 'Updates an existing page by ID.',
 		'inputSchema' => array( 'type' => 'object', 'required' => array( 'id' ), 'properties' => array(
-			'id'      => array( 'type' => 'integer' ),
-			'title'   => array( 'type' => 'string' ),
-			'content' => array( 'type' => 'string' ),
-			'status'  => array( 'type' => 'string' ),
+			'id'       => array( 'type' => 'integer' ),
+			'title'    => array( 'type' => 'string' ),
+			'content'  => array( 'type' => 'string' ),
+			'status'   => array( 'type' => 'string' ),
+			'template' => array( 'type' => 'string', 'description' => 'Page template file, from wsp_get_page_templates (e.g. "templates/full-width.php" or "default").' ),
 		) ),
 		'callback'    => 'wsp_execute_update_page',
 		'capability'  => 'edit_pages',
