@@ -63,6 +63,11 @@ require_once WSP_MCP_DIR . 'includes/abilities/cpt.php';
 require_once WSP_MCP_DIR . 'includes/abilities/site-editor.php';
 require_once WSP_MCP_DIR . 'includes/abilities/widgets.php';
 require_once WSP_MCP_DIR . 'includes/abilities/health.php';
+require_once WSP_MCP_DIR . 'includes/abilities/revisions.php';
+require_once WSP_MCP_DIR . 'includes/abilities/post-meta.php';
+require_once WSP_MCP_DIR . 'includes/abilities/blocks.php';
+require_once WSP_MCP_DIR . 'includes/seo/class-redirects.php';
+require_once WSP_MCP_DIR . 'includes/abilities/redirects.php';
 require_once WSP_MCP_DIR . 'includes/abilities/yoast.php';
 require_once WSP_MCP_DIR . 'includes/abilities/rankmath.php';
 require_once WSP_MCP_DIR . 'includes/abilities/elementor.php';
@@ -83,6 +88,8 @@ add_action( 'admin_init',                       'wsp_mcp_register_settings' );
 // before the tool registry is built. Registers its own REST endpoint.
 add_action( 'plugins_loaded', array( 'WSP_MCP_Server', 'init' ) );
 add_action( 'plugins_loaded', 'wsp_mcp_maybe_upgrade_db' );
+// Redirects & 404 Manager — creates its own tables (own version gate) and hooks template_redirect.
+add_action( 'plugins_loaded', array( 'WSP_MCP_Redirects', 'init' ) );
 // Native OAuth 2.1 authorization server (v2.12.0) — its own early `init` dispatcher,
 // independent of the REST API and of WSP_MCP_Server's own boot timing.
 add_action( 'plugins_loaded', array( 'WSP_MCP_OAuth_Server', 'init' ) );
@@ -98,6 +105,7 @@ function wsp_mcp_activate() {
     WSP_MCP_Session_Store::create_table();
     WSP_MCP_Audit_Log::create_table();
     WSP_MCP_OAuth_Store::create_tables();
+    WSP_MCP_Redirects::install();
     WSP_MCP_Auth::get_api_key();
     if ( ! wp_next_scheduled( 'wsp_mcp_session_cleanup' ) ) {
         wp_schedule_event( time(), 'daily', 'wsp_mcp_session_cleanup' );
@@ -116,6 +124,7 @@ function wsp_mcp_deactivate() {
     wp_clear_scheduled_hook( 'wsp_mcp_session_cleanup' );
     wp_clear_scheduled_hook( 'wsp_mcp_audit_log_cleanup' );
     wp_clear_scheduled_hook( 'wsp_mcp_oauth_cleanup' );
+    wp_clear_scheduled_hook( 'wsp_mcp_404_cleanup' );
 }
 
 /**

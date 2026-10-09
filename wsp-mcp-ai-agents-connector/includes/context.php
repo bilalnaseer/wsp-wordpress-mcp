@@ -13,6 +13,10 @@
  *   2. tool `wsp_get_site_context` — the full, uncapped documents
  *   3. MCP resources `wsp://context/agents.md` / `wsp://context/changelog.md`
  *
+ * Written from the admin page, or by an agent through the opt-in tool
+ * `wsp_update_site_context` (replace / append / prepend, so a large file can be
+ * sent in chunks).
+ *
  * Off by default. The documents are admin-authored plain text: they are never
  * rendered as HTML (admin page uses esc_textarea(); MCP output is JSON), so the
  * sanitizer normalises encoding/control characters instead of stripping tags —
@@ -30,8 +34,8 @@ define( 'WSP_MCP_CONTEXT_AGENTS_OPTION', 'wsp_mcp_context_agents' );
 /** CHANGELOG.md body. */
 define( 'WSP_MCP_CONTEXT_CHANGELOG_OPTION', 'wsp_mcp_context_changelog' );
 
-/** Hard storage limit per document (characters). */
-define( 'WSP_MCP_CONTEXT_MAX_CHARS', 50000 );
+/** Hard storage limit per document (characters). Only the pushed head is capped smaller. */
+define( 'WSP_MCP_CONTEXT_MAX_CHARS', 300000 );
 /** How much of AGENTS.md is pushed in `initialize` instructions. */
 define( 'WSP_MCP_CONTEXT_AGENTS_PUSH_CHARS', 6000 );
 /** How much of the changelog head (newest entries) is pushed in `initialize`. */
@@ -72,9 +76,11 @@ function wsp_mcp_context_is_active() {
  * Normalise a pasted Markdown document for storage.
  *
  * @param mixed $text Raw (already wp_unslash()ed) input.
+ * @param bool  $trim Trim surrounding whitespace. Off for chunked MCP writes,
+ *                    where a chunk boundary can fall on a newline.
  * @return string
  */
-function wsp_mcp_context_sanitize( $text ) {
+function wsp_mcp_context_sanitize( $text, $trim = true ) {
 	if ( ! is_string( $text ) ) {
 		return '';
 	}
@@ -82,7 +88,10 @@ function wsp_mcp_context_sanitize( $text ) {
 	$text = str_replace( array( "\r\n", "\r" ), "\n", $text );
 	// Drop control characters except tab and newline.
 	$text = preg_replace( '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $text );
-	$text = trim( (string) $text );
+	$text = (string) $text;
+	if ( $trim ) {
+		$text = trim( $text );
+	}
 	if ( mb_strlen( $text ) > WSP_MCP_CONTEXT_MAX_CHARS ) {
 		$text = mb_substr( $text, 0, WSP_MCP_CONTEXT_MAX_CHARS );
 	}
@@ -154,6 +163,82 @@ function wsp_execute_get_site_context( $input ) {
 		$result['changelog_md'] = wsp_mcp_context_get( 'changelog' );
 	}
 	return $result;
+}
+
+/**
+ * Tool callback: wsp_update_site_context.
+ *
+ * Writes one document. `append` / `prepend` let an agent upload a file larger
+ * than it can comfortably send in one call: first chunk with `replace`, the
+ * rest with `append`. Content is normalised but not trimmed, so chunk
+ * boundaries survive. Over-limit writes are refused, never silently truncated,
+ * so the agent knows when the stored copy would be incomplete.
+ *
+ * @param array $input {
+ *     @type string $file    Required. 'agents' | 'changelog'.
+ *     @type string $content Required. Markdown ('' with mode=replace clears the document).
+ *     @type string $mode    'replace' (default) | 'append' | 'prepend'.
+ *     @type bool   $enable  Optional. Also set the Site Context master switch.
+ * }
+ * @return array|WP_Error
+ */
+function wsp_execute_update_site_context( $input ) {
+	$file = isset( $input['file'] ) && is_string( $input['file'] ) ? sanitize_key( $input['file'] ) : '';
+	if ( ! in_array( $file, array( 'agents', 'changelog' ), true ) ) {
+		return new WP_Error( 'invalid_file', 'file must be one of: agents, changelog.' );
+	}
+	if ( ! isset( $input['content'] ) || ! is_string( $input['content'] ) ) {
+		return new WP_Error( 'invalid_content', 'content (string) is required.' );
+	}
+	$mode = isset( $input['mode'] ) && is_string( $input['mode'] ) ? sanitize_key( $input['mode'] ) : 'replace';
+	if ( ! in_array( $mode, array( 'replace', 'append', 'prepend' ), true ) ) {
+		return new WP_Error( 'invalid_mode', 'mode must be one of: replace, append, prepend.' );
+	}
+
+	// Check the raw length first: the sanitizer would otherwise truncate silently.
+	$too_large = sprintf( 'The limit per document is %d characters. Nothing was saved.', WSP_MCP_CONTEXT_MAX_CHARS );
+	if ( mb_strlen( $input['content'] ) > WSP_MCP_CONTEXT_MAX_CHARS ) {
+		return new WP_Error( 'too_large', 'content is too long. ' . $too_large );
+	}
+
+	// MCP arguments are decoded JSON, never slashed — no wp_unslash() here.
+	$chunk   = wsp_mcp_context_sanitize( $input['content'], false );
+	$current = wsp_mcp_context_get( $file );
+	if ( 'append' === $mode ) {
+		$text = $current . $chunk;
+	} elseif ( 'prepend' === $mode ) {
+		$text = $chunk . $current;
+	} else {
+		$text = $chunk;
+	}
+
+	$length = mb_strlen( $text );
+	if ( $length > WSP_MCP_CONTEXT_MAX_CHARS ) {
+		return new WP_Error(
+			'too_large',
+			sprintf( 'Result would be %d characters. ', $length ) . $too_large
+		);
+	}
+
+	$option = 'changelog' === $file ? WSP_MCP_CONTEXT_CHANGELOG_OPTION : WSP_MCP_CONTEXT_AGENTS_OPTION;
+	update_option( $option, $text, false );
+
+	if ( isset( $input['enable'] ) ) {
+		update_option( WSP_MCP_CONTEXT_ENABLED_OPTION, rest_sanitize_boolean( $input['enable'] ) ? 1 : 0, false );
+	}
+
+	return array(
+		'file'             => 'changelog' === $file ? 'CHANGELOG.md' : 'AGENTS.md',
+		'mode'             => $mode,
+		'chunk_chars'      => mb_strlen( $chunk ),
+		'total_chars'      => $length,
+		'max_chars'        => WSP_MCP_CONTEXT_MAX_CHARS,
+		'estimated_tokens' => wsp_mcp_context_estimate_tokens( $text ),
+		'sha256'           => hash( 'sha256', $text ),
+		'context_enabled'  => wsp_mcp_context_is_enabled(),
+		'context_active'   => wsp_mcp_context_is_active(),
+		'note'             => 'wsp_get_site_context returns the new text immediately; the copy pushed on connect updates when agents reconnect.',
+	);
 }
 
 /**

@@ -30,6 +30,19 @@ function wsp_mcp_register_native_tools() {
 		'enable_key'      => '',
 		'active_callback' => 'wsp_mcp_context_is_active',
 	) );
+	// Write side: a normal registry toggle (OFF by default), independent of the Context switch so it can fill an empty page.
+	WSP_MCP_Server::register_tool( 'wsp_update_site_context', array(
+		'description' => 'Write the site\'s AGENTS.md or CHANGELOG.md (the Site Context every connected agent reads first). For a large file, send the first chunk with mode=replace and the rest in order with mode=append (keep each chunk under ~40,000 characters); check total_chars / sha256 in the response. Never include passwords or API keys — every connected agent can read these documents.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'file', 'content' ), 'properties' => array(
+			'file'    => array( 'type' => 'string', 'enum' => array( 'agents', 'changelog' ), 'description' => 'agents = AGENTS.md, changelog = CHANGELOG.md.' ),
+			'content' => array( 'type' => 'string', 'description' => 'Markdown text. Empty string with mode=replace clears the document.' ),
+			'mode'    => array( 'type' => 'string', 'enum' => array( 'replace', 'append', 'prepend' ), 'description' => 'replace (default) | append | prepend (e.g. add a new changelog entry at the top).' ),
+			'enable'  => array( 'type' => 'boolean', 'description' => 'Optional. Also turn the Site Context switch on (true) or off (false).' ),
+		) ),
+		'callback'    => 'wsp_execute_update_site_context',
+		'capability'  => 'manage_options',
+		'enable_key'  => 'wsp/update-site-context',
+	) );
 
 	// ---- Posts ----
 	WSP_MCP_Server::register_tool( 'wsp_get_posts', array(
@@ -787,6 +800,235 @@ function wsp_mcp_register_native_tools() {
 		'callback'    => 'wsp_execute_get_error_log',
 		'capability'  => 'manage_options',
 		'enable_key'  => 'wsp/get-error-log',
+	) );
+
+	// ---- Revisions (posts, pages, custom post types) ----
+	WSP_MCP_Server::register_tool( 'wsp_get_revisions', array(
+		'description' => 'Lists the saved revisions of a post, page, or custom post type item, newest first. Returns { post_id, post_type, post_title, total, returned, revisions: [{ id, parent_id, date_gmt, author, is_autosave, title, content_chars, changed_fields (which of title / content / excerpt differ from the live post) }] }. Use a revision id with wsp_get_revision or wsp_restore_revision.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'post_id' ), 'properties' => array(
+			'post_id' => array( 'type' => 'integer', 'description' => 'ID of the post, page, or custom post type item.' ),
+			'limit'   => array( 'type' => 'integer', 'minimum' => 1, 'maximum' => 100, 'description' => 'Default 20.' ),
+		) ),
+		'callback'    => 'wsp_execute_get_revisions',
+		'capability'  => 'edit_posts',
+		'enable_key'  => 'wsp/get-revisions',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_get_revision', array(
+		'description' => 'Reads one revision in full: title, content, excerpt, date, author, plus a "current" block with the live post\'s title, content and excerpt so the two can be compared.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'id' ), 'properties' => array(
+			'id' => array( 'type' => 'integer', 'description' => 'Revision ID from wsp_get_revisions.' ),
+		) ),
+		'callback'    => 'wsp_execute_get_revision',
+		'capability'  => 'edit_posts',
+		'enable_key'  => 'wsp/get-revision',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_restore_revision', array(
+		'description' => 'Rolls a post back to a revision: restores its title, content and excerpt (not status, slug, taxonomies or custom fields). The version that was live is saved as a new revision first, so the restore can be undone. Read the revision with wsp_get_revision before restoring.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'id' ), 'properties' => array(
+			'id' => array( 'type' => 'integer', 'description' => 'Revision ID from wsp_get_revisions.' ),
+		) ),
+		'callback'    => 'wsp_execute_restore_revision',
+		'capability'  => 'edit_posts',
+		'enable_key'  => 'wsp/restore-revision',
+	) );
+
+	// ---- Post Meta ----
+	WSP_MCP_Server::register_tool( 'wsp_get_post_meta', array(
+		'description' => 'Reads custom fields (post meta) of a post, page, attachment or custom post type item. With "key": returns { post_id, key, exists, value }. Without "key": returns { post_id, post_type, meta: { <key>: value }, returned, truncated } for all public keys (max 200). Protected keys (starting with an underscore, e.g. _elementor_data, _thumbnail_id) are never returned. For Yoast SEO use the wsp_yoast_* tools.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'post_id' ), 'properties' => array(
+			'post_id' => array( 'type' => 'integer', 'description' => 'Post / page / CPT item ID.' ),
+			'key'     => array( 'type' => 'string', 'description' => 'Meta key. Omit to list all public meta.' ),
+			'single'  => array( 'type' => 'boolean', 'description' => 'With key: true (default) returns one value; false returns an array of every value stored under the key.' ),
+		) ),
+		'callback'    => 'wsp_execute_get_post_meta',
+		'capability'  => 'edit_posts',
+		'enable_key'  => 'wsp/get-post-meta',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_update_post_meta', array(
+		'description' => 'Creates or updates a custom field on a post. value may be a string, number, boolean, array or object (stored serialized). Every string is passed through wp_kses_post, so script tags and event handlers are stripped. Protected keys (leading underscore) are refused. With prev_value, only the row holding that value is changed (for keys with several rows). Returns { success, changed, created, post_id, key, previous_value, value }.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'post_id', 'key', 'value' ), 'properties' => array(
+			'post_id'    => array( 'type' => 'integer' ),
+			'key'        => array( 'type' => 'string', 'description' => 'Letters, digits, _ - : . only.' ),
+			'value'      => array( 'description' => 'New value (any JSON type).' ),
+			'prev_value' => array( 'description' => 'Optional: only update the row currently holding this value.' ),
+		) ),
+		'callback'    => 'wsp_execute_update_post_meta',
+		'capability'  => 'edit_posts',
+		'enable_key'  => 'wsp/update-post-meta',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_delete_post_meta', array(
+		'description' => 'Deletes a custom field from a post: every row for the key, or with "value" only rows holding that value. Protected keys (leading underscore) are refused. Returns { success, post_id, key, previous_value }. Not undoable (post meta has no trash) — read the value first.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'post_id', 'key' ), 'properties' => array(
+			'post_id' => array( 'type' => 'integer' ),
+			'key'     => array( 'type' => 'string' ),
+			'value'   => array( 'description' => 'Optional: only delete rows holding this value.' ),
+		) ),
+		'callback'    => 'wsp_execute_delete_post_meta',
+		'capability'  => 'edit_posts',
+		'enable_key'  => 'wsp/delete-post-meta',
+	) );
+
+	// ---- Blocks (Gutenberg) ----
+	$block_id_prop = array( 'id' => array( 'type' => 'integer', 'description' => 'Reusable block (wp_block) ID from wsp_list_blocks.' ) );
+	$block_status  = array( 'type' => 'string', 'enum' => array( 'publish', 'draft', 'pending', 'private' ) );
+	$block_sync    = array( 'type' => 'string', 'enum' => array( 'synced', 'unsynced' ), 'description' => 'synced (default): edits change every post using the block. unsynced: inserted as an independent copy.' );
+	WSP_MCP_Server::register_tool( 'wsp_list_blocks', array(
+		'description' => 'Lists reusable blocks (the "wp_block" post type: saved synced/unsynced patterns). Returns { blocks: [{ id, title, slug, status, sync_status, modified }], total, returned, pages }. Non-published statuses need permission to edit others\' blocks.',
+		'inputSchema' => array( 'type' => 'object', 'properties' => array(
+			'search'   => array( 'type' => 'string' ),
+			'status'   => array( 'type' => 'string', 'enum' => array( 'publish', 'draft', 'pending', 'private', 'trash', 'any' ), 'description' => 'Default publish.' ),
+			'per_page' => array( 'type' => 'integer', 'minimum' => 1, 'maximum' => 100, 'description' => 'Default 20.' ),
+			'page'     => array( 'type' => 'integer', 'minimum' => 1 ),
+		) ),
+		'callback'    => 'wsp_execute_list_blocks',
+		'capability'  => 'edit_posts',
+		'enable_key'  => 'wsp/list-blocks',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_get_block', array(
+		'description' => 'Reads one reusable block: title, status, sync_status, full block markup in "content", and "used_in" (up to 50 editable posts that embed it). parse=true also returns the parsed block tree.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'id' ), 'properties' => $block_id_prop + array(
+			'parse' => array( 'type' => 'boolean', 'description' => 'Also return "blocks", the parsed tree. Default false.' ),
+		) ),
+		'callback'    => 'wsp_execute_get_block',
+		'capability'  => 'edit_posts',
+		'enable_key'  => 'wsp/get-block',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_create_block', array(
+		'description' => 'Creates a reusable block. "content" is Gutenberg block markup, e.g. "<!-- wp:paragraph --><p>Hello</p><!-- /wp:paragraph -->". Markup is sanitized with wp_kses_post (scripts and event handlers are stripped). Default status publish. Returns { success, block }.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'title', 'content' ), 'properties' => array(
+			'title'       => array( 'type' => 'string' ),
+			'content'     => array( 'type' => 'string', 'description' => 'Block markup.' ),
+			'status'      => $block_status,
+			'slug'        => array( 'type' => 'string' ),
+			'sync_status' => $block_sync,
+		) ),
+		'callback'    => 'wsp_execute_create_block',
+		'capability'  => 'publish_posts',
+		'enable_key'  => 'wsp/create-block',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_update_block', array(
+		'description' => 'Updates a reusable block (only the fields you pass). For a synced block this changes every post that embeds it — check "used_in" via wsp_get_block first. Markup is sanitized with wp_kses_post. Returns { success, block }.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'id' ), 'properties' => $block_id_prop + array(
+			'title'       => array( 'type' => 'string' ),
+			'content'     => array( 'type' => 'string', 'description' => 'New block markup (replaces the old).' ),
+			'status'      => $block_status,
+			'sync_status' => $block_sync,
+		) ),
+		'callback'    => 'wsp_execute_update_block',
+		'capability'  => 'edit_posts',
+		'enable_key'  => 'wsp/update-block',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_delete_block', array(
+		'description' => 'Moves a reusable block to the trash (restorable), or with force=true deletes it permanently. Returns { success, id, permanent, used_in, warning } — posts still embedding the block will render nothing for it.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'id' ), 'properties' => $block_id_prop + array(
+			'force' => array( 'type' => 'boolean', 'description' => 'Delete permanently instead of trashing. Default false.' ),
+		) ),
+		'callback'    => 'wsp_execute_delete_block',
+		'capability'  => 'delete_posts',
+		'enable_key'  => 'wsp/delete-block',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_list_patterns', array(
+		'description' => 'Lists registered block patterns (from WordPress core, the active theme and plugins; not user-saved reusable blocks — use wsp_list_blocks for those). Returns { patterns: [{ name, title, description, categories, keywords, block_types, content? }], total, returned, categories: [{ name, label }] }.',
+		'inputSchema' => array( 'type' => 'object', 'properties' => array(
+			'search'          => array( 'type' => 'string' ),
+			'category'        => array( 'type' => 'string', 'description' => 'Pattern category slug.' ),
+			'include_content' => array( 'type' => 'boolean', 'description' => 'Include each pattern\'s block markup (large). Default false.' ),
+			'limit'           => array( 'type' => 'integer', 'minimum' => 1, 'maximum' => 200, 'description' => 'Default 50.' ),
+		) ),
+		'callback'    => 'wsp_execute_list_patterns',
+		'capability'  => 'edit_posts',
+		'enable_key'  => 'wsp/list-patterns',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_get_post_blocks', array(
+		'description' => 'Reads the block tree of a post, page or custom post type item (via parse_blocks). Returns { post_id, post_type, title, has_blocks, block_count, blocks: [{ blockName, attrs, innerHTML, innerContent, innerBlocks }] }. Whitespace-only freeform chunks are dropped. Pass the same shape back to wsp_update_post_blocks.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'post_id' ), 'properties' => array(
+			'post_id' => array( 'type' => 'integer' ),
+		) ),
+		'callback'    => 'wsp_execute_get_post_blocks',
+		'capability'  => 'edit_posts',
+		'enable_key'  => 'wsp/get-post-blocks',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_update_post_blocks', array(
+		'description' => 'Replaces a post\'s entire block content. Provide EXACTLY ONE of: "blocks" (array of { blockName, attrs, innerHTML, innerContent, innerBlocks } — the shape wsp_get_post_blocks returns; blockName must be a registered type, see wsp_list_block_types; for a container with inner blocks give innerContent as HTML strings with one null per inner block, e.g. ["<div class=\\"wp-block-group\\">", null, "</div>"]) or "content" (raw block markup string). Markup is sanitized with wp_kses_post. This replaces ALL content, so read the current blocks first; WordPress keeps the previous version as a revision. Returns { success, post_id, block_count, revisions, link }.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'post_id' ), 'properties' => array(
+			'post_id' => array( 'type' => 'integer' ),
+			'blocks'  => array( 'type' => 'array', 'items' => array( 'type' => 'object' ) ),
+			'content' => array( 'type' => 'string', 'description' => 'Raw block markup (alternative to blocks).' ),
+		) ),
+		'callback'    => 'wsp_execute_update_post_blocks',
+		'capability'  => 'edit_posts',
+		'enable_key'  => 'wsp/update-post-blocks',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_list_block_types', array(
+		'description' => 'Lists registered block types (core/*, plugin and theme blocks). Returns { block_types: [{ name, title, category, description, parent, is_dynamic, attributes? }], total, returned }. Use it to find valid blockName values and attribute names for wsp_update_post_blocks.',
+		'inputSchema' => array( 'type' => 'object', 'properties' => array(
+			'search'             => array( 'type' => 'string' ),
+			'namespace'          => array( 'type' => 'string', 'description' => 'e.g. "core".' ),
+			'include_attributes' => array( 'type' => 'boolean', 'description' => 'Include attribute names, types and defaults. Default false.' ),
+			'limit'              => array( 'type' => 'integer', 'minimum' => 1, 'maximum' => 500, 'description' => 'Default 200.' ),
+		) ),
+		'callback'    => 'wsp_execute_list_block_types',
+		'capability'  => 'edit_posts',
+		'enable_key'  => 'wsp/list-block-types',
+	) );
+
+	// ---- Redirects & 404 Manager ----
+	WSP_MCP_Server::register_tool( 'wsp_list_redirects', array(
+		'description' => 'Lists URL redirects, newest first. Returns { redirects: [{ id, source, destination, status_code, external, hits, last_hit, note, created_by, created_at }], total, returned, pages, limit }. "source" is a site-relative path; "destination" is a /path or full URL.',
+		'inputSchema' => array( 'type' => 'object', 'properties' => array(
+			'search'   => array( 'type' => 'string', 'description' => 'Matches source, destination or note.' ),
+			'per_page' => array( 'type' => 'integer', 'minimum' => 1, 'maximum' => 100, 'description' => 'Default 20.' ),
+			'page'     => array( 'type' => 'integer', 'minimum' => 1 ),
+		) ),
+		'callback'    => 'wsp_execute_list_redirects',
+		'capability'  => 'manage_options',
+		'enable_key'  => 'wsp/list-redirects',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_create_redirect', array(
+		'description' => 'Creates a redirect that takes effect immediately for every visitor. "source": the old path on this site, e.g. "/old-page" (matched on the path only, case-insensitively, ignoring trailing slashes; no query strings; not "/", /wp-admin, /wp-login.php, /wp-json). "destination": a "/new-page" path or a full http(s) URL — a URL on a DIFFERENT domain is refused unless allow_external=true. status_code 301 (permanent, default; browsers and search engines cache it) or 302 (temporary). Refuses loops and duplicate sources. A redirect overrides any real page at the source path (a warning is returned if one exists). Returns { success, redirect, warning?, notice? }. Tip: use wsp_get_404_logs to find broken URLs worth redirecting.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'source', 'destination' ), 'properties' => array(
+			'source'         => array( 'type' => 'string', 'description' => 'Old path, e.g. /old-page' ),
+			'destination'    => array( 'type' => 'string', 'description' => 'New /path or full URL.' ),
+			'status_code'    => array( 'type' => 'integer', 'enum' => array( 301, 302 ), 'description' => 'Default 301.' ),
+			'allow_external' => array( 'type' => 'boolean', 'description' => 'Permit a destination on another domain. Default false.' ),
+			'note'           => array( 'type' => 'string', 'description' => 'Optional reminder of why (max 255).' ),
+		) ),
+		'callback'    => 'wsp_execute_create_redirect',
+		'capability'  => 'manage_options',
+		'enable_key'  => 'wsp/create-redirect',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_delete_redirect', array(
+		'description' => 'Deletes a redirect by id (from wsp_list_redirects). Visitors who cached a 301 in their browser may keep being redirected for a while. Returns { success, deleted }.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'id' ), 'properties' => array(
+			'id' => array( 'type' => 'integer' ),
+		) ),
+		'callback'    => 'wsp_execute_delete_redirect',
+		'capability'  => 'manage_options',
+		'enable_key'  => 'wsp/delete-redirect',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_get_404_logs', array(
+		'description' => 'Lists URLs that visitors requested but were not found (404), aggregated per path. Recording is active only while this tool is enabled, so an empty result right after enabling is normal. Returns { entries: [{ id, path, hits, first_seen, last_seen, referrer, user_agent, redirect_id (set when a redirect already covers the path) }], returned, total_paths, total_hits, tracking_since }. Paths only — query strings are stripped and no IP addresses are stored. Entries expire after 30 days.',
+		'inputSchema' => array( 'type' => 'object', 'properties' => array(
+			'limit'           => array( 'type' => 'integer', 'minimum' => 1, 'maximum' => 200, 'description' => 'Default 50.' ),
+			'orderby'         => array( 'type' => 'string', 'enum' => array( 'recent', 'hits' ), 'description' => 'recent (default) or hits.' ),
+			'search'          => array( 'type' => 'string', 'description' => 'Substring of the path.' ),
+			'min_hits'        => array( 'type' => 'integer', 'minimum' => 1 ),
+			'days'            => array( 'type' => 'integer', 'minimum' => 1, 'description' => 'Only paths seen in the last N days.' ),
+			'unresolved_only' => array( 'type' => 'boolean', 'description' => 'Hide paths that already have a redirect.' ),
+		) ),
+		'callback'    => 'wsp_execute_get_404_logs',
+		'capability'  => 'manage_options',
+		'enable_key'  => 'wsp/get-404-logs',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_clear_404_logs', array(
+		'description' => 'Deletes recorded 404 entries: one by id, or everything with all=true. Returns { success, deleted }.',
+		'inputSchema' => array( 'type' => 'object', 'properties' => array(
+			'id'  => array( 'type' => 'integer', 'description' => 'Entry id from wsp_get_404_logs.' ),
+			'all' => array( 'type' => 'boolean', 'description' => 'Clear the whole log.' ),
+		) ),
+		'callback'    => 'wsp_execute_clear_404_logs',
+		'capability'  => 'manage_options',
+		'enable_key'  => 'wsp/clear-404-logs',
 	) );
 
 	// ---- Yoast SEO (only when Yoast is active) ----

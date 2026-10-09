@@ -16,6 +16,15 @@ delete_metadata( 'user', 0, 'wsp_mcp_review_notice', '', true );
 wp_clear_scheduled_hook( 'wsp_mcp_session_cleanup' );
 wp_clear_scheduled_hook( 'wsp_mcp_audit_log_cleanup' );
 wp_clear_scheduled_hook( 'wsp_mcp_oauth_cleanup' );
+wp_clear_scheduled_hook( 'wsp_mcp_404_cleanup' );
+delete_option( 'wsp_mcp_redirects_db_version' );
+delete_option( 'wsp_mcp_redirects_count' );
+
+// Drop the Redirects & 404 Manager tables.
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}wsp_mcp_redirects" );
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}wsp_mcp_404_log" );
 
 // Drop the native MCP sessions table.
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery

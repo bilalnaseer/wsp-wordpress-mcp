@@ -11,6 +11,65 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased]
+
+### Added — Site Context write tool `wsp_update_site_context` (`includes/context.php`)
+
+- Agents can now write the site's AGENTS.md / CHANGELOG.md over MCP instead of the admin pasting them into
+  MCP > Context. Inputs: `file` (agents|changelog), `content`, `mode` (replace|append|prepend), optional
+  `enable` (sets the Site Context switch). Large files go in chunks: first `replace`, then `append`.
+  Response carries `total_chars` + `sha256` so the agent can verify the upload.
+- Registry toggle `wsp/update-site-context` (group **Site**, OFF by default), capability `manage_options`.
+  Deliberately a normal `enable_key` tool, not tied to the Context switch's `active_callback`, so it can fill
+  an empty Context page.
+- `WSP_MCP_CONTEXT_MAX_CHARS` raised 50,000 → 300,000: a real-world AGENTS.md (~106 KB) didn't fit. The pushed
+  `initialize` head is unchanged (6,000 / 1,500 chars). The tool refuses over-limit writes instead of truncating;
+  the admin page's "Load from file" now warns instead of silently cutting the file.
+- `wsp_mcp_context_sanitize()` gained a `$trim` flag (default true); the tool passes false so chunk boundaries
+  that fall on whitespace/newlines are preserved.
+
+### Added — Revisions ability group (`includes/abilities/revisions.php` — new file)
+
+- `wsp_get_revisions`, `wsp_get_revision`, `wsp_restore_revision`: list a post's revisions, read one next
+  to the live version, and roll back to it. Built on `wp_get_post_revisions()` / `wp_get_post_revision()` /
+  `wp_restore_post_revision()`. OFF by default; new settings group **Revisions**.
+- Access is gated by the parent post's `edit_post` capability (object-level guard), not just `edit_posts`.
+  Restore keeps the previous live version as a new revision, so it is reversible.
+
+---
+
+### Added — Redirects & 404 Manager (`includes/seo/class-redirects.php`, `includes/abilities/redirects.php` — new files)
+
+- Tools `wsp_list_redirects`, `wsp_create_redirect`, `wsp_delete_redirect` (301/302), `wsp_get_404_logs`,
+  `wsp_clear_404_logs`. OFF by default; new settings group **Redirects & 404**; all `manage_options`.
+- First module with a front-end runtime: `template_redirect` applies stored redirects (exact path match) and,
+  only while `wsp/get-404-logs` is enabled, records 404s (aggregated per path, no IPs, query strings stripped,
+  capped, 30-day retention via daily cron `wsp_mcp_404_cleanup`).
+- New tables `wsp_mcp_redirects` and `wsp_mcp_404_log` with their own schema-version gate; removed in `uninstall.php`.
+- Safety: external destinations need `allow_external=true`; `/`, `/wp-admin`, `/wp-login.php`, `/wp-json`,
+  `/wp-cron.php`, `/xmlrpc.php` can't be sources; redirect loops refused.
+
+### Fixed — GMT timestamps mislabeled in Revisions and Blocks output
+
+- `wsp_get_revisions` / `wsp_get_revision` / Blocks `modified` formatted `post_modified_gmt` through
+  `mysql2date()`, which stamps the clock time with the *site* timezone offset. Now formatted as true UTC ISO 8601.
+
+### Added — Blocks (Gutenberg) ability group (`includes/abilities/blocks.php` — new file)
+
+- Nine tools: `wsp_list_blocks`, `wsp_get_block`, `wsp_create_block`, `wsp_update_block`, `wsp_delete_block`
+  (reusable `wp_block` posts), `wsp_list_patterns`, `wsp_list_block_types` (registry views), and
+  `wsp_get_post_blocks` / `wsp_update_post_blocks` (per-post block tree via `parse_blocks()` /
+  `serialize_blocks()`). OFF by default; new settings group **Blocks**. Named `wsp_*` per project convention.
+- Object-level guards on every write; block trees validated against registered block types with node/depth
+  limits; all markup passes `wp_kses_post()`. Delete trashes by default and reports posts still using the block.
+
+### Added — Post Meta ability group (`includes/abilities/post-meta.php` — new file)
+
+- `wsp_get_post_meta`, `wsp_update_post_meta`, `wsp_delete_post_meta` over `get_/update_/delete_post_meta()`.
+  OFF by default; new settings group **Post Meta**.
+- Security: object guard + per-key `edit_post_meta` / `delete_post_meta` caps; protected (underscore) keys are
+  refused and hidden, so Elementor data and other plugins' internals can't be read or rewritten; written
+  strings go through `wp_kses_post()`.
 ## [2.9.5] — 2026-10-08
 
 ### Added — Site Context: admin-written AGENTS.md + CHANGELOG.md delivered to agents first (`includes/context.php`, `includes/admin/context-page.php` — new files)

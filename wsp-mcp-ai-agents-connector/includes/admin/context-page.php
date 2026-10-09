@@ -5,6 +5,7 @@
  * Lets the site admin switch on "Site Context" and edit the two Markdown
  * documents (AGENTS.md, CHANGELOG.md) that connected agents receive first.
  * Storage + delivery live in includes/context.php; this file is UI only.
+ * Agents can also write the documents via the wsp_update_site_context tool.
  *
  * @package WSP_MCP
  */
@@ -210,6 +211,7 @@ function wsp_mcp_context_page() {
 							<li><?php esc_html_e( 'The full, uncapped text is available from the always-on tool wsp_get_site_context.', 'wsp-mcp-ai-agents-connector' ); ?></li>
 							<li><?php esc_html_e( 'Both files are also exposed as MCP resources for clients that support them.', 'wsp-mcp-ai-agents-connector' ); ?></li>
 						</ol>
+						<p style="margin-top:10px"><?php esc_html_e( 'Let your AI keep these files up to date: enable "Update Site Context" in MCP > Settings (Site group). The tool wsp_update_site_context replaces, appends to or prepends to either file, and accepts large files in chunks. Administrators only.', 'wsp-mcp-ai-agents-connector' ); ?></p>
 						<p style="margin-top:10px"><?php esc_html_e( 'Keep the top of each file the most important: put the newest changelog entries first.', 'wsp-mcp-ai-agents-connector' ); ?></p>
 					</div>
 				</div>
@@ -236,7 +238,12 @@ function wsp_mcp_context_page() {
 				if (!file || !area) { return; }
 				var reader = new FileReader();
 				reader.onload = function () {
-					area.value = String(reader.result).slice(0, area.maxLength);
+					var text = String(reader.result);
+					if (text.length > area.maxLength) {
+						window.alert(<?php echo wp_json_encode( __( 'This file is longer than the limit and was cut off at the end. Shorten it, or split it and upload it through the wsp_update_site_context tool.', 'wsp-mcp-ai-agents-connector' ) ); ?>);
+						text = text.slice(0, area.maxLength);
+					}
+					area.value = text;
 					refresh(area);
 				};
 				reader.readAsText(file);
