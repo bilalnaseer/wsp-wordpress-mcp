@@ -22,9 +22,12 @@ class WSP_MCP_Server {
 	const SUPPORTED_PROTOCOLS = array( '2024-11-05', '2025-03-26', '2025-06-18', '2025-11-25' );
 	const DEFAULT_PROTOCOL     = '2025-06-18';
 
-	/** Rate limit: requests per window per IP. */
+	/** Rate limit: requests per window per authenticated user (Claude egresses from a rotating IP pool, so IP is useless). */
 	const RATE_MAX    = 120;
 	const RATE_WINDOW = 60;
+
+	/** Failed-auth attempts per window per IP (brute-force guard only). */
+	const RATE_FAIL_MAX = 30;
 
 	/** Boot: register tools and the REST route. */
 	public static function init() {
@@ -106,12 +109,8 @@ class WSP_MCP_Server {
 
 		$origin = self::validate_origin( $request );
 		if ( true !== $origin ) {
+			WSP_MCP_Audit_Log::log_rejection( 'origin_blocked', 'Origin rejected on ' . $method . ' /mcp.' );
 			return $origin;
-		}
-
-		$rate = self::check_rate_limit();
-		if ( true !== $rate ) {
-			return $rate;
 		}
 
 		if ( 'GET' === $method ) {
@@ -140,7 +139,7 @@ class WSP_MCP_Server {
 		$id         = isset( $body['id'] ) ? $body['id'] : null;
 
 		// Authenticate every request.
-		$auth = WSP_MCP_Auth::authenticate( $request );
+		$auth = self::authenticate_and_limit( $request );
 		if ( true !== $auth ) {
 			return $auth;
 		}
@@ -253,12 +252,15 @@ class WSP_MCP_Server {
 			return self::tool_text( $id, 'Error: tool has no handler.', true );
 		}
 
+		self::arm_fatal_guard( $id, $name, $category, $start );
 		try {
 			$result = call_user_func( $spec['callback'], $args );
 		} catch ( \Throwable $e ) {
 			WSP_MCP_Audit_Log::log( $name, WSP_MCP_Audit_Log::STATUS_ERROR, $e->getMessage(), self::elapsed_ms( $start ), $category );
 			return self::tool_text( $id, 'Error: ' . $e->getMessage(), true );
 		}
+
+		self::$fatal_armed = false;
 
 		if ( is_wp_error( $result ) ) {
 			// Object-level guards (guard.php, acf.php, yoast.php, rankmath.php, …)
@@ -273,6 +275,45 @@ class WSP_MCP_Server {
 		WSP_MCP_Audit_Log::log( $name, WSP_MCP_Audit_Log::STATUS_SUCCESS, '', self::elapsed_ms( $start ), $category );
 		wsp_mcp_review_record_success();
 		return self::tool_text( $id, wp_json_encode( $result, JSON_PRETTY_PRINT ), false );
+	}
+
+	/** True while a tool callback is running (see arm_fatal_guard()). */
+	private static $fatal_armed = false;
+
+	/**
+	 * A tool (e.g. a theme upload that leaves broken PHP behind) can hit a true
+	 * PHP fatal, which try/catch cannot intercept and which would surface as a
+	 * bare 500/502. On shutdown after such a fatal, log it and answer with a
+	 * proper JSON-RPC tool error so the client stays connected.
+	 */
+	private static function arm_fatal_guard( $id, $name, $category, $start ) {
+		self::$fatal_armed = true;
+		register_shutdown_function( function () use ( $id, $name, $category, $start ) {
+			if ( ! self::$fatal_armed ) {
+				return;
+			}
+			$err = error_get_last();
+			if ( ! $err || ! in_array( $err['type'], array( E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_RECOVERABLE_ERROR ), true ) ) {
+				return;
+			}
+			$msg = 'PHP fatal during tool execution: ' . $err['message'];
+			WSP_MCP_Audit_Log::log( $name, WSP_MCP_Audit_Log::STATUS_ERROR, $msg, self::elapsed_ms( $start ), $category );
+			while ( ob_get_level() > 0 ) {
+				ob_end_clean();
+			}
+			if ( ! headers_sent() ) {
+				status_header( 200 );
+				header( 'Content-Type: application/json; charset=utf-8' );
+			}
+			echo wp_json_encode( array(
+				'jsonrpc' => '2.0',
+				'id'      => $id,
+				'result'  => array(
+					'content' => array( array( 'type' => 'text', 'text' => 'Error: ' . wp_strip_all_tags( $msg ) ) ),
+					'isError' => true,
+				),
+			) );
+		} );
 	}
 
 	/** Milliseconds elapsed since $start (a microtime(true) value), rounded to the nearest int. */
@@ -300,7 +341,7 @@ class WSP_MCP_Server {
 
 	/** DELETE: terminate a session. */
 	private static function handle_delete( WP_REST_Request $request ) {
-		$auth = WSP_MCP_Auth::authenticate( $request );
+		$auth = self::authenticate_and_limit( $request );
 		if ( true !== $auth ) {
 			return $auth;
 		}
@@ -321,12 +362,41 @@ class WSP_MCP_Server {
 		if ( ! is_string( $session_id ) || '' === $session_id ) {
 			return self::rpc_error( $id, -32600, 'Mcp-Session-Id header required. Call initialize first.', 400 );
 		}
+		$prefix = substr( $session_id, 0, 8 );
 		if ( ! WSP_MCP_Session_Store::touch_session( $session_id ) ) {
+			WSP_MCP_Audit_Log::log_rejection( 'session_expired', 'Unknown or expired session ' . $prefix . '… (404, client should re-initialize).' );
 			return self::rpc_error( $id, -32600, 'Session not found or expired. Re-initialize.', 404 );
 		}
 		$stored = WSP_MCP_Session_Store::get_fingerprint( $session_id );
 		if ( '' !== $stored && ! hash_equals( $stored, WSP_MCP_Auth::fingerprint( $request ) ) ) {
-			return self::rpc_error( $id, -32600, 'Session credential mismatch. Re-initialize.', 403 );
+			// 404, not 403: per the MCP spec a 404 tells the client the session is
+			// gone and to send a fresh initialize. Clients do not recover from 403.
+			WSP_MCP_Audit_Log::log_rejection( 'session_mismatch', 'Session ' . $prefix . '… belongs to a different user (404, client should re-initialize).' );
+			return self::rpc_error( $id, -32600, 'Session not found or expired. Re-initialize.', 404 );
+		}
+		return true;
+	}
+
+	/**
+	 * Authenticate, then apply the per-user rate limit. Failed authentication is
+	 * throttled per IP (brute-force guard) and audit-logged by WSP_MCP_Auth.
+	 *
+	 * @return true|WP_REST_Response
+	 */
+	private static function authenticate_and_limit( WP_REST_Request $request ) {
+		$auth = WSP_MCP_Auth::authenticate( $request );
+		if ( true !== $auth ) {
+			$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '0';
+			if ( true !== self::bump_rate( 'wsp_mcp_rate_fail_' . md5( $ip ), self::RATE_FAIL_MAX ) ) {
+				WSP_MCP_Audit_Log::log_rejection( 'rate_limited', 'Too many failed authentication attempts from one IP (429).' );
+				return self::rpc_error( null, -32600, 'Rate limit exceeded.', 429 );
+			}
+			return $auth;
+		}
+		$user_id = get_current_user_id();
+		if ( true !== self::bump_rate( 'wsp_mcp_rate_u_' . $user_id, self::RATE_MAX ) ) {
+			WSP_MCP_Audit_Log::log_rejection( 'rate_limited', 'User ' . $user_id . ' exceeded ' . self::RATE_MAX . ' requests/' . self::RATE_WINDOW . 's (429).' );
+			return self::rpc_error( null, -32600, 'Rate limit exceeded.', 429 );
 		}
 		return true;
 	}
@@ -353,20 +423,18 @@ class WSP_MCP_Server {
 		return true;
 	}
 
-	private static function check_rate_limit() {
-		$ip  = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '0';
-		$key = 'wsp_mcp_rate_' . md5( $ip );
+	/** Count one hit against a transient bucket. @return true|false false when over $max. */
+	private static function bump_rate( $key, $max ) {
 		$data = get_transient( $key );
 		if ( false === $data || ! is_array( $data ) ) {
 			set_transient( $key, array( 'count' => 1, 'start' => time() ), self::RATE_WINDOW );
 			return true;
 		}
 		$data['count']++;
-		set_transient( $key, $data, self::RATE_WINDOW );
-		if ( $data['count'] > self::RATE_MAX ) {
-			return self::rpc_error( null, -32600, 'Rate limit exceeded.', 429 );
-		}
-		return true;
+		// Keep the original window: remaining TTL, not a fresh one.
+		$left = max( 1, self::RATE_WINDOW - ( time() - (int) $data['start'] ) );
+		set_transient( $key, $data, $left );
+		return $data['count'] <= $max;
 	}
 
 	/* ---------- Response helpers ---------- */

@@ -291,7 +291,11 @@ function wsp_execute_update_global_styles( $input ) {
 	//    Custom CSS can never be set through MCP: `css` keys are stripped from caller input.
 	if ( $has_settings ) $settings = $replace ? $input['settings'] : wsp_site_editor_merge( $settings, $input['settings'] );
 	if ( $has_styles ) {
-		$patch  = wsp_site_editor_strip_custom_css( $input['styles'] );
+		$patch = wsp_site_editor_strip_custom_css( $input['styles'] );
+		if ( $patch !== $input['styles'] ) {
+			// Refuse loudly instead of "succeeding" while silently dropping the CSS.
+			return new WP_Error( 'custom_css_not_allowed', 'Custom CSS ("css" keys in styles) cannot be set through MCP and nothing was saved. Remove the "css" key, or add the CSS in Appearance > Editor > Styles > Additional CSS, or in the theme\'s style.css via wsp_upload_theme.' );
+		}
 		$styles = $replace ? $patch : wsp_site_editor_merge( $styles, $patch );
 	}
 

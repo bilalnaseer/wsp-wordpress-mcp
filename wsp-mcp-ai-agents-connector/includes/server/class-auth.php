@@ -91,25 +91,22 @@ class WSP_MCP_Auth {
 			return true;
 		}
 
+		WSP_MCP_Audit_Log::log_rejection( 'auth_failed', 'Missing or invalid credentials (401).' );
 		return self::challenge();
 	}
 
 	/**
-	 * Build a SHA-256 fingerprint of the request credential, used to bind a
-	 * session to whoever created it.
+	 * Fingerprint used to bind a session to whoever created it.
 	 *
-	 * @param WP_REST_Request $request Incoming request.
+	 * Bound to the authenticated WordPress user, NOT the raw credential: OAuth
+	 * clients (Claude) refresh their access token mid-session, which changes the
+	 * Authorization header while the session is still legitimate. Call after
+	 * authenticate() so the current user is resolved.
+	 *
+	 * @param WP_REST_Request $request Incoming request (unused; kept for back-compat).
 	 * @return string Fingerprint hash.
 	 */
-	public static function fingerprint( $request ) {
-		$auth = $request->get_header( 'authorization' );
-		if ( is_string( $auth ) && '' !== $auth ) {
-			return hash( 'sha256', 'auth:' . $auth );
-		}
-		$api_key = $request->get_header( 'x-wsp-mcp-api-key' );
-		if ( is_string( $api_key ) && '' !== $api_key ) {
-			return hash( 'sha256', 'apikey:' . $api_key );
-		}
+	public static function fingerprint( $request = null ) {
 		return hash( 'sha256', 'user:' . get_current_user_id() );
 	}
 

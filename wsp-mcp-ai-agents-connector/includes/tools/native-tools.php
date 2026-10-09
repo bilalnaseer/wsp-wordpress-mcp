@@ -425,6 +425,50 @@ function wsp_mcp_register_native_tools() {
 		'capability'  => 'switch_themes',
 		'enable_key'  => 'wsp/switch-theme',
 	) );
+	WSP_MCP_Server::register_tool( 'wsp_get_theme_file', array(
+		'description' => 'Lists the files of an installed theme (omit "path"), or reads one text file from it (returns content, bytes, sha256; content is capped at 512 KB with truncated:true).',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'theme' ), 'properties' => array(
+			'theme' => array( 'type' => 'string', 'description' => 'Theme folder slug (see wsp_get_themes).' ),
+			'path'  => array( 'type' => 'string', 'description' => 'Relative file path, e.g. "functions.php" or "templates/index.html". Omit to list all files.' ),
+		) ),
+		'callback'    => 'wsp_execute_get_theme_file',
+		'capability'  => 'install_themes',
+		'enable_key'  => 'wsp/get-theme-file',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_update_theme_file', array(
+		'description' => 'Creates or overwrites ONE file in an installed theme without re-uploading the whole theme. PHP files are syntax-checked and literal require/include targets must exist, otherwise nothing is written. The previous version is copied to uploads/wsp-mcp-theme-backups/ (returned as "backup"). Same path/extension rules as wsp_upload_theme.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'theme', 'path', 'content' ), 'properties' => array(
+			'theme'   => array( 'type' => 'string', 'description' => 'Theme folder slug.' ),
+			'path'    => array( 'type' => 'string', 'description' => 'Relative file path inside the theme.' ),
+			'content' => array( 'type' => 'string', 'description' => 'Full new file content.' ),
+		) ),
+		'callback'    => 'wsp_execute_update_theme_file',
+		'capability'  => 'install_themes',
+		'enable_key'  => 'wsp/update-theme-file',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_upload_theme_chunk', array(
+		'description' => 'Uploads a large theme .zip in pieces. Send base64 slices of the zip as part=0,1,2,… with the same upload_id (part 0 restarts); on the last piece set complete=true (plus overwrite/activate) and the assembled zip is installed exactly like wsp_upload_theme "data". Returns next_part until complete.',
+		'inputSchema' => array( 'type' => 'object', 'required' => array( 'upload_id', 'part', 'data' ), 'properties' => array(
+			'upload_id' => array( 'type' => 'string', 'description' => 'Any short unique id, identical for all pieces of one upload.' ),
+			'part'      => array( 'type' => 'integer', 'description' => '0-based piece number, sent in order.' ),
+			'data'      => array( 'type' => 'string', 'description' => 'Base64 slice of the .zip (slice the base64 string, not the binary).' ),
+			'complete'  => array( 'type' => 'boolean', 'description' => 'true on the final piece: assemble and install.' ),
+			'overwrite' => array( 'type' => 'boolean', 'description' => 'Final piece only: replace an installed theme of the same name.' ),
+			'activate'  => array( 'type' => 'boolean', 'description' => 'Final piece only: activate after install.' ),
+		) ),
+		'callback'    => 'wsp_execute_upload_theme_chunk',
+		'capability'  => 'install_themes',
+		'enable_key'  => 'wsp/upload-theme-chunk',
+	) );
+	WSP_MCP_Server::register_tool( 'wsp_get_mcp_diagnostics', array(
+		'description' => 'MCP transport diagnostics: number of live sessions, session TTL, and counts/recent entries of rejected requests (auth_failed, origin_blocked, session_expired, session_mismatch, rate_limited) so you can see why a client is being blocked.',
+		'inputSchema' => array( 'type' => 'object', 'properties' => array(
+			'hours' => array( 'type' => 'integer', 'minimum' => 1, 'maximum' => 720, 'description' => 'Look-back window for rejection counts. Default 24.' ),
+		) ),
+		'callback'    => 'wsp_execute_get_mcp_diagnostics',
+		'capability'  => 'manage_options',
+		'enable_key'  => 'wsp/get-mcp-diagnostics',
+	) );
 	WSP_MCP_Server::register_tool( 'wsp_upload_theme', array(
 		'description' => 'Installs a WordPress theme into wp-content/themes — use this to install a theme you generated. Provide EXACTLY ONE source: "files" (recommended for generated themes: an object mapping relative paths to text content, e.g. {"style.css": "/*\nTheme Name: Acme\n...*/", "functions.php": "<?php ...", "templates/index.html": "<!-- wp:... -->"}, plus "slug" for the folder name and optional "binary_files" for base64 images/fonts such as screenshot.png), "data" (a base64 .zip whose root contains the theme folder), or "url" (public http(s) link to a theme .zip). style.css with a "Theme Name:" header is required; a classic theme also needs index.php, a block theme needs templates/index.html; a child theme sets "Template: <parent-slug>" and a missing parent is fetched from WordPress.org. Installs through WordPress core\'s Theme_Upgrader (same as Appearance > Themes > Upload). Existing themes are only replaced with overwrite=true. activate=true switches the site to the theme after install. Returns { slug, name, version, is_block_theme, parent, parent_installed, replaced, activated, active_theme, preview_url } (+ activation_error if install succeeded but activation did not).',
 		'inputSchema' => array( 'type' => 'object', 'properties' => array(
@@ -433,7 +477,8 @@ function wsp_mcp_register_native_tools() {
 			'binary_files' => array( 'type' => 'object', 'additionalProperties' => array( 'type' => 'string' ), 'description' => 'Binary theme files as { "relative/path.ext": "base64" } — only with "files". Allowed: .png .jpg .jpeg .gif .webp .avif .ico .svg .woff .woff2 .ttf .otf .eot .mo.' ),
 			'data'         => array( 'type' => 'string', 'description' => 'A theme .zip as base64 (data: URI prefix allowed).' ),
 			'url'          => array( 'type' => 'string', 'description' => 'Public http(s) URL of a theme .zip.' ),
-			'overwrite'    => array( 'type' => 'boolean', 'description' => 'Replace an already-installed theme with the same folder name. Default false.' ),
+			'overwrite'    => array( 'type' => 'boolean', 'description' => 'Update an already-installed theme with the same folder name. With "files", a partial map is MERGED into the installed theme (files you do not send are kept, so you can patch single files) and the old folder is first backed up to {slug}-backup-{timestamp}. Default false.' ),
+			'replace_all'  => array( 'type' => 'boolean', 'description' => 'Only with "files" + overwrite: delete every installed file not in "files" (clean replace). Default false.' ),
 			'activate'     => array( 'type' => 'boolean', 'description' => 'Activate the theme after installing it (needs switch_themes). Default false.' ),
 		) ),
 		'callback'    => 'wsp_execute_upload_theme',

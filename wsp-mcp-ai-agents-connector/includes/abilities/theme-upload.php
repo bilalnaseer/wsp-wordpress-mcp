@@ -120,11 +120,90 @@ function wsp_theme_write_zip( $zip_path, $entries ) {
 	return true;
 }
 
+
+/**
+ * Pre-flight check of the PHP being installed: every provided .php file must parse
+ * (token_get_all with TOKEN_PARSE — no shell/exec needed), and literal
+ * require/include of a theme file (get_template_directory() . '/inc/x.php',
+ * get_theme_file_path( 'inc/x.php' ), …) must point at a file that will exist in
+ * the final theme. This is what a partial upload used to break (functions.php
+ * requiring an inc/ file that was deleted). Returns true or WP_Error.
+ *
+ * @param string $slug     Theme folder.
+ * @param array  $entries  Final zip entries ( "slug/path" => bytes ), merged.
+ * @param array  $provided Zip entry names supplied by the caller (only these are parse-checked).
+ */
+function wsp_theme_preflight( $slug, $entries, $provided ) {
+	foreach ( $provided as $name ) {
+		if ( 'php' !== strtolower( pathinfo( $name, PATHINFO_EXTENSION ) ) ) continue;
+		try {
+			token_get_all( $entries[ $name ], TOKEN_PARSE );
+		} catch ( \ParseError $e ) {
+			return new WP_Error( 'php_syntax_error', sprintf( 'PHP syntax error in %s on line %d: %s. Nothing was installed.', substr( $name, strlen( $slug ) + 1 ), $e->getLine(), $e->getMessage() ) );
+		}
+	}
+	$re = '#\b(?:require|include)(?:_once)?\s*\(?\s*(?:(?:get_template_directory|get_stylesheet_directory)\s*\(\s*\)\s*\.\s*|get_theme_file_path\s*\(\s*|get_parent_theme_file_path\s*\(\s*)[\'"]/?([^\'"]+)[\'"]#';
+	foreach ( $provided as $name ) {
+		if ( 'php' !== strtolower( pathinfo( $name, PATHINFO_EXTENSION ) ) ) continue;
+		if ( ! preg_match_all( $re, $entries[ $name ], $m ) ) continue;
+		foreach ( array_unique( $m[1] ) as $rel ) {
+			if ( ! isset( $entries[ $slug . '/' . ltrim( $rel, '/' ) ] ) ) {
+				return new WP_Error( 'missing_include', sprintf( '%s requires "%s", which is not in the theme being installed. Include that file (or upload with replace_all=false so existing files are kept). Nothing was installed.', substr( $name, strlen( $slug ) + 1 ), $rel ) );
+			}
+		}
+	}
+	return true;
+}
+
+/**
+ * Existing files of an installed theme as zip entries, skipping paths in $skip.
+ * Only files the upload path would itself accept are carried over.
+ */
+function wsp_theme_collect_existing( $slug, $skip ) {
+	$dir = trailingslashit( get_theme_root() ) . $slug;
+	if ( ! is_dir( $dir ) ) return array();
+	$text = wsp_theme_text_extensions();
+	$bin  = wsp_theme_binary_extensions();
+	$out  = array();
+	$total = 0;
+	$it = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $dir, FilesystemIterator::SKIP_DOTS ) );
+	foreach ( $it as $file ) {
+		if ( ! $file->isFile() || $file->isLink() ) continue;
+		$rel = str_replace( '\\', '/', substr( $file->getPathname(), strlen( $dir ) + 1 ) );
+		$key = $slug . '/' . $rel;
+		if ( isset( $skip[ $key ] ) ) continue;
+		if ( is_wp_error( wsp_theme_normalize_path( $rel, array_unique( array_merge( $text, $bin ) ) ) ) ) continue;
+		$total += $file->getSize();
+		if ( count( $out ) >= WSP_THEME_MAX_FILES || $total > WSP_THEME_MAX_BYTES ) break;
+		$bytes = file_get_contents( $file->getPathname() ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		if ( false !== $bytes ) $out[ $key ] = $bytes;
+	}
+	return $out;
+}
+
+/** Copy an installed theme folder to {slug}-backup-{timestamp}. Returns the backup slug, '' if none, or WP_Error. */
+function wsp_theme_backup( $slug ) {
+	global $wp_filesystem;
+	$src = trailingslashit( get_theme_root() ) . $slug;
+	if ( ! is_dir( $src ) ) return '';
+	$backup = $slug . '-backup-' . gmdate( 'Ymd-His' );
+	$dest   = trailingslashit( get_theme_root() ) . $backup;
+	if ( ! $wp_filesystem->mkdir( $dest ) ) {
+		return new WP_Error( 'backup_failed', 'Could not create a backup of the existing theme, so it was left untouched.' );
+	}
+	$copied = copy_dir( $src, $dest );
+	if ( is_wp_error( $copied ) ) {
+		$wp_filesystem->delete( $dest, true );
+		return new WP_Error( 'backup_failed', 'Could not back up the existing theme (' . $copied->get_error_message() . '), so it was left untouched.' );
+	}
+	return $backup;
+}
+
 /**
  * Build a temp zip from the `files` / `binary_files` inputs.
  * Returns the temp zip path or WP_Error. Caller deletes the file.
  */
-function wsp_theme_zip_from_files( $slug, $files, $binary_files ) {
+function wsp_theme_zip_from_files( $slug, $files, $binary_files, $merge_existing = false ) {
 	if ( ! is_array( $files ) || empty( $files ) ) {
 		return new WP_Error( 'invalid_input', '"files" must be a non-empty object of { "relative/path": "file content" }.' );
 	}
@@ -172,6 +251,14 @@ function wsp_theme_zip_from_files( $slug, $files, $binary_files ) {
 		return new WP_Error( 'too_large', sprintf( 'Theme files total %s; the limit is %s.', size_format( $total ), size_format( WSP_THEME_MAX_BYTES ) ) );
 	}
 
+	// Partial upload over an installed theme: keep every existing file the caller did not send.
+	$provided = array_keys( $entries );
+	if ( $merge_existing ) {
+		$entries += wsp_theme_collect_existing( $slug, $entries );
+	}
+	$preflight = wsp_theme_preflight( $slug, $entries, $provided );
+	if ( is_wp_error( $preflight ) ) return $preflight;
+
 	// Friendly pre-check; Theme_Upgrader::check_package() re-validates authoritatively.
 	$style = isset( $entries[ $slug . '/style.css' ] ) ? $entries[ $slug . '/style.css' ] : '';
 	if ( '' === $style ) {
@@ -212,6 +299,28 @@ function wsp_theme_zip_from_data( $data ) {
 	if ( false === file_put_contents( $tmp, $bytes ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 		wp_delete_file( $tmp );
 		return new WP_Error( 'tmp_failed', 'Could not write the theme archive to disk.' );
+	}
+	// Validate the archive up front: a truncated base64 string otherwise surfaces much later
+	// as an opaque PCLZIP_ERR_BAD_FORMAT from core's unzipper.
+	$bad = '';
+	if ( class_exists( 'ZipArchive' ) ) {
+		$za = new ZipArchive();
+		$rc = $za->open( $tmp, ZipArchive::CHECKCONS );
+		if ( true !== $rc ) {
+			$bad = 'ZipArchive error ' . (int) $rc;
+		} else {
+			$za->close();
+		}
+	} else {
+		require_once ABSPATH . 'wp-admin/includes/class-pclzip.php';
+		$pz = new PclZip( $tmp );
+		if ( 0 === $pz->listContent() ) {
+			$bad = $pz->errorInfo( true );
+		}
+	}
+	if ( '' !== $bad ) {
+		wp_delete_file( $tmp );
+		return new WP_Error( 'invalid_zip', sprintf( 'The decoded archive (%s) is not a valid .zip (%s) — the base64 was probably truncated or altered in transit. Send it with wsp_upload_theme_chunk, or use "files".', size_format( strlen( $bytes ) ), $bad ) );
 	}
 	return $tmp;
 }
@@ -260,6 +369,12 @@ function wsp_execute_upload_theme( $input ) {
 	$overwrite = ! empty( $input['overwrite'] );
 	$activate  = ! empty( $input['activate'] );
 
+	// Large themes take a while to zip/unpack; don't let the default limit kill the call.
+	if ( function_exists( 'set_time_limit' ) ) {
+		@set_time_limit( 300 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, Squiz.PHP.DiscouragedFunctions.Discouraged
+	}
+	wp_raise_memory_limit( 'admin' );
+
 	require_once ABSPATH . 'wp-admin/includes/file.php';
 	require_once ABSPATH . 'wp-admin/includes/misc.php';
 	require_once ABSPATH . 'wp-admin/includes/theme.php';
@@ -274,7 +389,10 @@ function wsp_execute_upload_theme( $input ) {
 		if ( ! $overwrite && wp_get_theme( $slug )->exists() ) {
 			return new WP_Error( 'theme_exists', sprintf( 'A theme named "%s" is already installed. Pass overwrite=true to replace it, or use a different slug.', $slug ) );
 		}
-		$tmp = wsp_theme_zip_from_files( $slug, $input['files'], isset( $input['binary_files'] ) ? $input['binary_files'] : null );
+		// With overwrite, a partial `files` map is merged into the installed theme by default;
+		// only replace_all=true makes it a clean replace that deletes everything not sent.
+		$merge = $overwrite && empty( $input['replace_all'] ) && wp_get_theme( $slug )->exists();
+		$tmp = wsp_theme_zip_from_files( $slug, $input['files'], isset( $input['binary_files'] ) ? $input['binary_files'] : null, $merge );
 		if ( is_wp_error( $tmp ) ) return $tmp;
 		$package = $tmp;
 	} elseif ( $has_data ) {
@@ -295,6 +413,19 @@ function wsp_execute_upload_theme( $input ) {
 	}
 
 	$before = array_keys( wp_get_themes( array( 'errors' => null ) ) );
+
+	// Back up the theme folder that is about to be replaced.
+	$backup = '';
+	if ( $overwrite ) {
+		$target = isset( $slug ) ? $slug : '';
+		if ( '' !== $target && wp_get_theme( $target )->exists() ) {
+			$backup = wsp_theme_backup( $target );
+			if ( is_wp_error( $backup ) ) {
+				if ( $tmp ) wp_delete_file( $tmp );
+				return $backup;
+			}
+		}
+	}
 
 	$skin     = new WP_Ajax_Upgrader_Skin();
 	$upgrader = new Theme_Upgrader( $skin );
@@ -342,6 +473,8 @@ function wsp_execute_upload_theme( $input ) {
 		'parent_installed' => $is_child ? wp_get_theme( $theme->get_template() )->exists() : null,
 		'replaced'         => in_array( $stylesheet, $before, true ),
 		'activated'        => false,
+		'backup'           => $backup ? $backup : null,
+		'merged_with_existing' => isset( $merge ) ? $merge : false,
 		'active_theme'     => get_stylesheet(),
 		'preview_url'      => add_query_arg( 'theme', $stylesheet, admin_url( 'customize.php' ) ),
 	);

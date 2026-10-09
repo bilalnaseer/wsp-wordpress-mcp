@@ -59,6 +59,8 @@ require_once WSP_MCP_DIR . 'includes/abilities/site.php';
 require_once WSP_MCP_DIR . 'includes/abilities/menus.php';
 require_once WSP_MCP_DIR . 'includes/abilities/themes.php';
 require_once WSP_MCP_DIR . 'includes/abilities/theme-upload.php'; // wsp_upload_theme handler
+require_once WSP_MCP_DIR . 'includes/abilities/theme-files.php'; // single-file theme tools + chunked upload
+require_once WSP_MCP_DIR . 'includes/abilities/diagnostics.php'; // wsp_get_mcp_diagnostics
 require_once WSP_MCP_DIR . 'includes/abilities/cpt.php';
 require_once WSP_MCP_DIR . 'includes/abilities/site-editor.php';
 require_once WSP_MCP_DIR . 'includes/abilities/widgets.php';

@@ -282,6 +282,49 @@ function wsp_execute_woo_create_product_tag( $input ) {
 	return wsp_woo_ok( wsp_woo_term_row( $res ) );
 }
 
+function wsp_execute_woo_assign_product_tags( $input ) {
+	if ( $e = wsp_woo_guard() ) return $e;
+	$ids = isset( $input['product_ids'] ) && is_array( $input['product_ids'] ) ? array_values( array_unique( array_filter( array_map( 'intval', $input['product_ids'] ) ) ) ) : array();
+	if ( empty( $ids ) ) return wsp_woo_fail( 'product_ids is required.' );
+	if ( count( $ids ) > 200 ) return wsp_woo_fail( 'At most 200 products per call.' );
+	$mode = isset( $input['mode'] ) ? sanitize_key( $input['mode'] ) : 'add';
+	if ( ! in_array( $mode, array( 'add', 'replace', 'remove' ), true ) ) return wsp_woo_fail( 'mode must be add, replace or remove.' );
+
+	$tags = array();
+	foreach ( (array) ( isset( $input['tag_ids'] ) ? $input['tag_ids'] : array() ) as $tid ) {
+		$tid = intval( $tid );
+		if ( ! $tid || ! term_exists( $tid, 'product_tag' ) ) return wsp_woo_fail( "Product tag $tid not found." );
+		$tags[] = $tid;
+	}
+	foreach ( (array) ( isset( $input['tag_names'] ) ? $input['tag_names'] : array() ) as $name ) {
+		$name = sanitize_text_field( wp_unslash( (string) $name ) );
+		if ( '' === $name ) continue;
+		$t = term_exists( $name, 'product_tag' );
+		if ( ! $t ) {
+			if ( 'remove' === $mode ) continue;
+			$t = wp_insert_term( $name, 'product_tag' );
+			if ( is_wp_error( $t ) ) return wsp_woo_fail( $t->get_error_message() );
+		}
+		$tags[] = (int) ( is_array( $t ) ? $t['term_id'] : $t );
+	}
+	$tags = array_values( array_unique( $tags ) );
+	if ( empty( $tags ) && 'replace' !== $mode ) return wsp_woo_fail( 'Provide tag_ids and/or tag_names.' );
+
+	$results = array();
+	foreach ( $ids as $pid ) {
+		$post = get_post( $pid );
+		if ( ! $post || 'product' !== $post->post_type ) { $results[] = array( 'id' => $pid, 'ok' => false, 'error' => 'Not a product.' ); continue; }
+		if ( ! current_user_can( 'edit_post', $pid ) ) { $results[] = array( 'id' => $pid, 'ok' => false, 'error' => 'Not allowed to edit this product.' ); continue; }
+		if ( 'remove' === $mode ) {
+			$r = wp_remove_object_terms( $pid, $tags, 'product_tag' );
+		} else {
+			$r = wp_set_object_terms( $pid, $tags, 'product_tag', 'add' === $mode );
+		}
+		$results[] = is_wp_error( $r ) ? array( 'id' => $pid, 'ok' => false, 'error' => $r->get_error_message() ) : array( 'id' => $pid, 'ok' => true );
+	}
+	return wsp_woo_ok( array( 'mode' => $mode, 'tag_ids' => $tags, 'results' => $results ) );
+}
+
 function wsp_execute_woo_update_product_tag( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	$id = isset( $input['id'] ) ? intval( $input['id'] ) : 0;

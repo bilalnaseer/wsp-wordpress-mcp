@@ -589,7 +589,16 @@ function wsp_execute_acf_update_option_value( $input ) {
     if ( is_wp_error( $cap_check ) ) return $cap_check;
 
     $field_name = sanitize_text_field( $input['field_name'] );
-    $value = wsp_acf_sanitize_value( wp_unslash( $input['value'] ) );
+    $value = wsp_acf_sanitize_value( $input['value'] );
+
+    // Repeater / flexible content / gallery / clone are ACF Pro field types: on free ACF the
+    // write would silently store nothing useful, so say so instead of reporting success.
+    if ( ! defined( 'ACF_PRO' ) && function_exists( 'get_field_object' ) ) {
+        $obj = get_field_object( $field_name, 'options', false );
+        if ( is_array( $obj ) && isset( $obj['type'] ) && in_array( $obj['type'], array( 'repeater', 'flexible_content', 'gallery', 'clone' ), true ) ) {
+            return new WP_Error( 'unsupported', sprintf( 'Field "%s" is a %s field, which requires ACF Pro. Free ACF supports flat fields only.', $field_name, $obj['type'] ) );
+        }
+    }
 
     update_field( $field_name, $value, 'options' );
     return array( 'success' => true, 'field_name' => $field_name, 'value' => get_field( $field_name, 'options' ) );

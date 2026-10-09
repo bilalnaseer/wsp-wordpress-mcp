@@ -103,6 +103,50 @@ class WSP_MCP_Audit_Log {
 	}
 
 	/**
+	 * Record a request rejected before tool dispatch (auth, origin, rate limit,
+	 * session checks). Shown in the log as tool "mcp:<reason>" with status denied,
+	 * so admins can see why clients are being blocked.
+	 *
+	 * @param string $reason  Short machine code, e.g. session_mismatch.
+	 * @param string $detail  Human detail (route, session id prefix, …).
+	 */
+	public static function log_rejection( $reason, $detail = '' ) {
+		self::log( 'mcp:' . sanitize_key( $reason ), self::STATUS_DENIED, $detail, 0, 'Protocol' );
+	}
+
+	/** Rejections (tool_name "mcp:*") grouped by reason within the last $hours hours. */
+	public static function get_rejection_counts( $hours = 24 ) {
+		global $wpdb;
+		$table = self::table();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
+		$rows = $wpdb->get_results( $wpdb->prepare(
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from $wpdb->prefix; values bound.
+			"SELECT tool_name, COUNT(*) AS n FROM {$table} WHERE tool_name LIKE %s AND created_at >= %s GROUP BY tool_name ORDER BY n DESC",
+			'mcp:%',
+			gmdate( 'Y-m-d H:i:s', time() - ( (int) $hours * HOUR_IN_SECONDS ) )
+		), ARRAY_A );
+		$out = array();
+		foreach ( (array) $rows as $row ) {
+			$out[ substr( $row['tool_name'], 4 ) ] = (int) $row['n'];
+		}
+		return $out;
+	}
+
+	/** Most recent rejection rows. */
+	public static function get_recent_rejections( $limit = 20 ) {
+		global $wpdb;
+		$table = self::table();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
+		$rows = $wpdb->get_results( $wpdb->prepare(
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from $wpdb->prefix; values bound.
+			"SELECT tool_name, message, ip_address, user_login, created_at FROM {$table} WHERE tool_name LIKE %s ORDER BY id DESC LIMIT %d",
+			'mcp:%',
+			max( 1, min( 100, (int) $limit ) )
+		), ARRAY_A );
+		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
 	 * Best-effort client IP for the audit trail. Only the direct connection
 	 * (REMOTE_ADDR) is trusted — proxy headers (X-Forwarded-For, etc.) are
 	 * attacker-controlled and are not used, so this cannot be spoofed to

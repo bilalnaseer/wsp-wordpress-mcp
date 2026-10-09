@@ -13,6 +13,37 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed — session 403 loop, audit gaps, per-user rate limit, destructive theme overwrite
+
+- **Sessions no longer die when an OAuth token refreshes.** `WSP_MCP_Auth::fingerprint()` now hashes the
+  authenticated **user ID**, not the `Authorization` header, so a refreshed access token keeps its session.
+  A genuine session/user mismatch now returns **404** (not 403) with "Re-initialize", the only status MCP clients
+  recover from. Pre-existing sessions (old header-based fingerprints) get one 404 and re-initialize.
+- **Rejections are audit-logged** as tool `mcp:<reason>` (status denied, category Protocol): `auth_failed`,
+  `origin_blocked`, `session_expired`, `session_mismatch`, `rate_limited` (`WSP_MCP_Audit_Log::log_rejection()`).
+  Session create/reuse are deliberately not logged (would drown real tool calls in Analytics).
+- **Rate limit is per authenticated user** (120/60s), applied after auth. Failed authentication is throttled per IP
+  (30/60s) as a brute-force guard only. Claude's rotating egress IPs made the old per-IP bucket meaningless.
+- **Tool fatals no longer surface as Bad Gateway:** a shutdown guard around `tools/call` logs a PHP fatal and
+  answers with a JSON-RPC tool error.
+- **`wsp_upload_theme` with `overwrite` no longer wipes the theme:** a partial `files` map is merged into the
+  installed theme (new `replace_all=true` restores the clean-replace behaviour), the old folder is first copied to
+  `{slug}-backup-{timestamp}` (reported as `backup`), and the incoming PHP is pre-flighted (`token_get_all`
+  parse check + literal `require`/`include` targets must exist) before anything is swapped. `files` path only;
+  `data`/`url` zips are unchanged.
+- **`wsp_update_global_styles` returns an error** (`custom_css_not_allowed`) when `styles` contains a `css` key,
+  instead of reporting success while dropping it. The no-custom-CSS invariant is unchanged.
+- **New tools (all OFF by default):** `wsp_get_theme_file` (list/read), `wsp_update_theme_file` (one file;
+  parse-checked, previous version copied to `uploads/wsp-mcp-theme-backups/`), `wsp_upload_theme_chunk` (large
+  zips in base64 pieces, then installs via `wsp_upload_theme` `data`) — new `includes/abilities/theme-files.php`;
+  `wsp_get_mcp_diagnostics` (live sessions + rejection counts/recent rows; `includes/abilities/diagnostics.php`);
+  `wsp_woo_assign_product_tags` (bulk add/replace/remove tags on up to 200 products, creates missing tag names).
+- **`wsp_upload_theme` `data`:** the decoded zip is validated (ZipArchive CHECKCONS / PclZip) up front, so a truncated
+  base64 string gives a clear `invalid_zip` error instead of `PCLZIP_ERR_BAD_FORMAT`; time limit raised to 300s and
+  memory to the admin limit for large themes.
+- **`wsp_acf_update_option_value`** refuses repeater/flexible/gallery/clone fields on free ACF (`unsupported`) and no
+  longer `wp_unslash()`es the value.
+
 ### Added — Site Context write tool `wsp_update_site_context` (`includes/context.php`)
 
 - Agents can now write the site's AGENTS.md / CHANGELOG.md over MCP instead of the admin pasting them into

@@ -50,6 +50,7 @@ function wsp_mcp_woo_admin_tool_defs() {
 		'wsp_woo_update_product_category' => array( 'Update Product Category', 'Update a product category (name, slug, parent, description, image).', 'write', $W, array( 'id' => $id ) + $term + array( 'parent' => array( 'i', 'Parent category ID (0 = top level).' ), 'image_id' => array( 'i', 'Attachment ID (0 removes the image).' ) ), array( 'id' ) ),
 		'wsp_woo_get_product_tags'        => array( 'List Product Tags', 'List product tags.', 'read', $W, array( 'search' => array( 's', 'Search term.' ), 'per_page' => array( 'i', '1-100, default 100.' ), 'page' => array( 'i', 'Page number.' ) ), array() ),
 		'wsp_woo_update_product_tag'      => array( 'Update Product Tag', 'Update a product tag (name, slug, description). Returns the updated tag.', 'write', $W, array( 'id' => $id ) + $term, array( 'id' ) ),
+		'wsp_woo_assign_product_tags'     => array( 'Assign Product Tags (bulk)', 'Add, replace or remove tags on many products at once. Tags can be given as IDs and/or names (unknown names are created). Max 200 products per call. Returns per-product results.', 'write', $W, array( 'product_ids' => array( 'ia', 'Product IDs (max 200).' ), 'tag_ids' => array( 'ia', 'Existing product tag IDs.' ), 'tag_names' => array( 'sa', 'Tag names; missing ones are created.' ), 'mode' => array( 's', 'add (default) | replace | remove.' ) ), array( 'product_ids' ) ),
 		'wsp_woo_create_product_tag'      => array( 'Create Product Tag', 'Create a product tag.', 'write', $W, $term, array( 'name' ) ),
 
 		// ---- Attributes ----

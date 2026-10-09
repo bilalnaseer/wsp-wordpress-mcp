@@ -128,6 +128,18 @@ class WSP_MCP_Session_Store {
 		return is_string( $fp ) ? $fp : '';
 	}
 
+	/** Number of unexpired sessions (diagnostics). */
+	public static function count_active() {
+		global $wpdb;
+		$table = $wpdb->prefix . 'wsp_mcp_sessions';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
+		return (int) $wpdb->get_var( $wpdb->prepare(
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from $wpdb->prefix; value bound.
+			"SELECT COUNT(*) FROM {$table} WHERE expires_at > %s",
+			current_time( 'mysql', true )
+		) );
+	}
+
 	/** Delete a session. */
 	public static function delete_session( $session_id ) {
 		global $wpdb;
