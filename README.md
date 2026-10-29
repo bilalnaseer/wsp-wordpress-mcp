@@ -4,7 +4,7 @@
 
 > **By [WebSensePro](https://websensepro.com) — Official Shopify Partner & WordPress Agency**
 
-[![Version](https://img.shields.io/badge/Version-2.9.6-blue?style=for-the-badge)](https://github.com/bilalnaseer/wsp-wordpress-mcp/releases)
+[![Version](https://img.shields.io/badge/Version-2.9.7-blue?style=for-the-badge)](https://github.com/bilalnaseer/wsp-wordpress-mcp/releases)
 [![YouTube](https://img.shields.io/badge/YouTube-150K%2B%20Subscribers-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtube.com/websensepro)
 [![License](https://img.shields.io/badge/License-GPL%202.0-green?style=for-the-badge)](LICENSE)
 
@@ -61,7 +61,12 @@ WSP MCP is a **free MCP plugin for WordPress**. Install it, connect your AI app,
 
 ---
 
-## ✨ What's New in v2.9.6
+## ✨ What's New in v2.9.7
+
+- 💬 **ChatGPT tab** on **MCP > Connection** with step-by-step instructions and a walkthrough GIF; the Claude Connectors tab now has a GIF too.
+- 🌐 **OAuth sign-in works on more hosts** — discovery is also served from a non-`.well-known` address, fixing connection failures on hosts that block `/.well-known/` (e.g. SiteGround).
+
+## v2.9.6
 
 - 🔒 **Security: hardened authorization checks** on post listing, Elementor, Ultimate Addons for Elementor and media-upload tools. Unpublished posts are only listed to users who can edit them, and write tools now verify the caller may act on the specific post. **Update recommended.**
 - 🔁 **Sessions survive OAuth token refresh**, rate limiting is now per user, and rejected requests appear in the Audit Log.
@@ -108,7 +113,7 @@ Contributed by [@dulaj44](https://github.com/dulaj44) in [#42](https://github.co
 - 🐛 **Audit Log accuracy** — permission-denied results from the new Read Post tool are now logged as denied, not success.
 - 🐛 **Add Menu Item validation** — an `object_id` whose post type doesn't match the requested `type` is now rejected instead of silently stored.
 
-**Recent releases:** v2.9.6 — security hardening of authorization checks · v2.9.5 — Site Context + WooCommerce store management · v2.9.0 — Navigation Menus tool group + Read Post tool · v2.8.0 — one-click Claude Connector sign-in (OAuth 2.1) + Analytics dashboard · v2.7.1 — object-level authorization on write tools (Patchstack) · v2.7.0 — Audit Log · v2.6.x — WPForms, Contact Form 7, Gravity Forms, UAE, Elementor design tools.
+**Recent releases:** v2.9.7 — ChatGPT connection guide + OAuth discovery fix for hosts blocking /.well-known/ · v2.9.6 — security hardening of authorization checks · v2.9.5 — Site Context + WooCommerce store management · v2.9.0 — Navigation Menus tool group + Read Post tool · v2.8.0 — one-click Claude Connector sign-in (OAuth 2.1) + Analytics dashboard · v2.7.1 — object-level authorization on write tools (Patchstack) · v2.7.0 — Audit Log · v2.6.x — WPForms, Contact Form 7, Gravity Forms, UAE, Elementor design tools.
 
 📋 **Full history:** see [CHANGELOG.md](CHANGELOG.md).
 

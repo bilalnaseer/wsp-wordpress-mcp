@@ -4,7 +4,7 @@ Tags: mcp, ai, claude, chatgpt, ai agent
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.9.6
+Stable tag: 2.9.7
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -126,6 +126,10 @@ Watch the step-by-step video tutorial:
 https://youtu.be/hxhjs3IUYQE
 
 == Changelog ==
+
+= 2.9.7 =
+* New: ChatGPT tab on MCP > Connection with step-by-step instructions and a walkthrough GIF. The Claude Connectors tab also gets a walkthrough GIF.
+* Fixed: connecting ChatGPT and other OAuth clients on hosts that block `/.well-known/` at the web server (for example SiteGround). OAuth discovery is now also served from a non-`.well-known` address.
 
 = 2.9.6 =
 * Security: hardened authorization checks on post listing, Elementor, Ultimate Addons for Elementor and media upload tools. Update recommended.
@@ -268,6 +272,9 @@ https://youtu.be/hxhjs3IUYQE
 * Elementor abilities, modular architecture, auto config generator.
 
 == Upgrade Notice ==
+
+= 2.9.7 =
+Adds a ChatGPT connection guide and fixes OAuth sign-in on hosts that block /.well-known/ (e.g. SiteGround).
 
 = 2.9.6 =
 Security update: hardened authorization checks. Update recommended.

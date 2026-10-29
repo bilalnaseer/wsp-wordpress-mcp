@@ -35,7 +35,7 @@ These three files give you complete project understanding without touching the c
 
 **Plugin Name:** WSP MCP - Free MCP Plugin for WordPress: Connect Claude, ChatGPT & AI Agents  
 (must match the `=== … ===` title line in `readme.txt` — Plugin Check flags a mismatch)  
-**Version:** 2.9.6
+**Version:** 2.9.7
 **Slug/prefix:** `wsp`  
 **WP option key:** `wsp_mcp_abilities`  
 **Constant prefix:** `WSP_MCP_`
@@ -240,7 +240,7 @@ wsp-wordpress-mcp/                        ← repo root (NOT the plugin — docs
 
 | Constant | Value |
 |---|---|
-| `WSP_MCP_VERSION` | `'2.9.6'` |
+| `WSP_MCP_VERSION` | `'2.9.7'` |
 | `WSP_MCP_OPTION` | `'wsp_mcp_abilities'` (per-ability on/off toggles) |
 | `WSP_MCP_DIR` | `plugin_dir_path(__FILE__)` |
 

@@ -13,6 +13,17 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.9.7] — 2026-10-29
+
+### Added
+- **ChatGPT tab** on MCP > Connection with step-by-step instructions and a walkthrough GIF; GIF added to the Claude Connectors tab (`assets/images/chatgpt-connect-steps.gif`, `claude-connect-steps.gif`).
+
+### Fixed
+- **OAuth discovery on hosts that 404 `/.well-known/`** (e.g. SiteGround Nginx): `protected_resource_metadata_url()` now points at `/wsp-mcp-oauth/protected-resource`, and both that and `/wsp-mcp-oauth/authorization-server` are served as aliases alongside the RFC paths.
+
+### Changed
+- `readme.txt` description lists WebSensePro's free SEO tools.
+
 ## [2.9.6] — 2026-10-13
 
 ### Security
