@@ -167,7 +167,12 @@ class WSP_MCP_OAuth_Server {
 	 * @return string Absolute URL of this install's protected-resource metadata.
 	 */
 	public static function protected_resource_metadata_url() {
-		return home_url( '/.well-known/oauth-protected-resource' );
+		// Not the RFC 9728 /.well-known/ URI: some hosts (SiteGround's shared
+		// Nginx, for one) answer /.well-known/* with a 404 before WordPress ever
+		// runs, which leaves ChatGPT and other clients unable to find the
+		// document. RFC 9728 §5.1 lets the 401 pointer name any URL, and the
+		// alias below is served by this same plugin on every host.
+		return home_url( '/wsp-mcp-oauth/protected-resource' );
 	}
 
 	/**
@@ -221,10 +226,12 @@ class WSP_MCP_OAuth_Server {
 			'/.well-known/oauth-protected-resource',                    // RFC 9728, origin root.
 			$base . '/.well-known/oauth-protected-resource',            // Reachable from a subdirectory install.
 			'/.well-known/oauth-protected-resource' . $resource_path,   // RFC 9728 §3.1 path insertion.
+			$base . '/wsp-mcp-oauth/protected-resource',                // Non-.well-known alias: survives hosts that 404 /.well-known/ at the web server.
 		);
 		$as_paths = array(
 			'/.well-known/oauth-authorization-server',          // RFC 8414, origin root.
 			$base . '/.well-known/oauth-authorization-server',  // RFC 8414 path appending.
+			$base . '/wsp-mcp-oauth/authorization-server',      // Non-.well-known alias, same reason as above.
 		);
 		if ( '' !== $base ) {
 			// The MCP authorization spec has clients fall back to OpenID Connect
