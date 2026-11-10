@@ -76,10 +76,12 @@ function wsp_execute_create_post( $input ) {
     if ( ! empty( $input['excerpt'] ) )    $args['post_excerpt']  = sanitize_text_field( wp_unslash( $input['excerpt'] ) );
     if ( ! empty( $input['slug'] ) )       $args['post_name']     = sanitize_title( $input['slug'] );
     if ( ! empty( $input['categories'] ) ) $args['post_category'] = array_map( 'intval', $input['categories'] );
+    $date_check = wsp_mcp_apply_post_date( $args, $input );
+    if ( is_wp_error( $date_check ) ) return $date_check;
     $id = wp_insert_post( $args, true );
     if ( is_wp_error( $id ) ) return array( 'success' => false, 'error' => $id->get_error_message() );
     if ( ! empty( $input['tags'] ) ) wp_set_post_tags( $id, array_map( 'intval', $input['tags'] ) );
-    return array( 'success' => true, 'id' => $id, 'url' => get_permalink( $id ), 'status' => $args['post_status'] );
+    return array( 'success' => true, 'id' => $id, 'url' => get_permalink( $id ), 'status' => get_post_status( $id ), 'date' => get_post_field( 'post_date', $id ) );
 }
 
 function wsp_execute_update_post( $input ) {
@@ -94,10 +96,12 @@ function wsp_execute_update_post( $input ) {
     if ( isset( $input['content'] ) )    $args['post_content']  = wp_kses_post( wp_unslash( $input['content'] ) );
     if ( isset( $input['status'] ) )     $args['post_status']   = sanitize_text_field( wp_unslash( $input['status'] ) );
     if ( isset( $input['categories'] ) ) $args['post_category'] = array_map( 'intval', $input['categories'] );
+    $date_check = wsp_mcp_apply_post_date( $args, $input, $post );
+    if ( is_wp_error( $date_check ) ) return $date_check;
     $id = wp_update_post( $args, true );
     if ( is_wp_error( $id ) ) return array( 'success' => false, 'error' => $id->get_error_message() );
     if ( isset( $input['tags'] ) ) wp_set_post_tags( $id, array_map( 'intval', $input['tags'] ) );
-    return array( 'success' => true, 'id' => $id, 'url' => get_permalink( $id ) );
+    return array( 'success' => true, 'id' => $id, 'url' => get_permalink( $id ), 'status' => get_post_status( $id ), 'date' => get_post_field( 'post_date', $id ) );
 }
 
 function wsp_execute_delete_post( $input ) {

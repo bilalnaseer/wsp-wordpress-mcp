@@ -18,6 +18,11 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  */
 function wsp_mcp_register_native_tools() {
 	$obj = array( 'type' => 'object', 'properties' => new stdClass() );
+	// Shared by post / page / CPT create + update (see wsp_mcp_apply_post_date()).
+	$date_prop = array(
+		'type'        => 'string',
+		'description' => 'Publish date, ISO 8601 (e.g. 2026-12-01T09:00:00). Site timezone unless an offset or Z is given. A future date with status "publish" or "future" schedules the item; status "future" requires a future date.',
+	);
 
 	// ---- Site Context (MCP > Context) — advertised only while the admin's switch is on and a document has content ----
 	WSP_MCP_Server::register_tool( 'wsp_get_site_context', array(
@@ -65,11 +70,12 @@ function wsp_mcp_register_native_tools() {
 		'enable_key'  => 'wsp/get-post',
 	) );
 	WSP_MCP_Server::register_tool( 'wsp_create_post', array(
-		'description' => 'Creates a new blog post.',
+		'description' => 'Creates a new blog post. To schedule it, pass status "future" (or "publish") with a future date.',
 		'inputSchema' => array( 'type' => 'object', 'required' => array( 'title', 'content' ), 'properties' => array(
 			'title'      => array( 'type' => 'string' ),
 			'content'    => array( 'type' => 'string' ),
 			'status'     => array( 'type' => 'string' ),
+			'date'       => $date_prop,
 			'categories' => array( 'type' => 'array', 'items' => array( 'type' => 'integer' ) ),
 			'tags'       => array( 'type' => 'array', 'items' => array( 'type' => 'integer' ) ),
 			'excerpt'    => array( 'type' => 'string' ),
@@ -86,6 +92,7 @@ function wsp_mcp_register_native_tools() {
 			'title'      => array( 'type' => 'string' ),
 			'content'    => array( 'type' => 'string' ),
 			'status'     => array( 'type' => 'string' ),
+			'date'       => $date_prop,
 			'categories' => array( 'type' => 'array', 'items' => array( 'type' => 'integer' ) ),
 			'tags'       => array( 'type' => 'array', 'items' => array( 'type' => 'integer' ) ),
 		) ),
@@ -112,11 +119,12 @@ function wsp_mcp_register_native_tools() {
 		'enable_key'  => 'wsp/get-pages',
 	) );
 	WSP_MCP_Server::register_tool( 'wsp_create_page', array(
-		'description' => 'Creates a new page (optionally Elementor-initialized).',
+		'description' => 'Creates a new page (optionally Elementor-initialized). To schedule it, pass status "future" (or "publish") with a future date.',
 		'inputSchema' => array( 'type' => 'object', 'required' => array( 'title', 'content' ), 'properties' => array(
 			'title'     => array( 'type' => 'string' ),
 			'content'   => array( 'type' => 'string' ),
 			'status'    => array( 'type' => 'string' ),
+			'date'      => $date_prop,
 			'parent'    => array( 'type' => 'integer' ),
 			'slug'      => array( 'type' => 'string' ),
 			'elementor' => array( 'type' => 'boolean' ),
@@ -132,6 +140,7 @@ function wsp_mcp_register_native_tools() {
 			'title'   => array( 'type' => 'string' ),
 			'content' => array( 'type' => 'string' ),
 			'status'  => array( 'type' => 'string' ),
+			'date'    => $date_prop,
 		) ),
 		'callback'    => 'wsp_execute_update_page',
 		'capability'  => 'edit_pages',
@@ -506,12 +515,13 @@ function wsp_mcp_register_native_tools() {
 		'enable_key'  => 'wsp/get-cpt-items',
 	) );
 	WSP_MCP_Server::register_tool( 'wsp_create_cpt_item', array(
-		'description' => 'Create a new item of a given custom post type.',
+		'description' => 'Create a new item of a given custom post type. To schedule it, pass status "future" (or "publish") with a future date.',
 		'inputSchema' => array( 'type' => 'object', 'required' => array( 'post_type', 'title' ), 'properties' => array(
 			'post_type' => array( 'type' => 'string' ),
 			'title'     => array( 'type' => 'string' ),
 			'content'   => array( 'type' => 'string' ),
 			'status'    => array( 'type' => 'string' ),
+			'date'      => $date_prop,
 			'slug'      => array( 'type' => 'string' ),
 		) ),
 		'callback'    => 'wsp_execute_create_cpt_item',
@@ -526,6 +536,7 @@ function wsp_mcp_register_native_tools() {
 			'title'     => array( 'type' => 'string' ),
 			'content'   => array( 'type' => 'string' ),
 			'status'    => array( 'type' => 'string' ),
+			'date'      => $date_prop,
 		) ),
 		'callback'    => 'wsp_execute_update_cpt_item',
 		'capability'  => 'edit_posts',

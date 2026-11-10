@@ -88,10 +88,12 @@ function wsp_execute_create_cpt_item( $input ) {
         'post_status'  => $status,
     );
     if ( ! empty( $input['slug'] ) ) $args['post_name'] = sanitize_title( $input['slug'] );
+    $date_check = wsp_mcp_apply_post_date( $args, $input );
+    if ( is_wp_error( $date_check ) ) return $date_check;
 
     $id = wp_insert_post( $args, true );
     if ( is_wp_error( $id ) ) return array( 'success' => false, 'error' => $id->get_error_message() );
-    return array( 'success' => true, 'id' => $id, 'url' => get_permalink( $id ), 'status' => $args['post_status'] );
+    return array( 'success' => true, 'id' => $id, 'url' => get_permalink( $id ), 'status' => get_post_status( $id ), 'date' => get_post_field( 'post_date', $id ) );
 }
 
 function wsp_execute_update_cpt_item( $input ) {
@@ -111,10 +113,12 @@ function wsp_execute_update_cpt_item( $input ) {
         if ( is_wp_error( $status_check ) ) return $status_check;
         $args['post_status'] = sanitize_key( $input['status'] );
     }
+    $date_check = wsp_mcp_apply_post_date( $args, $input, $post );
+    if ( is_wp_error( $date_check ) ) return $date_check;
 
     $result = wp_update_post( $args, true );
     if ( is_wp_error( $result ) ) return array( 'success' => false, 'error' => $result->get_error_message() );
-    return array( 'success' => true, 'id' => $id, 'url' => get_permalink( $id ) );
+    return array( 'success' => true, 'id' => $id, 'url' => get_permalink( $id ), 'status' => get_post_status( $id ), 'date' => get_post_field( 'post_date', $id ) );
 }
 
 function wsp_execute_delete_cpt_item( $input ) {
