@@ -4,7 +4,7 @@ Tags: mcp, ai, claude, chatgpt, ai agent
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.9.7
+Stable tag: 2.9.8
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -126,6 +126,9 @@ Watch the step-by-step video tutorial:
 https://youtu.be/hxhjs3IUYQE
 
 == Changelog ==
+
+= 2.9.8 =
+* Fixed: scheduling posts, pages and custom post type items. Create and update now accept a `date` (ISO 8601, in your site's timezone unless you add an offset or Z). Before, setting the status to "future" saved the current time and WordPress published the item immediately. A "future" status without a future date is now rejected with a clear error instead of going live, and responses report the status and date that were actually saved.
 
 = 2.9.7 =
 * New: ChatGPT tab on MCP > Connection with step-by-step instructions and a walkthrough GIF. The Claude Connectors tab also gets a walkthrough GIF.
@@ -272,6 +275,9 @@ https://youtu.be/hxhjs3IUYQE
 * Elementor abilities, modular architecture, auto config generator.
 
 == Upgrade Notice ==
+
+= 2.9.8 =
+Fixes scheduled posts, pages and custom post type items being published immediately instead of at their scheduled date.
 
 = 2.9.7 =
 Adds a ChatGPT connection guide and fixes OAuth sign-in on hosts that block /.well-known/ (e.g. SiteGround).

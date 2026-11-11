@@ -13,6 +13,11 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.9.8] — 2026-11-11
+
+### Fixed
+- **Scheduling posts, pages and CPT items (#60, PR #62).** `wsp_create_post` / `wsp_update_post` / `wsp_create_page` / `wsp_update_page` / `wsp_create_cpt_item` / `wsp_update_cpt_item` had no `date` input, so `status: "future"` was saved with the current time and WordPress published it immediately. They now take `date` (ISO 8601, site timezone unless an offset/`Z` is given) via the shared `wsp_mcp_apply_post_date()` helper in `guard.php`; `future` without a future date is rejected with `invalid_date` instead of going live; a non-string `date` is rejected with `invalid_date`; responses return the saved `status` and `date` (read back from the DB, not echoed from input).
+
 ## [2.9.7] — 2026-10-29
 
 ### Added

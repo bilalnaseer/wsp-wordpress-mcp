@@ -4,7 +4,7 @@
 
 > **By [WebSensePro](https://websensepro.com) — Official Shopify Partner & WordPress Agency**
 
-[![Version](https://img.shields.io/badge/Version-2.9.7-blue?style=for-the-badge)](https://github.com/bilalnaseer/wsp-wordpress-mcp/releases)
+[![Version](https://img.shields.io/badge/Version-2.9.8-blue?style=for-the-badge)](https://github.com/bilalnaseer/wsp-wordpress-mcp/releases)
 [![YouTube](https://img.shields.io/badge/YouTube-150K%2B%20Subscribers-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtube.com/websensepro)
 [![License](https://img.shields.io/badge/License-GPL%202.0-green?style=for-the-badge)](LICENSE)
 
@@ -61,7 +61,11 @@ WSP MCP is a **free MCP plugin for WordPress**. Install it, connect your AI app,
 
 ---
 
-## ✨ What's New in v2.9.7
+## ✨ What's New in v2.9.8
+
+- 🗓️ **Scheduling now works** — create/update tools for posts, pages and custom post type items accept a `date` (ISO 8601, site timezone unless an offset or `Z` is given). Previously a `future` status was saved with the current time and published immediately; it is now scheduled, and a `future` status without a future date is rejected instead of going live. Thanks to [@Suboohi-Khan](https://github.com/Suboohi-Khan) for the fix ([#62](https://github.com/bilalnaseer/wsp-wordpress-mcp/pull/62)).
+
+## v2.9.7
 
 - 💬 **ChatGPT tab** on **MCP > Connection** with step-by-step instructions and a walkthrough GIF; the Claude Connectors tab now has a GIF too.
 - 🌐 **OAuth sign-in works on more hosts** — discovery is also served from a non-`.well-known` address, fixing connection failures on hosts that block `/.well-known/` (e.g. SiteGround).
@@ -113,7 +117,7 @@ Contributed by [@dulaj44](https://github.com/dulaj44) in [#42](https://github.co
 - 🐛 **Audit Log accuracy** — permission-denied results from the new Read Post tool are now logged as denied, not success.
 - 🐛 **Add Menu Item validation** — an `object_id` whose post type doesn't match the requested `type` is now rejected instead of silently stored.
 
-**Recent releases:** v2.9.7 — ChatGPT connection guide + OAuth discovery fix for hosts blocking /.well-known/ · v2.9.6 — security hardening of authorization checks · v2.9.5 — Site Context + WooCommerce store management · v2.9.0 — Navigation Menus tool group + Read Post tool · v2.8.0 — one-click Claude Connector sign-in (OAuth 2.1) + Analytics dashboard · v2.7.1 — object-level authorization on write tools (Patchstack) · v2.7.0 — Audit Log · v2.6.x — WPForms, Contact Form 7, Gravity Forms, UAE, Elementor design tools.
+**Recent releases:** v2.9.8 — scheduling fix for posts, pages and CPT items · v2.9.7 — ChatGPT connection guide + OAuth discovery fix for hosts blocking /.well-known/ · v2.9.6 — security hardening of authorization checks · v2.9.5 — Site Context + WooCommerce store management · v2.9.0 — Navigation Menus tool group + Read Post tool · v2.8.0 — one-click Claude Connector sign-in (OAuth 2.1) + Analytics dashboard · v2.7.1 — object-level authorization on write tools (Patchstack) · v2.7.0 — Audit Log · v2.6.x — WPForms, Contact Form 7, Gravity Forms, UAE, Elementor design tools.
 
 📋 **Full history:** see [CHANGELOG.md](CHANGELOG.md).
 
