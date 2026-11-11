@@ -81,3 +81,51 @@ function wsp_mcp_guard_post_status( $post, $status ) {
 	}
 	return true;
 }
+
+/**
+ * Apply the caller's `date` input to a post array before wp_insert_post() /
+ * wp_update_post(). Without it, status 'future' was saved with the current
+ * time and WordPress silently published the item immediately (issue #60).
+ *
+ * The date is read in the site's timezone unless the string carries its own
+ * offset (e.g. `2026-12-01T09:00:00Z`). A date in the future with status
+ * 'publish' is scheduled by WordPress itself, as in the editor.
+ *
+ * @param array        $args  Post array being built; post_date / post_date_gmt / edit_date are set on it.
+ * @param array        $input Tool input (reads `date`).
+ * @param WP_Post|null $post  Existing post on update, null on create.
+ * @return true|WP_Error
+ */
+function wsp_mcp_apply_post_date( &$args, $input, $post = null ) {
+	if ( isset( $args['post_status'] ) ) {
+		$status = $args['post_status'];
+	} else {
+		$status = $post ? $post->post_status : 'draft';
+	}
+
+	if ( isset( $input['date'] ) && ! is_scalar( $input['date'] ) ) {
+		return new WP_Error( 'invalid_date', "'date' must be an ISO 8601 string, e.g. 2026-12-01T09:00:00." );
+	}
+
+	if ( isset( $input['date'] ) && '' !== trim( (string) $input['date'] ) ) {
+		$raw = sanitize_text_field( (string) $input['date'] );
+		$dt  = date_create_immutable( $raw, wp_timezone() );
+		if ( false === $dt ) {
+			return new WP_Error( 'invalid_date', "Could not parse date '" . esc_html( $raw ) . "'. Use ISO 8601, e.g. 2026-12-01T09:00:00 (site timezone) or 2026-12-01T09:00:00Z (UTC)." );
+		}
+		$args['post_date']     = $dt->setTimezone( wp_timezone() )->format( 'Y-m-d H:i:s' );
+		$args['post_date_gmt'] = $dt->setTimezone( new DateTimeZone( 'UTC' ) )->format( 'Y-m-d H:i:s' );
+		$args['edit_date']     = true;
+		$timestamp             = $dt->getTimestamp();
+	} elseif ( 'future' === $status ) {
+		// No date supplied: an update may keep the post's existing (future) date.
+		$timestamp = ( $post && '0000-00-00 00:00:00' !== $post->post_date_gmt ) ? strtotime( $post->post_date_gmt . ' UTC' ) : 0;
+	} else {
+		return true;
+	}
+
+	if ( 'future' === $status && $timestamp <= time() ) {
+		return new WP_Error( 'invalid_date', "Status 'future' needs a 'date' in the future (site timezone: " . wp_timezone_string() . '); otherwise WordPress publishes immediately.' );
+	}
+	return true;
+}

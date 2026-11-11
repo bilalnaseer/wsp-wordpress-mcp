@@ -25,6 +25,8 @@ function wsp_execute_create_page( $input ) {
     );
     if ( ! empty( $input['parent'] ) ) $args['post_parent'] = intval( $input['parent'] );
     if ( ! empty( $input['slug'] ) )   $args['post_name']   = sanitize_title( $input['slug'] );
+    $date_check = wsp_mcp_apply_post_date( $args, $input );
+    if ( is_wp_error( $date_check ) ) return $date_check;
     $id = wp_insert_post( $args, true );
     if ( is_wp_error( $id ) ) return array( 'success' => false, 'error' => $id->get_error_message() );
 
@@ -34,7 +36,7 @@ function wsp_execute_create_page( $input ) {
         $elementor_initialized = true;
     }
 
-    return array( 'success' => true, 'id' => $id, 'url' => get_permalink( $id ), 'elementor' => $elementor_initialized );
+    return array( 'success' => true, 'id' => $id, 'url' => get_permalink( $id ), 'status' => get_post_status( $id ), 'date' => get_post_field( 'post_date', $id ), 'elementor' => $elementor_initialized );
 }
 
 function wsp_execute_update_page( $input ) {
@@ -48,9 +50,11 @@ function wsp_execute_update_page( $input ) {
     if ( isset( $input['title'] ) )   $args['post_title']   = sanitize_text_field( wp_unslash( $input['title'] ) );
     if ( isset( $input['content'] ) ) $args['post_content'] = wp_kses_post( wp_unslash( $input['content'] ) );
     if ( isset( $input['status'] ) )  $args['post_status']  = sanitize_text_field( wp_unslash( $input['status'] ) );
+    $date_check = wsp_mcp_apply_post_date( $args, $input, $post );
+    if ( is_wp_error( $date_check ) ) return $date_check;
     $id = wp_update_post( $args, true );
     if ( is_wp_error( $id ) ) return array( 'success' => false, 'error' => $id->get_error_message() );
-    return array( 'success' => true, 'id' => $id, 'url' => get_permalink( $id ) );
+    return array( 'success' => true, 'id' => $id, 'url' => get_permalink( $id ), 'status' => get_post_status( $id ), 'date' => get_post_field( 'post_date', $id ) );
 }
 
 function wsp_execute_delete_page( $input ) {
