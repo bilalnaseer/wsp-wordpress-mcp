@@ -103,6 +103,10 @@ function wsp_mcp_apply_post_date( &$args, $input, $post = null ) {
 		$status = $post ? $post->post_status : 'draft';
 	}
 
+	if ( isset( $input['date'] ) && ! is_scalar( $input['date'] ) ) {
+		return new WP_Error( 'invalid_date', "'date' must be an ISO 8601 string, e.g. 2026-12-01T09:00:00." );
+	}
+
 	if ( isset( $input['date'] ) && '' !== trim( (string) $input['date'] ) ) {
 		$raw = sanitize_text_field( (string) $input['date'] );
 		$dt  = date_create_immutable( $raw, wp_timezone() );

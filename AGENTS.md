@@ -320,12 +320,11 @@ admin toggle for each is driven by its entry in `wsp_mcp_ability_registry()` (`r
 |---|---|---|---|---|---|
 | `wsp/get-posts` | Get Blog Posts | read | ON | `__return_true` | `per_page` (int), `status` (publish\|draft\|all) |
 | `wsp/get-post` | Read Post | read | OFF | `edit_posts` + `read_post` (object) | `id`* |
-| `wsp/create-post` | Create Post | write | OFF | `publish_posts` | `title`*, `content`*, `status`, `date`, `categories[]`, `tags[]`, `excerpt`, `slug` |
-| `wsp/update-post` | Update Post | write | OFF | `edit_posts` | `id`*, `title`, `content`, `status`, `date`, `categories[]`, `tags[]` |
+| `wsp/create-post` | Create Post | write | OFF | `publish_posts` | `title`*, `content`*, `status`, `categories[]`, `tags[]`, `excerpt`, `slug` |
+| `wsp/update-post` | Update Post | write | OFF | `edit_posts` | `id`*, `title`, `content`, `status`, `categories[]`, `tags[]` |
 | `wsp/delete-post` | Delete Post | write | OFF | `delete_posts` | `id`* |
 
 - Delete moves to trash, not permanent deletion.
-- **Scheduling (`date`, issue #60):** post/page/CPT create + update run `wsp_mcp_apply_post_date()` (`guard.php`) before saving. `date` is ISO 8601, read in the site timezone unless it carries an offset/`Z`; it sets `post_date` + `post_date_gmt` + `edit_date`. A future date with `publish` or `future` is scheduled by core. `status=future` without a future date (new or existing) returns `WP_Error( 'invalid_date' )` — **do not regress:** before this fix the date was ignored and core silently published `future` items immediately. Responses report the *saved* `status` and `date` (from the DB, not the input).
 - `status=all` expands to `['publish','draft','pending','future']` **only for callers with `edit_posts`**; without `edit_others_posts` unpublished results are limited to the caller's own posts, and users without `edit_posts` (Subscribers) always get published only.
 - `get-post` (v2.9.0) returns one post in **any** status (including trash) with full `post_content`, pinned to `post_type === 'post'`. Not-found and forbidden return `WP_Error( 'not_found' | 'forbidden' )` — never a plain array — so `do_tools_call()` logs them as error/denied rather than success.
 
@@ -334,8 +333,8 @@ admin toggle for each is driven by its entry in `wsp_mcp_ability_registry()` (`r
 | Ability key | Label | Access | Default | Permission | Inputs |
 |---|---|---|---|---|---|
 | `wsp/get-pages` | Get Pages | read | ON | `__return_true` | none |
-| `wsp/create-page` | Create Page | write | OFF | `publish_pages` | `title`*, `content`*, `status`, `date`, `parent` (int), `slug` |
-| `wsp/update-page` | Update Page | write | OFF | `edit_pages` | `id`*, `title`, `content`, `status`, `date` |
+| `wsp/create-page` | Create Page | write | OFF | `publish_pages` | `title`*, `content`*, `status`, `parent` (int), `slug` |
+| `wsp/update-page` | Update Page | write | OFF | `edit_pages` | `id`*, `title`, `content`, `status` |
 | `wsp/delete-page` | Delete Page | write | OFF | `delete_pages` | `id`* |
 
 #### Taxonomy (`taxonomy.php`)
@@ -423,8 +422,8 @@ like `user_request`, orders, form definitions return `not_found`) **and requires
 |---|---|---|---|---|
 | `wsp/get-post-types` | Read Post Types | read | `edit_posts` | none |
 | `wsp/get-cpt-items` | Read CPT Items | read | `edit_posts` | `post_type`*, `per_page`, `status` (publish\|draft\|pending\|future\|private\|all) |
-| `wsp/create-cpt-item` | Create CPT Item | write | `publish_posts` | `post_type`*, `title`*, `content`, `status` (default draft), `date`, `slug` |
-| `wsp/update-cpt-item` | Update CPT Item | write | `edit_posts` | `post_type`*, `id`*, `title`, `content`, `status`, `date` |
+| `wsp/create-cpt-item` | Create CPT Item | write | `publish_posts` | `post_type`*, `title`*, `content`, `status` (default draft), `slug` |
+| `wsp/update-cpt-item` | Update CPT Item | write | `edit_posts` | `post_type`*, `id`*, `title`, `content`, `status` |
 | `wsp/delete-cpt-item` | Delete CPT Item | write | `delete_posts` | `post_type`*, `id`* (trash, not permanent) |
 
 - Object-level guards: update → `wsp_mcp_guard_edit_post()` + `wsp_mcp_guard_post_status()`; delete →
