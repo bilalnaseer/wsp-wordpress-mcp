@@ -77,6 +77,7 @@ require_once WSP_MCP_DIR . 'includes/abilities/woocommerce-catalog.php'; // shar
 require_once WSP_MCP_DIR . 'includes/abilities/woocommerce-store.php';
 require_once WSP_MCP_DIR . 'includes/abilities/plugins.php';
 require_once WSP_MCP_DIR . 'includes/abilities/woocommerce.php';
+require_once WSP_MCP_DIR . 'includes/abilities/litespeed.php'; // Included LiteSpeed Cache Abilities
 require_once WSP_MCP_DIR . 'includes/abilities/acf.php'; // Included ACF Pro Abilities
 require_once WSP_MCP_DIR . 'includes/abilities/uae.php'; // Included UAE Abilities
 require_once WSP_MCP_DIR . 'includes/abilities/gravityforms.php'; // Included Gravity Forms Abilities
