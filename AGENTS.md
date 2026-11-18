@@ -182,6 +182,7 @@ exists because its absence is an exploitable bug, not a style preference.
 3. Add the ability's metadata to `wsp_mcp_ability_registry()` in `registry.php` (so the
    admin toggle exists; set `default`).
 4. Enable it in MCP > Settings, then **reconnect the client** (see gotcha below).
+5. **Regenerate `docs/tools-list.md`** with `php bin/generate-tools-list.php` (all tools, read/write flag, description). A Claude Code `PostToolUse` hook (`.claude/settings.json` → `.claude/hooks/regen-tools-list.sh`) does this automatically whenever `registry.php` or a file under `includes/tools/` or `includes/abilities/` is edited; agents without hooks must run it by hand. Commit the regenerated file with the tool.
 
 > The public tool list on **wspmcp.com** is maintained separately in the website repo —
 > it is **not** generated from this repo. (The old `bin/` generators + `sync-abilities.yml` GitHub
@@ -198,6 +199,9 @@ must **reconnect** (fully restart Claude Desktop, not just open a new chat) befo
 
 ```
 wsp-wordpress-mcp/                        ← repo root (NOT the plugin — docs live here)
+├── bin/generate-tools-list.php               ← regenerates docs/tools-list.md (stubs WP, forces every integration active)
+├── docs/tools-list.md                        ← generated: every MCP tool + read/write + description (291 at v2.9.9)
+├── .claude/settings.json + hooks/            ← PostToolUse hook that runs the generator on tool-file edits
 └── wsp-mcp-ai-agents-connector/          ← plugin root (the installable folder)
     ├── wsp-mcp-ai-agents-connector.php   ← main file: constants, requires, hooks, activation/migration
     ├── readme.txt              ← WP.org readme (v2.0)
