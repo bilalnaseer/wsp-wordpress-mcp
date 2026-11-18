@@ -35,7 +35,7 @@ These three files give you complete project understanding without touching the c
 
 **Plugin Name:** WSP MCP - Free MCP Plugin for WordPress: Connect Claude, ChatGPT & AI Agents  
 (must match the `=== … ===` title line in `readme.txt` — Plugin Check flags a mismatch)  
-**Version:** 2.9.8
+**Version:** 2.9.9
 **Slug/prefix:** `wsp`  
 **WP option key:** `wsp_mcp_abilities`  
 **Constant prefix:** `WSP_MCP_`
@@ -240,7 +240,7 @@ wsp-wordpress-mcp/                        ← repo root (NOT the plugin — docs
 
 | Constant | Value |
 |---|---|
-| `WSP_MCP_VERSION` | `'2.9.8'` |
+| `WSP_MCP_VERSION` | `'2.9.9'` |
 | `WSP_MCP_OPTION` | `'wsp_mcp_abilities'` (per-ability on/off toggles) |
 | `WSP_MCP_DIR` | `plugin_dir_path(__FILE__)` |
 
@@ -880,6 +880,7 @@ Only registered if `wsp_uae_is_active()`. Adds 45 tools to manipulate UAE widget
 - **Two-column layout (v2.6.7):** `.wsp-wrap` (max-width `1180px`) wraps a `.wsp-layout` flex row of
   `.wsp-main` (settings, capped at `860px`) and `.wsp-side` (sticky promo cards). Collapses to one
   column below `1100px`. See "Promo cards" below.
+- **Global Enable All / Disable All (v2.9.9):** `#wsp-global-toggle` button above the groups flips every ability checkbox client-side (nothing persists until Save). Enabling opens a custom modal (`#wsp-modal-*`) because it turns on write abilities; disabling is immediate. Button state starts as "Enable All" and is not derived from saved settings.
 - JS: write abilities show a `confirm()` dialog before enabling. "Toggle All" per group (its click is
   excluded from the accordion toggle via `e.target.closest('.wsp-toggle-all')`).
 - Saves to `wsp_mcp_abilities` option via Settings API (`wsp_mcp_settings_group`).
