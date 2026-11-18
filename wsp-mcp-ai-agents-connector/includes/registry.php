@@ -164,16 +164,20 @@ function wsp_mcp_ability_registry() {
     if ( wsp_yoast_is_active() ) {
         $abilities += array(
             // YOAST SEO
-            'wsp/yoast-get-seo'    => array( 'label' => 'Get Yoast SEO Meta',    'description' => 'Get Yoast SEO title, meta description, and focus keyphrase for a post or page.', 'group' => 'Yoast SEO', 'access' => 'read',  'default' => false ),
-            'wsp/yoast-update-seo' => array( 'label' => 'Update Yoast SEO Meta', 'description' => 'Update Yoast SEO title, meta description, and/or focus keyphrase for a post or page.', 'group' => 'Yoast SEO', 'access' => 'write', 'default' => false ),
+            'wsp/yoast-get-seo'          => array( 'label' => 'Get Yoast SEO Meta',           'description' => 'Get Yoast SEO title, meta description, and focus keyphrase for any post type including WooCommerce products.',                              'group' => 'Yoast SEO', 'access' => 'read',  'default' => false ),
+            'wsp/yoast-update-seo'       => array( 'label' => 'Update Yoast SEO Meta',        'description' => 'Update Yoast SEO title, meta description, and/or focus keyphrase for any post type including WooCommerce products.',                        'group' => 'Yoast SEO', 'access' => 'write', 'default' => false ),
+            'wsp/yoast-get-term-seo'     => array( 'label' => 'Get Yoast Term SEO Meta',      'description' => 'Get Yoast SEO title, meta description, and focus keyphrase for a taxonomy term (e.g. WooCommerce product_cat, product_tag, product_brand).', 'group' => 'Yoast SEO', 'access' => 'read',  'default' => false ),
+            'wsp/yoast-update-term-seo'  => array( 'label' => 'Update Yoast Term SEO Meta',   'description' => 'Update Yoast SEO meta for a taxonomy term (e.g. WooCommerce product_cat, product_tag, product_brand).',                                     'group' => 'Yoast SEO', 'access' => 'write', 'default' => false ),
         );
     }
 
     if ( wsp_rankmath_is_active() ) {
         $abilities += array(
             // RANK MATH SEO
-            'wsp/rankmath-get-seo'    => array( 'label' => 'Get Rank Math SEO Meta',    'description' => 'Get Rank Math SEO title, meta description, focus keyword, and SEO score for a post or page.', 'group' => 'Rank Math SEO', 'access' => 'read',  'default' => false ),
-            'wsp/rankmath-update-seo' => array( 'label' => 'Update Rank Math SEO Meta', 'description' => 'Update Rank Math SEO title, meta description, and/or focus keyword for a post or page.', 'group' => 'Rank Math SEO', 'access' => 'write', 'default' => false ),
+            'wsp/rankmath-get-seo'          => array( 'label' => 'Get Rank Math SEO Meta',          'description' => 'Get Rank Math SEO title, meta description, focus keyword, and SEO score for any post type including WooCommerce products.',                              'group' => 'Rank Math SEO', 'access' => 'read',  'default' => false ),
+            'wsp/rankmath-update-seo'       => array( 'label' => 'Update Rank Math SEO Meta',       'description' => 'Update Rank Math SEO title, meta description, and/or focus keyword for any post type including WooCommerce products.',                                   'group' => 'Rank Math SEO', 'access' => 'write', 'default' => false ),
+            'wsp/rankmath-get-term-seo'     => array( 'label' => 'Get Rank Math Term SEO Meta',     'description' => 'Get Rank Math SEO title, meta description, focus keyword, and SEO score for a taxonomy term (e.g. WooCommerce product_cat, product_tag, product_brand).','group' => 'Rank Math SEO', 'access' => 'read',  'default' => false ),
+            'wsp/rankmath-update-term-seo'  => array( 'label' => 'Update Rank Math Term SEO Meta',  'description' => 'Update Rank Math SEO meta for a taxonomy term (e.g. WooCommerce product_cat, product_tag, product_brand).',                                              'group' => 'Rank Math SEO', 'access' => 'write', 'default' => false ),
         );
     }
 

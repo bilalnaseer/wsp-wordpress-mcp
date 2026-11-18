@@ -623,17 +623,20 @@ Table in `admin-tool-defs.php` (`wsp_mcp_plugin_admin_tool_defs()`), group **Sit
 
 #### Yoast SEO (`yoast.php`)
 
-Only registered if `wsp_yoast_is_active()` (`defined('WPSEO_VERSION') || class_exists('WPSEO_Meta')`). Both abilities require `edit_posts` capability.
+Only registered if `wsp_yoast_is_active()` (`defined('WPSEO_VERSION') || class_exists('WPSEO_Meta')`). All abilities require `edit_posts` capability.
 
 | Ability key | Label | Access | Default | Inputs |
 |---|---|---|---|---|
-| `wsp/yoast-get-seo` | Get Yoast SEO Meta | read | OFF | `id`* (int — post/page ID) |
+| `wsp/yoast-get-seo` | Get Yoast SEO Meta | read | OFF | `id`* (int — any post type ID, including WooCommerce `product`) |
 | `wsp/yoast-update-seo` | Update Yoast SEO Meta | write | OFF | `id`*, `seo_title`, `meta_description`, `focus_keyphrase` (at least one required) |
+| `wsp/yoast-get-term-seo` | Get Yoast Term SEO Meta | read | OFF | `term_id`*, `taxonomy`* (e.g. `product_cat`, `product_tag`, `product_brand`) |
+| `wsp/yoast-update-term-seo` | Update Yoast Term SEO Meta | write | OFF | `term_id`*, `taxonomy`*, `seo_title`, `meta_description`, `focus_keyphrase` (at least one required) |
 
+- `get-seo` / `update-seo` work on any registered post type (removed the `post`/`page`-only restriction); supports WooCommerce `product`, `product_variation`, and CPTs.
 - `get-seo` returns: `post_id`, `post_type`, `title` (WP title), `seo_title`, `meta_description`, `focus_keyphrase`, `url`.
 - `update-seo` rebuilds the Yoast indexable (`do_action('wp_insert_post', …)`) after saving.
 - Falls back to direct post-meta keys (`_yoast_wpseo_title`, `_yoast_wpseo_metadesc`, `_yoast_wpseo_focuskw`) when `WPSEO_Meta` class is unavailable.
-- Only supports `post` and `page` post types; returns `WP_Error` for others.
+- `get-term-seo` / `update-term-seo` read and write Yoast SEO meta for taxonomy terms. Uses `WPSEO_Taxonomy_Meta::get_term_meta()` / `set_value()` when available; falls back to direct `get_term_meta()` / `update_term_meta()` with keys `wpseo_title`, `wpseo_desc`, `wpseo_focuskw`. Permission is the taxonomy's own `edit_terms` capability.
 
 #### Elementor (`elementor.php`)
 

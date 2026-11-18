@@ -1090,7 +1090,7 @@ function wsp_mcp_register_native_tools() {
 	// ---- Yoast SEO (only when Yoast is active) ----
 	if ( function_exists( 'wsp_yoast_is_active' ) && wsp_yoast_is_active() ) {
 		WSP_MCP_Server::register_tool( 'wsp_yoast_get_seo', array(
-			'description' => 'Get Yoast SEO title, meta description, and focus keyphrase for a post or page.',
+			'description' => 'Get Yoast SEO title, meta description, and focus keyphrase for any post type including WooCommerce products.',
 			'inputSchema' => array( 'type' => 'object', 'required' => array( 'id' ), 'properties' => array(
 				'id' => array( 'type' => 'integer' ),
 			) ),
@@ -1099,7 +1099,7 @@ function wsp_mcp_register_native_tools() {
 			'enable_key'  => 'wsp/yoast-get-seo',
 		) );
 		WSP_MCP_Server::register_tool( 'wsp_yoast_update_seo', array(
-			'description' => 'Update Yoast SEO title, meta description, and/or focus keyphrase for a post or page.',
+			'description' => 'Update Yoast SEO title, meta description, and/or focus keyphrase for any post type including WooCommerce products.',
 			'inputSchema' => array( 'type' => 'object', 'required' => array( 'id' ), 'properties' => array(
 				'id'               => array( 'type' => 'integer' ),
 				'seo_title'        => array( 'type' => 'string' ),
@@ -1110,12 +1110,35 @@ function wsp_mcp_register_native_tools() {
 			'capability'  => 'edit_posts',
 			'enable_key'  => 'wsp/yoast-update-seo',
 		) );
+		WSP_MCP_Server::register_tool( 'wsp_yoast_get_term_seo', array(
+			'description' => 'Get Yoast SEO title, meta description, and focus keyphrase for a taxonomy term (e.g. WooCommerce product_cat, product_tag, product_brand).',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'term_id', 'taxonomy' ), 'properties' => array(
+				'term_id'  => array( 'type' => 'integer', 'description' => 'Term ID.' ),
+				'taxonomy' => array( 'type' => 'string', 'description' => 'Taxonomy slug, e.g. product_cat, product_tag, product_brand.' ),
+			) ),
+			'callback'    => 'wsp_execute_yoast_get_term_seo',
+			'capability'  => 'edit_posts',
+			'enable_key'  => 'wsp/yoast-get-term-seo',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_yoast_update_term_seo', array(
+			'description' => 'Update Yoast SEO title, meta description, and/or focus keyphrase for a taxonomy term (e.g. WooCommerce product_cat, product_tag, product_brand).',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'term_id', 'taxonomy' ), 'properties' => array(
+				'term_id'          => array( 'type' => 'integer', 'description' => 'Term ID.' ),
+				'taxonomy'         => array( 'type' => 'string', 'description' => 'Taxonomy slug, e.g. product_cat, product_tag, product_brand.' ),
+				'seo_title'        => array( 'type' => 'string' ),
+				'meta_description' => array( 'type' => 'string' ),
+				'focus_keyphrase'  => array( 'type' => 'string' ),
+			) ),
+			'callback'    => 'wsp_execute_yoast_update_term_seo',
+			'capability'  => 'edit_posts',
+			'enable_key'  => 'wsp/yoast-update-term-seo',
+		) );
 	}
 
 	// ---- Rank Math SEO (only when Rank Math is active) ----
 	if ( function_exists( 'wsp_rankmath_is_active' ) && wsp_rankmath_is_active() ) {
 		WSP_MCP_Server::register_tool( 'wsp_rankmath_get_seo', array(
-			'description' => 'Get Rank Math SEO title, meta description, focus keyword, and SEO score for a post or page.',
+			'description' => 'Get Rank Math SEO title, meta description, focus keyword, and SEO score for any post type including WooCommerce products.',
 			'inputSchema' => array( 'type' => 'object', 'required' => array( 'id' ), 'properties' => array(
 				'id' => array( 'type' => 'integer' ),
 			) ),
@@ -1124,7 +1147,7 @@ function wsp_mcp_register_native_tools() {
 			'enable_key'  => 'wsp/rankmath-get-seo',
 		) );
 		WSP_MCP_Server::register_tool( 'wsp_rankmath_update_seo', array(
-			'description' => 'Update Rank Math SEO title, meta description, and/or focus keyword for a post or page. Focus keyword accepts multiple comma-separated keywords (first one is the primary). Pass an empty string to clear a field back to the global template.',
+			'description' => 'Update Rank Math SEO title, meta description, and/or focus keyword for any post type including WooCommerce products. Focus keyword accepts multiple comma-separated keywords (first one is the primary). Pass an empty string to clear a field back to the global template.',
 			'inputSchema' => array( 'type' => 'object', 'required' => array( 'id' ), 'properties' => array(
 				'id'               => array( 'type' => 'integer' ),
 				'seo_title'        => array( 'type' => 'string' ),
@@ -1134,6 +1157,29 @@ function wsp_mcp_register_native_tools() {
 			'callback'    => 'wsp_execute_rankmath_update_seo',
 			'capability'  => 'edit_posts',
 			'enable_key'  => 'wsp/rankmath-update-seo',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_rankmath_get_term_seo', array(
+			'description' => 'Get Rank Math SEO title, meta description, focus keyword, and SEO score for a taxonomy term (e.g. WooCommerce product_cat, product_tag, product_brand).',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'term_id', 'taxonomy' ), 'properties' => array(
+				'term_id'  => array( 'type' => 'integer', 'description' => 'Term ID.' ),
+				'taxonomy' => array( 'type' => 'string', 'description' => 'Taxonomy slug, e.g. product_cat, product_tag, product_brand.' ),
+			) ),
+			'callback'    => 'wsp_execute_rankmath_get_term_seo',
+			'capability'  => 'edit_posts',
+			'enable_key'  => 'wsp/rankmath-get-term-seo',
+		) );
+		WSP_MCP_Server::register_tool( 'wsp_rankmath_update_term_seo', array(
+			'description' => 'Update Rank Math SEO title, meta description, and/or focus keyword for a taxonomy term (e.g. WooCommerce product_cat, product_tag, product_brand). Pass an empty string to clear a field.',
+			'inputSchema' => array( 'type' => 'object', 'required' => array( 'term_id', 'taxonomy' ), 'properties' => array(
+				'term_id'          => array( 'type' => 'integer', 'description' => 'Term ID.' ),
+				'taxonomy'         => array( 'type' => 'string', 'description' => 'Taxonomy slug, e.g. product_cat, product_tag, product_brand.' ),
+				'seo_title'        => array( 'type' => 'string' ),
+				'meta_description' => array( 'type' => 'string' ),
+				'focus_keyword'    => array( 'type' => 'string' ),
+			) ),
+			'callback'    => 'wsp_execute_rankmath_update_term_seo',
+			'capability'  => 'edit_posts',
+			'enable_key'  => 'wsp/rankmath-update-term-seo',
 		) );
 	}
 

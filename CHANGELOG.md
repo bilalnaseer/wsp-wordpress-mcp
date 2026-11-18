@@ -13,6 +13,9 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **WooCommerce support for RankMath & Yoast SEO tools (#64).** Both `wsp_rankmath_get_seo` / `wsp_rankmath_update_seo` and `wsp_yoast_get_seo` / `wsp_yoast_update_seo` previously rejected any post type other than `post` and `page` with "only supported for posts and pages". The post-type restriction is removed — they now work on `product`, `product_variation`, and any other registered post type. Four new tools added (all OFF by default): `wsp_rankmath_get_term_seo` / `wsp_rankmath_update_term_seo` and `wsp_yoast_get_term_seo` / `wsp_yoast_update_term_seo` read and write RankMath / Yoast SEO meta for taxonomy terms (`product_cat`, `product_tag`, `product_brand`, etc.) using `get_term_meta` / `update_term_meta`; Yoast term tools use `WPSEO_Taxonomy_Meta` when available, with a direct term-meta fallback.
+
 ## [2.9.8] — 2026-11-11
 
 ### Fixed

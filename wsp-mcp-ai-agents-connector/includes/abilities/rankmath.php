@@ -47,15 +47,80 @@ function wsp_rankmath_validate_post( $post_id ) {
         return new WP_Error( 'post_not_found', 'Post not found.' );
     }
 
-    if ( ! in_array( $post->post_type, array( 'post', 'page' ), true ) ) {
-        return new WP_Error( 'invalid_post_type', 'Rank Math SEO meta is only supported for posts and pages.' );
-    }
-
     if ( ! current_user_can( 'edit_post', $post_id ) ) {
         return new WP_Error( 'forbidden', 'You do not have permission to edit this post.' );
     }
 
     return $post;
+}
+
+function wsp_rankmath_validate_term( $term_id, $taxonomy ) {
+    if ( ! taxonomy_exists( $taxonomy ) ) {
+        return new WP_Error( 'invalid_taxonomy', 'Taxonomy "' . $taxonomy . '" does not exist.' );
+    }
+
+    $term = get_term( $term_id, $taxonomy );
+    if ( ! $term || is_wp_error( $term ) ) {
+        return new WP_Error( 'term_not_found', 'Term not found.' );
+    }
+
+    $tax_obj = get_taxonomy( $taxonomy );
+    $cap     = $tax_obj ? $tax_obj->cap->edit_terms : 'manage_categories';
+    if ( ! current_user_can( $cap ) ) {
+        return new WP_Error( 'forbidden', 'You do not have permission to edit terms in this taxonomy.' );
+    }
+
+    return $term;
+}
+
+function wsp_rankmath_get_term_meta( $term_id, $key ) {
+    $map = array(
+        'title'         => 'rank_math_title',
+        'description'   => 'rank_math_description',
+        'focus_keyword' => 'rank_math_focus_keyword',
+    );
+
+    if ( ! isset( $map[ $key ] ) ) {
+        return '';
+    }
+
+    $value = get_term_meta( $term_id, $map[ $key ], true );
+    return is_string( $value ) ? $value : '';
+}
+
+function wsp_rankmath_set_term_meta( $term_id, $key, $value ) {
+    $map = array(
+        'title'         => 'rank_math_title',
+        'description'   => 'rank_math_description',
+        'focus_keyword' => 'rank_math_focus_keyword',
+    );
+
+    if ( ! isset( $map[ $key ] ) ) {
+        return;
+    }
+
+    if ( '' === $value ) {
+        delete_term_meta( $term_id, $map[ $key ] );
+        return;
+    }
+
+    update_term_meta( $term_id, $map[ $key ], $value );
+}
+
+function wsp_rankmath_format_term_seo_data( $term ) {
+    $term_id = $term->term_id;
+    $score   = get_term_meta( $term_id, 'rank_math_seo_score', true );
+
+    return array(
+        'term_id'          => $term_id,
+        'taxonomy'         => $term->taxonomy,
+        'name'             => $term->name,
+        'seo_title'        => wsp_rankmath_get_term_meta( $term_id, 'title' ),
+        'meta_description' => wsp_rankmath_get_term_meta( $term_id, 'description' ),
+        'focus_keyword'    => wsp_rankmath_get_term_meta( $term_id, 'focus_keyword' ),
+        'seo_score'        => '' === $score ? null : intval( $score ),
+        'url'              => get_term_link( $term ),
+    );
 }
 
 function wsp_rankmath_format_seo_data( $post ) {
@@ -124,5 +189,66 @@ function wsp_execute_rankmath_update_seo( $input ) {
         'id'      => $post_id,
         'updated' => $updated,
         'seo'     => wsp_rankmath_format_seo_data( get_post( $post_id ) ),
+    );
+}
+
+function wsp_execute_rankmath_get_term_seo( $input ) {
+    $term_id  = intval( $input['term_id'] );
+    $taxonomy = isset( $input['taxonomy'] ) ? sanitize_key( $input['taxonomy'] ) : '';
+
+    if ( ! $taxonomy ) {
+        return new WP_Error( 'missing_taxonomy', 'Provide a taxonomy (e.g. product_cat, product_tag, product_brand).' );
+    }
+
+    $term = wsp_rankmath_validate_term( $term_id, $taxonomy );
+    if ( is_wp_error( $term ) ) {
+        return $term;
+    }
+
+    return wsp_rankmath_format_term_seo_data( $term );
+}
+
+function wsp_execute_rankmath_update_term_seo( $input ) {
+    $term_id  = intval( $input['term_id'] );
+    $taxonomy = isset( $input['taxonomy'] ) ? sanitize_key( $input['taxonomy'] ) : '';
+
+    if ( ! $taxonomy ) {
+        return new WP_Error( 'missing_taxonomy', 'Provide a taxonomy (e.g. product_cat, product_tag, product_brand).' );
+    }
+
+    $term = wsp_rankmath_validate_term( $term_id, $taxonomy );
+    if ( is_wp_error( $term ) ) {
+        return $term;
+    }
+
+    $updated = array();
+
+    if ( isset( $input['seo_title'] ) ) {
+        $value = sanitize_text_field( wp_unslash( $input['seo_title'] ) );
+        wsp_rankmath_set_term_meta( $term->term_id, 'title', $value );
+        $updated['seo_title'] = $value;
+    }
+
+    if ( isset( $input['meta_description'] ) ) {
+        $value = sanitize_textarea_field( wp_unslash( $input['meta_description'] ) );
+        wsp_rankmath_set_term_meta( $term->term_id, 'description', $value );
+        $updated['meta_description'] = $value;
+    }
+
+    if ( isset( $input['focus_keyword'] ) ) {
+        $value = sanitize_text_field( wp_unslash( $input['focus_keyword'] ) );
+        wsp_rankmath_set_term_meta( $term->term_id, 'focus_keyword', $value );
+        $updated['focus_keyword'] = $value;
+    }
+
+    if ( empty( $updated ) ) {
+        return new WP_Error( 'no_fields', 'Provide at least one of: seo_title, meta_description, focus_keyword.' );
+    }
+
+    return array(
+        'success' => true,
+        'term_id' => $term->term_id,
+        'updated' => $updated,
+        'seo'     => wsp_rankmath_format_term_seo_data( get_term( $term->term_id, $taxonomy ) ),
     );
 }
