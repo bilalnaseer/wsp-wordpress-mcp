@@ -1,0 +1,433 @@
+# WSP MCP v2.9.9 — all tools (291, every integration active)
+
+## Advanced Custom Fields (27)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_acf_list_field_groups` | read | List all registered custom field groups. |
+| `wsp_acf_get_field_group` | read | Retrieve configuration parameters of a specific field group by key. |
+| `wsp_acf_create_field_group` | write | Create a brand new custom field group configuration. |
+| `wsp_acf_update_field_group` | write | Update location rules or active parameters of a field group. |
+| `wsp_acf_delete_field_group` | write | Permanently delete or trash a field group by its key. |
+| `wsp_acf_import_field_groups` | write | Import field groups config structure programmatically from JSON parameters. |
+| `wsp_acf_list_fields` | read | List all custom fields declared inside a specific field group. |
+| `wsp_acf_get_field` | read | Get full configurations and rules of a single field key. |
+| `wsp_acf_create_field` | write | Inject a new custom field config inside an existing group configuration. |
+| `wsp_acf_update_field_config` | write | Modify attribute settings for a single field configuration parameters. |
+| `wsp_acf_delete_field` | write | Delete config mapping of a field configuration. |
+| `wsp_acf_duplicate_field` | write | Duplicate an existing field config mapping. |
+| `wsp_acf_sync_fields` | write | Sync database structures with local filesystem JSON config records. |
+| `wsp_acf_get_value_deep` | read | Deep read custom field values with dot-notation pathing support (e.g. key.0.subkey). |
+| `wsp_acf_update_value_deep` | write | Deep write custom field values supporting array indices with dot-notation (e.g. repeater.0.key). |
+| `wsp_acf_delete_value` | write | Delete specific key field metadata value. |
+| `wsp_acf_get_all_values` | read | Get all raw field values mapped on any object. |
+| `wsp_acf_bulk_update_values` | write | Bulk update array values instantly. |
+| `wsp_acf_get_field_object` | read | Return both config parameter object and loaded values. |
+| `wsp_acf_list_post_types` | read | List registered post types. |
+| `wsp_acf_create_post_type` | write | Programmatically register brand new WordPress Post Type. |
+| `wsp_acf_list_taxonomies` | read | List taxonomies structure. |
+| `wsp_acf_create_taxonomy` | write | Programmatically register brand new WordPress taxonomy. |
+| `wsp_acf_list_options_pages` | read | List registered global options views. |
+| `wsp_acf_create_options_page` | write | Programmatically register global ACF Options Page. |
+| `wsp_acf_get_option_value` | read | Read global option value metadata. |
+| `wsp_acf_update_option_value` | write | Write option values globally. |
+
+## Blocks (9)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_list_blocks` | read | Lists reusable blocks (the "wp_block" post type: saved synced/unsynced patterns). Returns { blocks: [{ id, title, slug, status, sync_status, modified }], total, returned, pages }. Non-published statuses need permission to edit others' blocks. |
+| `wsp_get_block` | read | Reads one reusable block: title, status, sync_status, full block markup in "content", and "used_in" (up to 50 editable posts that embed it). parse=true also returns the parsed block tree. |
+| `wsp_create_block` | write | Creates a reusable block. "content" is Gutenberg block markup, e.g. "<!-- wp:paragraph --><p>Hello</p><!-- /wp:paragraph -->". Markup is sanitized with wp_kses_post (scripts and event handlers are stripped). Default status publish. Returns { success, block }. |
+| `wsp_update_block` | write | Updates a reusable block (only the fields you pass). For a synced block this changes every post that embeds it — check "used_in" via wsp_get_block first. Markup is sanitized with wp_kses_post. Returns { success, block }. |
+| `wsp_delete_block` | write | Moves a reusable block to the trash (restorable), or with force=true deletes it permanently. Returns { success, id, permanent, used_in, warning } — posts still embedding the block will render nothing for it. |
+| `wsp_list_patterns` | read | Lists registered block patterns (from WordPress core, the active theme and plugins; not user-saved reusable blocks — use wsp_list_blocks for those). Returns { patterns: [{ name, title, description, categories, keywords, block_types, content? }], total, returned, categories: [{ name, label }] }. |
+| `wsp_get_post_blocks` | read | Reads the block tree of a post, page or custom post type item (via parse_blocks). Returns { post_id, post_type, title, has_blocks, block_count, blocks: [{ blockName, attrs, innerHTML, innerContent, innerBlocks }] }. Whitespace-only freeform chunks are dropped. Pass the same shape back to wsp_update_post_blocks. |
+| `wsp_update_post_blocks` | write | Replaces a post's entire block content. Provide EXACTLY ONE of: "blocks" (array of { blockName, attrs, innerHTML, innerContent, innerBlocks } — the shape wsp_get_post_blocks returns; blockName must be a registered type, see wsp_list_block_types; for a container with inner blocks give innerContent as HTML strings with one null per inner block, e.g. ["<div class=\"wp-block-group\">", null, "</div>"]) or "content" (raw block markup string). Markup is sanitized with wp_kses_post. This replaces ALL content, so read the current blocks first; WordPress keeps the previous version as a revision. Returns { success, post_id, block_count, revisions, link }. |
+| `wsp_list_block_types` | read | Lists registered block types (core/*, plugin and theme blocks). Returns { block_types: [{ name, title, category, description, parent, is_dynamic, attributes? }], total, returned }. Use it to find valid blockName values and attribute names for wsp_update_post_blocks. |
+
+## Comments (3)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_get_comments` | read | Returns comments. |
+| `wsp_approve_comment` | write | Approves a pending comment by ID. |
+| `wsp_delete_comment` | write | Trashes a comment by ID. |
+
+## Contact Form 7 (10)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_cf7_list_forms` | read | Lists all Contact Form 7 forms with ID, title, and shortcode. |
+| `wsp_cf7_get_form` | read | Retrieves full CF7 form structure (markup, mail config, messages, tags). |
+| `wsp_cf7_create_form` | write | Creates a new Contact Form 7 form with title and optional markup/properties. |
+| `wsp_cf7_update_form` | write | Updates an existing CF7 form markup, mail settings, or messages. |
+| `wsp_cf7_delete_form` | write | Trashes or permanently deletes a Contact Form 7 form. |
+| `wsp_cf7_list_entries` | read | Lists Flamingo-stored form submissions (requires Flamingo plugin). |
+| `wsp_cf7_get_entry` | read | Retrieves full details of a single Flamingo submission by ID. |
+| `wsp_cf7_validate_form` | read | Runs the built-in configuration validator to check for email/syntax errors. |
+| `wsp_cf7_get_integrations` | read | Lists active integration modules and reCAPTCHA configuration status. |
+| `wsp_cf7_moderate_entry` | write | Mark a Flamingo submission as spam, unspam, trash, or untrash. |
+
+## Custom Post Types (5)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_get_post_types` | read | List registered custom post types (excludes built-in Posts/Pages). |
+| `wsp_get_cpt_items` | read | List items of a given custom post type. |
+| `wsp_create_cpt_item` | write | Create a new item of a given custom post type. To schedule it, pass status "future" (or "publish") with a future date. |
+| `wsp_update_cpt_item` | write | Update an existing custom post type item by ID. |
+| `wsp_delete_cpt_item` | write | Move a custom post type item to trash by ID. |
+
+## Elementor (20)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_elementor_list_pages` | read | Lists pages/posts built with Elementor. |
+| `wsp_elementor_get_page` | read | Get the element tree of an Elementor page by post ID. |
+| `wsp_elementor_get_element` | read | Get all settings for a specific element by post ID and element ID. |
+| `wsp_elementor_find_element` | read | Find elements on a page by widget type or settings content. |
+| `wsp_elementor_list_templates` | read | List Elementor saved templates from the library. |
+| `wsp_elementor_update_element` | write | Update settings for a widget or container by element ID. |
+| `wsp_elementor_add_widget` | write | Add a widget to a container or column on an Elementor page. |
+| `wsp_elementor_add_container` | write | Add a layout container or section to an Elementor page. |
+| `wsp_elementor_remove_element` | write | Remove a widget or container from an Elementor page by element ID. |
+| `wsp_elementor_get_active_kit` | read | Retrieve global fonts, color palette, and layout from the active Elementor kit. |
+| `wsp_elementor_update_active_kit` | write | Update colors and layout settings in the active Elementor kit. |
+| `wsp_elementor_regenerate_css` | write | Clear and regenerate all Elementor CSS cache files. |
+| `wsp_elementor_get_widget_schema` | read | Get control schema for a widget type — margins, padding, background, typography, etc. |
+| `wsp_elementor_duplicate_element` | write | Clone a widget or container with new unique IDs recursively. |
+| `wsp_elementor_move_element` | write | Reposition an element to a different parent or index position. |
+| `wsp_elementor_convert_css` | read | Parse CSS rules into Elementor-compatible settings structure. |
+| `wsp_elementor_get_page_settings` | read | Read global page config like template, background, and custom CSS. |
+| `wsp_elementor_update_page_settings` | write | Update page template (canvas/full-width) and page-level settings. |
+| `wsp_elementor_copy_styles` | write | Copy style settings from a source element to a destination element. |
+| `wsp_elementor_get_breakpoints` | read | Read responsive breakpoint values from Elementor configuration. |
+
+## Gravity Forms (18)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_gravity_list_forms` | read | Lists all Gravity Forms (ID, title, date, active status, entry count). |
+| `wsp_gravity_get_form` | read | Retrieves full JSON structure of a form (fields, labels, types, choices, rules). |
+| `wsp_gravity_create_form` | write | Creates a new Gravity Form structure with title and optional fields. |
+| `wsp_gravity_update_form` | write | Updates form properties, fields, or active status. |
+| `wsp_gravity_delete_form` | write | Deletes or trashes a Gravity Form. |
+| `wsp_gravity_list_entries` | read | Lists submissions/leads for a specific form (paginated). |
+| `wsp_gravity_get_entry` | read | Retrieves complete submission details by entry ID. |
+| `wsp_gravity_update_entry` | write | Updates field values or status (read/unread/starred) inside an entry. |
+| `wsp_gravity_delete_entry` | write | Trashes or permanently deletes an entry. |
+| `wsp_gravity_get_notifications` | read | Gets notification settings (emails, feeds) for a form. |
+| `wsp_gravity_get_confirmations` | read | Gets confirmation settings (thank-you messages, redirects) for a form. |
+| `wsp_gravity_create_notification` | write | Creates a new email notification for a form (to, subject, message, from, etc.). |
+| `wsp_gravity_update_notification` | write | Updates an existing notification (to, subject, message, active status, etc.). |
+| `wsp_gravity_delete_notification` | write | Deletes a notification from a form. |
+| `wsp_gravity_create_confirmation` | write | Creates a confirmation (thank-you message, redirect, or page) for a form. |
+| `wsp_gravity_update_confirmation` | write | Updates an existing confirmation (message, redirect URL, default status, etc.). |
+| `wsp_gravity_delete_confirmation` | write | Deletes a confirmation from a form. |
+| `wsp_gravity_update_form_settings` | write | Updates form-level settings (label placement, restrictions, scheduling, honeypot, etc.). |
+
+## Media (8)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_list_media` | read | Browse and search the WordPress media library by type, keyword, or date. |
+| `wsp_get_media` | read | Retrieve the full metadata of a specific media file by ID. |
+| `wsp_count_media` | read | Get media library counts grouped by MIME type, plus a total. |
+| `wsp_update_media` | write | Update the title, alt text, caption, or description of a media file by ID. |
+| `wsp_delete_media` | write | Permanently delete a media file from the WordPress media library by ID. |
+| `wsp_upload_media` | write | Upload an image into the WordPress media library. Provide EITHER "data" (base64-encoded file content — use this to upload a file attached to the chat directly, no public URL required) OR "url" (a public link to fetch). Supported types: jpg, png, gif, webp. |
+| `wsp_upload_media_from_url` | write | Pull an image from any web link straight into your media library. |
+| `wsp_set_featured_image` | write | Set an image as the featured image (thumbnail) for a post or page. |
+
+## Menus (9)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_get_menus` | read | Lists all navigation menus with item counts and assigned theme locations. |
+| `wsp_get_menu_items` | read | Lists the items inside a specific navigation menu. |
+| `wsp_create_menu` | write | Creates a new navigation menu. |
+| `wsp_delete_menu` | write | Deletes a navigation menu. |
+| `wsp_add_menu_item` | write | Adds an item (custom link, post, page, or category) to a navigation menu. |
+| `wsp_update_menu_item` | write | Updates a menu item's title, URL, parent, or order. |
+| `wsp_delete_menu_item` | write | Removes an item from a navigation menu. |
+| `wsp_get_menu_locations` | read | Lists theme menu locations and which menu is assigned to each. |
+| `wsp_assign_menu_location` | write | Assigns (or unassigns, when menu is omitted) a navigation menu to a theme location. |
+
+## Pages (4)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_get_pages` | read | Returns published pages. |
+| `wsp_create_page` | write | Creates a new page (optionally Elementor-initialized). To schedule it, pass status "future" (or "publish") with a future date. |
+| `wsp_update_page` | write | Updates an existing page by ID. |
+| `wsp_delete_page` | write | Moves a page to trash by ID. |
+
+## Post Meta (3)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_get_post_meta` | read | Reads custom fields (post meta) of a post, page, attachment or custom post type item. With "key": returns { post_id, key, exists, value }. Without "key": returns { post_id, post_type, meta: { <key>: value }, returned, truncated } for all public keys (max 200). Protected keys (starting with an underscore, e.g. _elementor_data, _thumbnail_id) are never returned. For Yoast SEO use the wsp_yoast_* tools. |
+| `wsp_update_post_meta` | write | Creates or updates a custom field on a post. value may be a string, number, boolean, array or object (stored serialized). Every string is passed through wp_kses_post, so script tags and event handlers are stripped. Protected keys (leading underscore) are refused. With prev_value, only the row holding that value is changed (for keys with several rows). Returns { success, changed, created, post_id, key, previous_value, value }. |
+| `wsp_delete_post_meta` | write | Deletes a custom field from a post: every row for the key, or with "value" only rows holding that value. Protected keys (leading underscore) are refused. Returns { success, post_id, key, previous_value }. Not undoable (post meta has no trash) — read the value first. |
+
+## Posts (5)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_get_posts` | read | Returns blog posts with full metadata. |
+| `wsp_get_post` | read | Gets a single post by ID with full content, any status (draft/publish/etc). |
+| `wsp_create_post` | write | Creates a new blog post. To schedule it, pass status "future" (or "publish") with a future date. |
+| `wsp_update_post` | write | Updates an existing post by ID. |
+| `wsp_delete_post` | write | Moves a post to trash by ID. |
+
+## Rank Math SEO (4)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_rankmath_get_seo` | read | Get Rank Math SEO title, meta description, focus keyword, and SEO score for any post type including WooCommerce products. |
+| `wsp_rankmath_update_seo` | write | Update Rank Math SEO title, meta description, and/or focus keyword for any post type including WooCommerce products. Focus keyword accepts multiple comma-separated keywords (first one is the primary). Pass an empty string to clear a field back to the global template. |
+| `wsp_rankmath_get_term_seo` | read | Get Rank Math SEO title, meta description, focus keyword, and SEO score for a taxonomy term (e.g. WooCommerce product_cat, product_tag, product_brand). |
+| `wsp_rankmath_update_term_seo` | write | Update Rank Math SEO title, meta description, and/or focus keyword for a taxonomy term (e.g. WooCommerce product_cat, product_tag, product_brand). Pass an empty string to clear a field. |
+
+## Redirects & 404 (5)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_list_redirects` | read | Lists URL redirects, newest first. Returns { redirects: [{ id, source, destination, status_code, external, hits, last_hit, note, created_by, created_at }], total, returned, pages, limit }. "source" is a site-relative path; "destination" is a /path or full URL. |
+| `wsp_create_redirect` | write | Creates a redirect that takes effect immediately for every visitor. "source": the old path on this site, e.g. "/old-page" (matched on the path only, case-insensitively, ignoring trailing slashes; no query strings; not "/", /wp-admin, /wp-login.php, /wp-json). "destination": a "/new-page" path or a full http(s) URL — a URL on a DIFFERENT domain is refused unless allow_external=true. status_code 301 (permanent, default; browsers and search engines cache it) or 302 (temporary). Refuses loops and duplicate sources. A redirect overrides any real page at the source path (a warning is returned if one exists). Returns { success, redirect, warning?, notice? }. Tip: use wsp_get_404_logs to find broken URLs worth redirecting. |
+| `wsp_delete_redirect` | write | Deletes a redirect by id (from wsp_list_redirects). Visitors who cached a 301 in their browser may keep being redirected for a while. Returns { success, deleted }. |
+| `wsp_get_404_logs` | read | Lists URLs that visitors requested but were not found (404), aggregated per path. Recording is active only while this tool is enabled, so an empty result right after enabling is normal. Returns { entries: [{ id, path, hits, first_seen, last_seen, referrer, user_agent, redirect_id (set when a redirect already covers the path) }], returned, total_paths, total_hits, tracking_since }. Paths only — query strings are stripped and no IP addresses are stored. Entries expire after 30 days. |
+| `wsp_clear_404_logs` | write | Deletes recorded 404 entries: one by id, or everything with all=true. Returns { success, deleted }. |
+
+## Revisions (3)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_get_revisions` | read | Lists the saved revisions of a post, page, or custom post type item, newest first. Returns { post_id, post_type, post_title, total, returned, revisions: [{ id, parent_id, date_gmt, author, is_autosave, title, content_chars, changed_fields (which of title / content / excerpt differ from the live post) }] }. Use a revision id with wsp_get_revision or wsp_restore_revision. |
+| `wsp_get_revision` | read | Reads one revision in full: title, content, excerpt, date, author, plus a "current" block with the live post's title, content and excerpt so the two can be compared. |
+| `wsp_restore_revision` | write | Rolls a post back to a revision: restores its title, content and excerpt (not status, slug, taxonomies or custom fields). The version that was live is saved as a new revision first, so the restore can be undone. Read the revision with wsp_get_revision before restoring. |
+
+## Search (1)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_search` | read | Search posts and pages by keyword. |
+
+## Site (12)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_update_site_context` | write | Write the site's AGENTS.md or CHANGELOG.md (the Site Context every connected agent reads first). For a large file, send the first chunk with mode=replace and the rest in order with mode=append (keep each chunk under ~40,000 characters); check total_chars / sha256 in the response. Never include passwords or API keys — every connected agent can read these documents. |
+| `wsp_get_site_info` | read | Returns site name, URL, tagline, WP version, and language. |
+| `wsp_get_plugins` | read | Lists installed plugins with name, version, author, active status and update availability (active_plugins = active only; plugins = all). |
+| `wsp_update_site_info` | write | Update the site title, tagline, and/or admin email. |
+| `wsp_update_permalink_structure` | write | Change the site permalink structure. |
+| `wsp_activate_plugin` | write | Activate an installed plugin by file path. |
+| `wsp_deactivate_plugin` | write | Deactivate an active plugin by file path. |
+| `wsp_install_plugin` | write | Install a plugin from wordpress.org by slug, optionally activating it. |
+| `wsp_install_plugin_from_url` | write | Install a plugin from a public https .zip URL. Only use sources you trust: the zip runs as PHP code. |
+| `wsp_delete_plugin` | write | Delete an installed plugin (must be deactivated first; this plugin cannot delete itself). |
+| `wsp_update_plugin` | write | Update an installed plugin to its latest available version. |
+| `wsp_get_mcp_diagnostics` | read | MCP transport diagnostics: number of live sessions, session TTL, and counts/recent entries of rejected requests (auth_failed, origin_blocked, session_expired, session_mismatch, rate_limited) so you can see why a client is being blocked. |
+
+## Site Context (1)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_get_site_context` | read | READ THIS FIRST. Returns the site administrator's AGENTS.md (how this site is built and the rules to follow) and CHANGELOG.md (what changed and why). Call once at the start of a session instead of exploring the site with other tools. |
+
+## Site Editor (6)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_get_global_styles` | read | Gets the Global Styles (theme.json) settings and styles of the active block theme. origin=user (default) returns only the site's Site Editor customizations; origin=merged returns the effective values (core + theme + user). include_variations=true also lists the theme's style variations as available_variations: [{ slug, title, scope }] where scope is full \| color \| typography; pass a slug to wsp_update_global_styles variation_slug to apply it. |
+| `wsp_update_global_styles` | write | Updates the site's Global Styles (theme.json user layer) for the active block theme. settings/styles use theme.json structure (e.g. styles.color.background, styles.elements.link.color.text, styles.blocks["core/button"].border.radius, settings.color.palette). By default values deep-merge into existing customizations — objects merge key-by-key, arrays (like a palette) replace wholesale, and null removes a key so it falls back to the theme. merge=false replaces settings/styles entirely. variation_slug applies a theme style variation first (full variations replace, color/typography partials merge). Custom CSS (`css` keys) cannot be set through this tool. |
+| `wsp_get_templates` | read | Lists block templates or template parts of the active theme. Returns { templates: [{ id, slug, title, description, type, area, status, source, has_theme_file, is_customized }], total, total_pages, page, per_page }. IDs are `theme-slug//slug` and are accepted by wsp_get_template / wsp_update_template with the same type. |
+| `wsp_get_template` | read | Gets one block template or template part by ID (theme-slug//slug) including its full block markup content. |
+| `wsp_create_template` | write | Creates a new block template or template part for the active theme. Fails if the slug already exists (use wsp_update_template for that, including to customize a theme-provided template). |
+| `wsp_update_template` | write | Updates a block template or template part (title, content, description, and area for template parts). Updating a theme-file template that has not been customized yet creates the same database override the Site Editor creates on first save. |
+
+## Site Health & Cron (6)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_get_site_health` | read | Runs WordPress core's Site Health tests and returns the Site Health Info data. Returns { counts: { good, recommended, critical }, tests: [{ test, label, status (good \| recommended \| critical \| error), badge, description, actions }] (critical first), skipped: [{ test, label, reason }], info: { <section>: { label, fields: { <name>: { label, value } } } }, info_truncated, info_omitted }. Text is plain. Info leaves out every field core marks private (database credentials, table prefix, paths) and redacts secret-shaped values. include_async=true also runs the slower tests (WordPress.org reachability, loopback, background updates, HTTPS, page cache) — can take several seconds. |
+| `wsp_get_cron_events` | read | Lists scheduled WP-Cron events, soonest first. Returns { events: [{ hook, key, next_run (ISO 8601 UTC), seconds_until_run (negative when past due), overdue (>1h past due), schedule: { name, interval_seconds, display, registered } or null for one-off, has_callback (false = orphaned, nothing runs), args (secrets redacted) }], total, returned, overdue_count, cron_disabled (DISABLE_WP_CRON), now, schedules: [{ name, interval_seconds, display }] }. |
+| `wsp_get_cron_event` | read | Inspects one cron hook: every scheduled instance (or just the one matching key) plus the callbacks attached to the hook (function / Class->method and priority). protected=true marks WSP MCP's own maintenance tasks, which cannot be unscheduled. |
+| `wsp_run_cron_event` | write | Runs an existing scheduled cron event immediately, in this request, exactly as wp-cron.php would. A recurring event keeps its next scheduled run; a one-off event is consumed (unscheduled). Returns { success, hook, key, duration_ms, recurring, output, error? }. Refused if no callback is attached to the hook. Only events already scheduled can be run — there is no tool to schedule new ones. |
+| `wsp_delete_cron_event` | write | Unschedules a cron event: one instance (by hook, plus key when the hook has several) or, with all=true, every instance of the hook. Use it to clear orphaned events (has_callback: false) left by removed plugins. Unscheduling a core or active-plugin task stops that task until its plugin re-schedules it. WSP MCP's own wsp_mcp_* tasks are refused. |
+| `wsp_get_error_log` | read | Returns the most recent lines of the PHP error log, newest last. Reads ONLY the PHP error_log path (where WP_DEBUG_LOG writes) or, failing that, wp-content/debug.log — never any other file. Secrets are redacted (tokens, passwords, salts, URL credentials, JWTs). Returns { path_source, path, size_bytes, modified, lines, returned, truncated, scanned_bytes }, or { path_source: null, reason } when no readable log exists (with how to enable one). |
+
+## Taxonomy (4)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_get_categories` | read | Returns all categories. |
+| `wsp_create_category` | write | Creates a new category (taxonomy "category", or "product_cat" for WooCommerce product categories). |
+| `wsp_get_tags` | read | Returns all tags. |
+| `wsp_create_tag` | write | Creates a new tag. |
+
+## Themes (6)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_get_themes` | read | List installed themes and which one is active. |
+| `wsp_switch_theme` | write | Activate a different installed theme. |
+| `wsp_get_theme_file` | read | Lists the files of an installed theme (omit "path"), or reads one text file from it (returns content, bytes, sha256; content is capped at 512 KB with truncated:true). |
+| `wsp_update_theme_file` | write | Creates or overwrites ONE file in an installed theme without re-uploading the whole theme. PHP files are syntax-checked and literal require/include targets must exist, otherwise nothing is written. The previous version is copied to uploads/wsp-mcp-theme-backups/ (returned as "backup"). Same path/extension rules as wsp_upload_theme. |
+| `wsp_upload_theme_chunk` | write | Uploads a large theme .zip in pieces. Send base64 slices of the zip as part=0,1,2,… with the same upload_id (part 0 restarts); on the last piece set complete=true (plus overwrite/activate) and the assembled zip is installed exactly like wsp_upload_theme "data". Returns next_part until complete. |
+| `wsp_upload_theme` | write | Installs a WordPress theme into wp-content/themes — use this to install a theme you generated. Provide EXACTLY ONE source: "files" (recommended for generated themes: an object mapping relative paths to text content, e.g. {"style.css": "/*\nTheme Name: Acme\n...*/", "functions.php": "<?php ...", "templates/index.html": "<!-- wp:... -->"}, plus "slug" for the folder name and optional "binary_files" for base64 images/fonts such as screenshot.png), "data" (a base64 .zip whose root contains the theme folder), or "url" (public http(s) link to a theme .zip). style.css with a "Theme Name:" header is required; a classic theme also needs index.php, a block theme needs templates/index.html; a child theme sets "Template: <parent-slug>" and a missing parent is fetched from WordPress.org. Installs through WordPress core's Theme_Upgrader (same as Appearance > Themes > Upload). Existing themes are only replaced with overwrite=true. activate=true switches the site to the theme after install. Returns { slug, name, version, is_block_theme, parent, parent_installed, replaced, activated, active_theme, preview_url } (+ activation_error if install succeeded but activation did not). |
+
+## Ultimate Addons Elementor (45)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_uae_widgets_activate` | write | UAE Tool: widgets activate |
+| `wsp_uae_widgets_deactivate` | write | UAE Tool: widgets deactivate |
+| `wsp_uae_widgets_list` | read | UAE Tool: widgets list |
+| `wsp_uae_widgets_bulk_toggle` | write | UAE Tool: widgets bulk toggle |
+| `wsp_uae_widgets_deactivate_unused` | write | UAE Tool: widgets deactivate unused |
+| `wsp_uae_widgets_get_usage` | read | UAE Tool: widgets get usage |
+| `wsp_uae_templates_list` | read | UAE Tool: templates list |
+| `wsp_uae_templates_create` | write | UAE Tool: templates create |
+| `wsp_uae_templates_delete` | write | UAE Tool: templates delete |
+| `wsp_uae_templates_duplicate` | write | UAE Tool: templates duplicate |
+| `wsp_uae_active_get` | read | UAE Tool: active get |
+| `wsp_uae_templates_get` | read | UAE Tool: templates get |
+| `wsp_uae_templates_update` | write | UAE Tool: templates update |
+| `wsp_uae_templates_restore` | write | UAE Tool: templates restore |
+| `wsp_uae_shortcode_render` | read | UAE Tool: shortcode render |
+| `wsp_uae_pages_list` | read | UAE Tool: pages list |
+| `wsp_uae_pages_create` | write | UAE Tool: pages create |
+| `wsp_uae_pages_delete` | write | UAE Tool: pages delete |
+| `wsp_uae_pages_restore` | write | UAE Tool: pages restore |
+| `wsp_uae_pages_update_meta` | write | UAE Tool: pages update meta |
+| `wsp_uae_pages_update_status` | write | UAE Tool: pages update status |
+| `wsp_uae_builder_get_structure` | read | UAE Tool: builder get structure |
+| `wsp_uae_builder_add_section` | write | UAE Tool: builder add section |
+| `wsp_uae_builder_insert_widget` | write | UAE Tool: builder insert widget |
+| `wsp_uae_builder_update_widget` | write | UAE Tool: builder update widget |
+| `wsp_uae_builder_remove_element` | write | UAE Tool: builder remove element |
+| `wsp_uae_builder_move_element` | write | UAE Tool: builder move element |
+| `wsp_uae_builder_add_column` | write | UAE Tool: builder add column |
+| `wsp_uae_builder_build` | write | UAE Tool: builder build |
+| `wsp_uae_builder_regenerate_css` | write | UAE Tool: builder regenerate css |
+| `wsp_uae_maintenance_clear_cache` | write | UAE Tool: maintenance clear cache |
+| `wsp_uae_builder_undo` | write | UAE Tool: builder undo |
+| `wsp_uae_builder_get_schema` | read | UAE Tool: builder get schema |
+| `wsp_uae_builder_list_widget_types` | read | UAE Tool: builder list widget types |
+| `wsp_uae_settings_get` | read | UAE Tool: settings get |
+| `wsp_uae_settings_update` | write | UAE Tool: settings update |
+| `wsp_uae_info_get` | read | UAE Tool: info get |
+| `wsp_uae_pro_features` | read | UAE Tool: pro features |
+| `wsp_uae_extensions_list` | read | UAE Tool: extensions list |
+| `wsp_uae_extensions_toggle` | write | UAE Tool: extensions toggle |
+| `wsp_uae_theme_get_info` | read | UAE Tool: theme get info |
+| `wsp_uae_theme_set_method` | write | UAE Tool: theme set method |
+| `wsp_uae_design_system_get_tokens` | read | UAE Tool: design system get tokens |
+| `wsp_uae_display_rules_get_locations` | read | UAE Tool: display rules get locations |
+| `wsp_uae_display_rules_update` | write | UAE Tool: display rules update |
+
+## Users (3)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_get_users` | read | Lists registered users. |
+| `wsp_create_user` | write | Create a new WordPress user account. |
+| `wsp_update_user` | write | Update a user's email, display name, role, or password. |
+
+## WPForms (12)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_wpforms_list_forms` | read | Lists all WPForms with ID, title, date, status, and field count. |
+| `wsp_wpforms_get_form` | read | Retrieves full WPForms structure (fields, settings, payments). |
+| `wsp_wpforms_describe_schema` | read | Returns supported field types and editable attributes to guide AI on create/update field actions. |
+| `wsp_wpforms_get_form_stats` | read | Fetch entry counts and analytics (Pro entry stats). |
+| `wsp_wpforms_create_form` | write | Creates a new WPForms form with fields, settings, and notification email. |
+| `wsp_wpforms_update_form_settings` | write | Update form settings (title, description, submit text, AJAX, anti-spam). |
+| `wsp_wpforms_add_field` | write | Add a new field to an existing form with auto-assigned ID. |
+| `wsp_wpforms_update_field` | write | Update a field label, description, required status, or choices. |
+| `wsp_wpforms_delete_form` | write | Trashes or permanently deletes a WPForms form. |
+| `wsp_wpforms_list_entries` | read | Lists submission entries for a form (requires WPForms Pro). |
+| `wsp_wpforms_get_entry` | read | Retrieves full details and field values of a single entry. |
+| `wsp_wpforms_delete_entry` | write | Trashes or permanently deletes a submission entry (Pro). |
+
+## Widgets (8)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_get_sidebars` | read | Lists the widget areas (sidebars, footers, …) of a classic theme with the ordered widget ids in each, plus wp_inactive_widgets (widgets removed from every area but kept). Returns { sidebars: [{ id, name, description, status, widgets }], total }. A block theme has no widget areas: returns an empty list and a hint to use wsp_get_templates (template parts) instead. |
+| `wsp_update_sidebar` | write | Sets the full contents and order of a widget area. `widgets` is the ordered list of widget ids it should contain; listed widgets are moved in from wherever they are, and widgets previously in the area but not listed move to wp_inactive_widgets (settings kept). Pass [] to empty the area. Sidebars themselves are registered by the theme and cannot be created or deleted. |
+| `wsp_get_widget_types` | read | Lists registered widget types — the valid id_base values for wsp_create_widget. Returns { widget_types: [{ id, name, description, is_multi, settings_editable }], total }. Only types with settings_editable: true can be created or have their settings changed over MCP. |
+| `wsp_get_widgets` | read | Lists widgets placed in widget areas with their settings, grouped by sidebar in display order. Returns { widgets: [{ id, id_base, sidebar, position, settings_editable, settings }], total }; position is the 0-based index in its sidebar. settings is null for widget types that do not expose them. |
+| `wsp_get_widget` | read | Gets one widget with its settings and rendered front-end HTML. Returns { id, id_base, sidebar, settings_editable, settings, rendered }. |
+| `wsp_create_widget` | write | Creates a widget in a widget area. id_base must be a settings_editable type from wsp_get_widget_types ("block" is recommended for free-form content). position is 0-based; omit (or past the end) to add last. |
+| `wsp_update_widget` | write | Updates a widget's settings, moves it to another widget area, and/or reorders it. instance is merged over current settings (omitted keys keep their values) — read it first with wsp_get_widget. sidebar moves it (added last unless position is given); position is 0-based within its sidebar. Widgets whose type does not expose settings can be moved but not edited. |
+| `wsp_delete_widget` | write | Removes a widget from the site. force=false (default) moves it to wp_inactive_widgets, keeping its settings (wsp_update_widget with a sidebar restores it). force=true deletes the widget and its settings permanently — cannot be undone. |
+
+## WooCommerce (50)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_woo_get_products` | read | List products with filtering and pagination. |
+| `wsp_woo_get_product` | read | Get single product details by ID. |
+| `wsp_woo_create_product` | write | Create a new simple or variable product in the store. |
+| `wsp_woo_create_variation` | write | Creates a variation for an existing variable product. |
+| `wsp_woo_update_product` | write | Update an existing product details. |
+| `wsp_woo_list_orders` | read | List recent orders with status filtering. |
+| `wsp_woo_update_order_status` | write | Update the status of an order. |
+| `wsp_woo_refund_order` | write | Create a full or partial refund for an order. |
+| `wsp_woo_create_coupon` | write | Create a new coupon code (percentage or fixed discount). |
+| `wsp_woo_list_coupons` | read | List all active store coupons with usage stats. |
+| `wsp_woo_create_order_note` | write | Add a note to an existing order (internal or customer-facing). |
+| `wsp_woo_list_customers` | read | List registered customers with billing details. |
+| `wsp_woo_report_sales` | read | Get sales, orders, net revenue, and average order value reports. |
+| `wsp_woo_get_low_stock` | read | Inspect and list products running low on stock. |
+| `wsp_woo_moderate_review` | write | Approve, spam, trash, or reply to product reviews. |
+| `wsp_woo_delete_product` | write | Move a product (simple, variable or variation) to the trash, or permanently delete with force=true. |
+| `wsp_woo_delete_variation` | write | Trash or permanently delete (force=true) one variation of a variable product. |
+| `wsp_woo_delete_coupon` | write | Trash a coupon, or permanently delete with force=true. |
+| `wsp_woo_delete_category` | write | Permanently delete a product category (force=true required; terms have no trash). Products are not deleted. |
+| `wsp_woo_delete_tag` | write | Permanently delete a product tag (force=true required; terms have no trash). |
+| `wsp_woo_get_product_categories` | read | List product categories (id, name, slug, parent, count, image_id). |
+| `wsp_woo_create_product_category` | write | Create a product category. |
+| `wsp_woo_update_product_category` | write | Update a product category (name, slug, parent, description, image). |
+| `wsp_woo_get_product_tags` | read | List product tags. |
+| `wsp_woo_update_product_tag` | write | Update a product tag (name, slug, description). Returns the updated tag. |
+| `wsp_woo_assign_product_tags` | write | Add, replace or remove tags on many products at once. Tags can be given as IDs and/or names (unknown names are created). Max 200 products per call. Returns per-product results. |
+| `wsp_woo_create_product_tag` | write | Create a product tag. |
+| `wsp_woo_get_attributes` | read | List global product attributes (e.g. Color, Size) with their taxonomy names. |
+| `wsp_woo_create_attribute` | write | Create a global product attribute. |
+| `wsp_woo_update_attribute` | write | Update a global product attribute. |
+| `wsp_woo_delete_attribute` | write | Permanently delete a global attribute and all its terms (force=true required). |
+| `wsp_woo_get_attribute_terms` | read | List the terms (e.g. Red, Blue) of a global attribute. |
+| `wsp_woo_create_attribute_term` | write | Add a term to a global attribute. |
+| `wsp_woo_delete_attribute_term` | write | Permanently delete an attribute term (force=true required). |
+| `wsp_woo_get_settings` | read | Read WooCommerce settings for a group: general (currency, position, separators, store address, selling/shipping countries, enable taxes), products, tax, shipping, checkout, account, email. Returns id, label, type, default and value only; dropdown choices (countries, currencies) are omitted unless include_options=true (each dropdown then shows options_count). Use setting_id / setting_ids to fetch just the settings you need, e.g. woocommerce_currency. Secret values are masked. |
+| `wsp_woo_update_settings` | write | Update WooCommerce settings in a group. Use option ids exactly as returned by wsp_woo_get_settings, e.g. {"woocommerce_currency":"EUR","woocommerce_calc_taxes":"yes"}. |
+| `wsp_woo_get_tax_classes` | read | List tax classes and whether taxes are enabled; optionally include configured tax rates. |
+| `wsp_woo_create_tax_rate` | write | Create a tax rate. |
+| `wsp_woo_update_tax_rate` | write | Update a tax rate. |
+| `wsp_woo_delete_tax_rate` | write | Permanently delete a tax rate (force=true required). |
+| `wsp_woo_get_shipping_zones` | read | List shipping zones with their locations and methods. |
+| `wsp_woo_create_shipping_zone` | write | Create a shipping zone. locations: "US", "US:CA", "postcode:90210", "continent:EU". |
+| `wsp_woo_update_shipping_zone` | write | Update a shipping zone name, order and locations. When locations is provided it REPLACES the existing list ([] clears it). Each location is {code, type} with type country, state, postcode or continent (strings like "US:CA" also work). Zone 0 cannot be edited. |
+| `wsp_woo_delete_shipping_zone` | write | Permanently delete a shipping zone AND all of its shipping methods. Returns the zone name and the number of removed methods. Zone 0 ("Locations not covered by your other zones") cannot be deleted. |
+| `wsp_woo_get_shipping_methods` | read | List the shipping methods of a zone (zone_id 0 = locations not covered by other zones). |
+| `wsp_woo_add_shipping_method` | write | Add a shipping method to a zone: flat_rate, free_shipping, local_pickup (or another installed method id). |
+| `wsp_woo_update_shipping_method` | write | Update a zone shipping method (settings, enabled, order). |
+| `wsp_woo_delete_shipping_method` | write | Permanently remove a shipping method from a zone (force=true required). |
+| `wsp_woo_get_payment_gateways` | read | List payment gateways with enabled state, title and settings. Secret keys/tokens are masked. |
+| `wsp_woo_update_payment_gateway` | write | Enable/disable a gateway or change its title, description and settings. Masked secret values are never written back. |
+
+## Yoast SEO (4)
+
+| Tool | R/W | Description |
+|---|---|---|
+| `wsp_yoast_get_seo` | read | Get Yoast SEO title, meta description, and focus keyphrase for any post type including WooCommerce products. |
+| `wsp_yoast_update_seo` | write | Update Yoast SEO title, meta description, and/or focus keyphrase for any post type including WooCommerce products. |
+| `wsp_yoast_get_term_seo` | read | Get Yoast SEO title, meta description, and focus keyphrase for a taxonomy term (e.g. WooCommerce product_cat, product_tag, product_brand). |
+| `wsp_yoast_update_term_seo` | write | Update Yoast SEO title, meta description, and/or focus keyphrase for a taxonomy term (e.g. WooCommerce product_cat, product_tag, product_brand). |
+
