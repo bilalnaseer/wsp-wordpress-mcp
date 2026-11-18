@@ -166,6 +166,66 @@ function wsp_mcp_enqueue_settings_assets( $hook ) {
                     refreshCount(g);
                 });
             });
+
+            var allGroups = Array.from(document.querySelectorAll(".wsp-group")).map(function(g){ return g.dataset.group; });
+
+            var overlay  = document.getElementById("wsp-modal-overlay");
+            var modalBox = document.getElementById("wsp-modal-box");
+            var modalTitle = document.getElementById("wsp-modal-title");
+            var modalMsg   = document.getElementById("wsp-modal-msg");
+            var modalOk    = document.getElementById("wsp-modal-confirm");
+            var modalCancel= document.getElementById("wsp-modal-cancel");
+            var globalBtn  = document.getElementById("wsp-global-toggle");
+
+            function openModal(title, msg, onOk) {
+                modalTitle.textContent = title;
+                modalMsg.textContent   = msg;
+                overlay.style.display  = "flex";
+                requestAnimationFrame(function(){
+                    overlay.style.background = "rgba(0,0,0,.55)";
+                    modalBox.style.transform = "scale(1) translateY(0)";
+                    modalBox.style.opacity   = "1";
+                });
+                modalOk.onclick = function(){ closeModal(); onOk(); };
+            }
+            function closeModal() {
+                overlay.style.background = "rgba(0,0,0,0)";
+                modalBox.style.transform = "scale(.92) translateY(-16px)";
+                modalBox.style.opacity   = "0";
+                setTimeout(function(){ overlay.style.display = "none"; }, 250);
+            }
+            modalCancel.onclick = closeModal;
+            overlay.addEventListener("click", function(e){ if (e.target === overlay) closeModal(); });
+
+            function updateGlobalBtn(state) {
+                if (state === "enable") {
+                    globalBtn.textContent = "Enable All Abilities";
+                    globalBtn.style.background = "#0073aa";
+                    globalBtn.dataset.state = "enable";
+                } else {
+                    globalBtn.textContent = "Disable All Abilities";
+                    globalBtn.style.background = "#d63638";
+                    globalBtn.dataset.state = "disable";
+                }
+            }
+
+            globalBtn.addEventListener("click", function(){
+                if (globalBtn.dataset.state === "enable") {
+                    openModal(
+                        "Enable All Abilities?",
+                        "This will enable all abilities including write abilities that can modify your live site. Make sure you trust the connected AI agent.",
+                        function(){
+                            document.querySelectorAll("input[type=\'checkbox\'][data-group]").forEach(function(b){ b.checked = true; });
+                            allGroups.forEach(function(g){ refreshCount(g); });
+                            updateGlobalBtn("disable");
+                        }
+                    );
+                } else {
+                    document.querySelectorAll("input[type=\'checkbox\'][data-group]").forEach(function(b){ b.checked = false; });
+                    allGroups.forEach(function(g){ refreshCount(g); });
+                    updateGlobalBtn("enable");
+                }
+            });
         });
     ';
     wp_add_inline_script( 'common', $custom_js );
@@ -236,6 +296,20 @@ function wsp_mcp_settings_page() {
             <div class="wsp-stat"><div class="wsp-stat-n"><?php echo esc_html( $total ); ?></div><div class="wsp-stat-l">Total Abilities</div></div>
             <div class="wsp-stat wsp-stat--on"><div class="wsp-stat-n"><?php echo esc_html( $enabled ); ?></div><div class="wsp-stat-l">Enabled</div></div>
             <div class="wsp-stat wsp-stat--wr"><div class="wsp-stat-n"><?php echo esc_html( $writes ); ?></div><div class="wsp-stat-l">Write Access Active</div></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+            <button type="button" id="wsp-global-toggle" data-state="enable" style="background:#0073aa;color:#fff;border:none;border-radius:6px;padding:9px 22px;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s">Enable All Abilities</button>
+        </div>
+
+        <div id="wsp-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0);z-index:99999;align-items:center;justify-content:center;transition:background .25s">
+            <div id="wsp-modal-box" style="background:#fff;border-radius:10px;padding:28px 32px;max-width:400px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.18);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;transform:scale(.92) translateY(-16px);opacity:0;transition:transform .25s cubic-bezier(.34,1.56,.64,1),opacity .2s">
+                <h3 id="wsp-modal-title" style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1d2327;text-align:center"></h3>
+                <p id="wsp-modal-msg" style="margin:0 0 22px;font-size:13px;color:#646970;text-align:center;line-height:1.6"></p>
+                <div style="display:flex;gap:10px;justify-content:center">
+                    <button id="wsp-modal-cancel" style="background:#f6f7f7;color:#1d2327;border:1px solid #dcdcde;border-radius:6px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer">Cancel</button>
+                    <button id="wsp-modal-confirm" style="background:#0073aa;color:#fff;border:none;border-radius:6px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer">Yes, Enable All</button>
+                </div>
+            </div>
         </div>
 
         <form method="post" action="options.php">
