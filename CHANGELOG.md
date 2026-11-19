@@ -13,6 +13,9 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Security
+- **Missing authorization in WooCommerce MCP tools (CVD VC-CVD-02069).** Six WooCommerce tools were gated on the generic `edit_posts` capability, which the Contributor role holds. A Contributor-level user with Application Password could call `wsp_woo_update_product` (change any product's name/price), `wsp_woo_list_orders` (read customer names and order totals), `wsp_woo_update_order_status`, `wsp_woo_create_order_note`, `wsp_woo_report_sales`, and `wsp_woo_moderate_review` without restriction. All six now require `manage_woocommerce`, matching the existing capability on `refund_order`, `create_coupon`, `list_coupons`, and `list_customers`. Fix: `includes/tools/native-tools.php` capability lines only — no callback changes.
+
 ### Added (repo tooling — not part of the plugin zip)
 - **`docs/tools-list.md`** — generated list of all 291 tools (name, read/write, description) grouped by plugin integration, produced by `php bin/generate-tools-list.php`, which runs the real registration code against WordPress stubs with every integration forced active.
 - **Auto-regeneration hook:** `.claude/settings.json` + `.claude/hooks/regen-tools-list.sh` (Claude Code `PostToolUse`) rerun the generator whenever `registry.php` or a file in `includes/tools/` / `includes/abilities/` is edited, so the list can't drift. "How to add a NEW MCP tool" in `AGENTS.md` gains a step 5 for it.
