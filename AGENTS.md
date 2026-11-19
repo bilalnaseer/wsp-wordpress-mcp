@@ -35,7 +35,7 @@ These three files give you complete project understanding without touching the c
 
 **Plugin Name:** WSP MCP - Free MCP Plugin for WordPress: Connect Claude, ChatGPT & AI Agents  
 (must match the `=== … ===` title line in `readme.txt` — Plugin Check flags a mismatch)  
-**Version:** 2.9.8
+**Version:** 2.9.9
 **Slug/prefix:** `wsp`  
 **WP option key:** `wsp_mcp_abilities`  
 **Constant prefix:** `WSP_MCP_`
@@ -182,6 +182,7 @@ exists because its absence is an exploitable bug, not a style preference.
 3. Add the ability's metadata to `wsp_mcp_ability_registry()` in `registry.php` (so the
    admin toggle exists; set `default`).
 4. Enable it in MCP > Settings, then **reconnect the client** (see gotcha below).
+5. **Regenerate `docs/tools-list.md`** with `php bin/generate-tools-list.php` (all tools, read/write flag, description). A Claude Code `PostToolUse` hook (`.claude/settings.json` → `.claude/hooks/regen-tools-list.sh`) does this automatically whenever `registry.php` or a file under `includes/tools/` or `includes/abilities/` is edited; agents without hooks must run it by hand. Commit the regenerated file with the tool.
 
 > The public tool list on **wspmcp.com** is maintained separately in the website repo —
 > it is **not** generated from this repo. (The old `bin/` generators + `sync-abilities.yml` GitHub
@@ -198,6 +199,9 @@ must **reconnect** (fully restart Claude Desktop, not just open a new chat) befo
 
 ```
 wsp-wordpress-mcp/                        ← repo root (NOT the plugin — docs live here)
+├── bin/generate-tools-list.php               ← regenerates docs/tools-list.md (stubs WP, forces every integration active)
+├── docs/tools-list.md                        ← generated: every MCP tool + read/write + description (291 at v2.9.9)
+├── .claude/settings.json + hooks/            ← PostToolUse hook that runs the generator on tool-file edits
 └── wsp-mcp-ai-agents-connector/          ← plugin root (the installable folder)
     ├── wsp-mcp-ai-agents-connector.php   ← main file: constants, requires, hooks, activation/migration
     ├── readme.txt              ← WP.org readme (v2.0)
@@ -240,7 +244,7 @@ wsp-wordpress-mcp/                        ← repo root (NOT the plugin — docs
 
 | Constant | Value |
 |---|---|
-| `WSP_MCP_VERSION` | `'2.9.8'` |
+| `WSP_MCP_VERSION` | `'2.9.9'` |
 | `WSP_MCP_OPTION` | `'wsp_mcp_abilities'` (per-ability on/off toggles) |
 | `WSP_MCP_DIR` | `plugin_dir_path(__FILE__)` |
 
@@ -880,6 +884,7 @@ Only registered if `wsp_uae_is_active()`. Adds 45 tools to manipulate UAE widget
 - **Two-column layout (v2.6.7):** `.wsp-wrap` (max-width `1180px`) wraps a `.wsp-layout` flex row of
   `.wsp-main` (settings, capped at `860px`) and `.wsp-side` (sticky promo cards). Collapses to one
   column below `1100px`. See "Promo cards" below.
+- **Global Enable All / Disable All (v2.9.9):** `#wsp-global-toggle` button above the groups flips every ability checkbox client-side (nothing persists until Save). Enabling opens a custom modal (`#wsp-modal-*`) because it turns on write abilities; disabling is immediate. Button state starts as "Enable All" and is not derived from saved settings.
 - JS: write abilities show a `confirm()` dialog before enabling. "Toggle All" per group (its click is
   excluded from the accordion toggle via `e.target.closest('.wsp-toggle-all')`).
 - Saves to `wsp_mcp_abilities` option via Settings API (`wsp_mcp_settings_group`).
