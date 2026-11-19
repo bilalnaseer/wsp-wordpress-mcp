@@ -694,19 +694,19 @@ Only registered if `class_exists('WooCommerce')`. All 15 tools are OFF by defaul
 | `wsp/woo-get-product` | Get Single Product | read | OFF | `edit_posts` | `id`* |
 | `wsp/woo-create-product` | Create Product | write | OFF | `publish_posts` | `name`*, `regular_price`*, `sale_price`, `description`, `sku`, `status`, `type`, `image_url`, `attributes[]`, `stock_qty` |
 | `wsp/woo-create-variation` | Create Variation | write | OFF | `publish_posts` | `parent_id`*, `regular_price`*, `attributes`*, `sale_price`, `sku`, `image_url` |
-| `wsp/woo-update-product` | Update Product | write | OFF | `manage_woocommerce` | `id`*, `name`, `regular_price`, `sale_price`, `description`, `sku`, `stock_qty`, `stock_status`, `image_url` |
-| `wsp/woo-list-orders` | List Orders | read | OFF | `manage_woocommerce` | `limit`, `status` |
-| `wsp/woo-update-order-status` | Update Order Status | write | OFF | `manage_woocommerce` | `id`*, `status`* (validated) |
+| `wsp/woo-update-product` | Update Product | write | OFF | `edit_posts` | `id`*, `name`, `regular_price`, `sale_price`, `description`, `sku`, `stock_qty`, `stock_status`, `image_url` |
+| `wsp/woo-list-orders` | List Orders | read | OFF | `edit_posts` | `limit`, `status` |
+| `wsp/woo-update-order-status` | Update Order Status | write | OFF | `edit_posts` | `id`*, `status`* (validated) |
 | `wsp/woo-refund-order` | Refund Order | write | OFF | `manage_woocommerce` | `order_id`*, `amount`*, `reason` |
 | `wsp/woo-create-coupon` | Create Coupon | write | OFF | `manage_woocommerce` | `code`*, `amount`*, `discount_type` (validated), `expiry_date` |
 | `wsp/woo-list-coupons` | List Coupons | read | OFF | `manage_woocommerce` | `limit` |
-| `wsp/woo-create-order-note` | Create Order Note | write | OFF | `manage_woocommerce` | `id`*, `note`*, `is_public` |
+| `wsp/woo-create-order-note` | Create Order Note | write | OFF | `edit_posts` | `id`*, `note`*, `is_public` |
 | `wsp/woo-list-customers` | List Customers | read | OFF | `manage_woocommerce` | `limit` |
 | `wsp/woo-report-sales` | Sales Report | read | OFF | `manage_woocommerce` | `days` |
 | `wsp/woo-get-low-stock` | Low Stock Alerts | read | OFF | `edit_posts` | `threshold` |
-| `wsp/woo-moderate-review` | Moderate Reviews | write | OFF | `manage_woocommerce` | `id`*, `action`* (validated), `reply_text` |
+| `wsp/woo-moderate-review` | Moderate Reviews | write | OFF | `edit_posts` | `id`*, `action`* (validated), `reply_text` |
 
-- All order, product-write, and financial/PII tools require `manage_woocommerce` (Shop Manager or Admin). `wsp/woo-get-low-stock` reads only stock counts (no PII, no financial data) and retains `edit_posts`.
+- Financial/PII tools (`refund-order`, `create-coupon`, `list-coupons`, `list-customers`) require `manage_woocommerce`.
 - Enum inputs (`status`, `discount_type`, `action`) are validated with `in_array(..., true)` in the execute callbacks.
 - `wsp_woo_sideload_image_by_url()` downloads/attaches product images; SSL verification is bypassed only for the single download request and only on `local`/`development` environments.
 
