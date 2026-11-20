@@ -114,12 +114,13 @@ function wsp_execute_woo_get_product( $input ) {
 }
 
 function wsp_execute_woo_create_product( $input ) {
-    $name  = sanitize_text_field( wp_unslash( $input['name'] ) );
-    $price = sanitize_text_field( wp_unslash( $input['regular_price'] ) );
-    $desc  = isset( $input['description'] ) ? wp_kses_post( wp_unslash( $input['description'] ) ) : '';
-    $sku   = isset( $input['sku'] ) ? sanitize_text_field( wp_unslash( $input['sku'] ) ) : '';
-    $status = isset( $input['status'] ) ? sanitize_text_field( wp_unslash( $input['status'] ) ) : 'draft';
-    $type   = isset( $input['type'] ) ? sanitize_text_field( wp_unslash( $input['type'] ) ) : 'simple';
+    $name        = sanitize_text_field( wp_unslash( $input['name'] ) );
+    $price       = sanitize_text_field( wp_unslash( $input['regular_price'] ) );
+    $desc        = isset( $input['description'] ) ? wp_kses_post( wp_unslash( $input['description'] ) ) : '';
+    $short_desc  = isset( $input['short_description'] ) ? wp_kses_post( wp_unslash( $input['short_description'] ) ) : '';
+    $sku         = isset( $input['sku'] ) ? sanitize_text_field( wp_unslash( $input['sku'] ) ) : '';
+    $status      = isset( $input['status'] ) ? sanitize_text_field( wp_unslash( $input['status'] ) ) : 'draft';
+    $type        = isset( $input['type'] ) ? sanitize_text_field( wp_unslash( $input['type'] ) ) : 'simple';
 
     if ( 'variable' === $type ) {
         $p = new WC_Product_Variable();
@@ -130,6 +131,9 @@ function wsp_execute_woo_create_product( $input ) {
     $p->set_name( $name );
     $p->set_status( $status );
     $p->set_description( $desc );
+    if ( '' !== $short_desc ) {
+        $p->set_short_description( $short_desc );
+    }
 
     if ( 'variable' !== $type ) {
         $p->set_regular_price( $price );
@@ -261,6 +265,12 @@ function wsp_execute_woo_update_product( $input ) {
         $value = wp_kses_post( wp_unslash( $input['description'] ) );
         $p->set_description( $value );
         $updated['description'] = $value;
+    }
+
+    if ( isset( $input['short_description'] ) ) {
+        $value = wp_kses_post( wp_unslash( $input['short_description'] ) );
+        $p->set_short_description( $value );
+        $updated['short_description'] = $value;
     }
 
     if ( isset( $input['sku'] ) ) {

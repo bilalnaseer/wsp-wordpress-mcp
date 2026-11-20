@@ -1207,12 +1207,13 @@ function wsp_mcp_register_native_tools() {
 		WSP_MCP_Server::register_tool( 'wsp_woo_create_product', array(
 			'description' => 'Create a new simple or variable product in the store.',
 			'inputSchema' => array( 'type' => 'object', 'required' => array( 'name', 'regular_price' ), 'properties' => array(
-				'name'          => array( 'type' => 'string', 'description' => 'Product name.' ),
-				'regular_price' => array( 'type' => 'string', 'description' => 'Regular price.' ),
-				'sale_price'    => array( 'type' => 'string', 'description' => 'Sale/discount price (optional).' ),
-				'description'   => array( 'type' => 'string', 'description' => 'Product description.' ),
-				'sku'           => array( 'type' => 'string', 'description' => 'Unique SKU.' ),
-				'status'        => array( 'type' => 'string', 'description' => 'publish | draft. Default draft.' ),
+				'name'              => array( 'type' => 'string', 'description' => 'Product name.' ),
+				'regular_price'     => array( 'type' => 'string', 'description' => 'Regular price.' ),
+				'sale_price'        => array( 'type' => 'string', 'description' => 'Sale/discount price (optional).' ),
+				'description'       => array( 'type' => 'string', 'description' => 'Full product description (long description).' ),
+				'short_description' => array( 'type' => 'string', 'description' => 'Product short description shown near the price.' ),
+				'sku'               => array( 'type' => 'string', 'description' => 'Unique SKU.' ),
+				'status'            => array( 'type' => 'string', 'description' => 'publish | draft. Default draft.' ),
 				'type'          => array( 'type' => 'string', 'description' => 'simple | variable. Default simple.' ),
 				'image_url'     => array( 'type' => 'string', 'description' => 'Direct image URL to download and set as product featured image.' ),
 				'attributes'    => array(
@@ -1255,12 +1256,13 @@ function wsp_mcp_register_native_tools() {
 		WSP_MCP_Server::register_tool( 'wsp_woo_update_product', array(
 			'description' => 'Update an existing product details.',
 			'inputSchema' => array( 'type' => 'object', 'required' => array( 'id' ), 'properties' => array(
-				'id'            => array( 'type' => 'integer', 'description' => 'The ID of the product to update.' ),
-				'name'          => array( 'type' => 'string', 'description' => 'Product name.' ),
-				'regular_price' => array( 'type' => 'string', 'description' => 'Regular price.' ),
-				'sale_price'    => array( 'type' => 'string', 'description' => 'Sale/discount price.' ),
-				'description'   => array( 'type' => 'string', 'description' => 'Product description.' ),
-				'sku'           => array( 'type' => 'string', 'description' => 'Unique SKU.' ),
+				'id'                => array( 'type' => 'integer', 'description' => 'The ID of the product to update.' ),
+				'name'              => array( 'type' => 'string', 'description' => 'Product name.' ),
+				'regular_price'     => array( 'type' => 'string', 'description' => 'Regular price.' ),
+				'sale_price'        => array( 'type' => 'string', 'description' => 'Sale/discount price.' ),
+				'description'       => array( 'type' => 'string', 'description' => 'Full product description (long description).' ),
+				'short_description' => array( 'type' => 'string', 'description' => 'Product short description shown near the price.' ),
+				'sku'               => array( 'type' => 'string', 'description' => 'Unique SKU.' ),
 				'stock_qty'     => array( 'type' => 'integer', 'description' => 'Manage stock quantity.' ),
 				'categories'    => array( 'type' => 'array', 'items' => array( 'type' => 'integer' ), 'description' => 'Product category term IDs (see wsp_woo_get_product_categories). Replaces existing.' ),
 				'tags'          => array( 'type' => 'array', 'items' => array( 'type' => 'integer' ), 'description' => 'Product tag term IDs (see wsp_woo_get_product_tags). Replaces existing.' ),
@@ -1269,7 +1271,7 @@ function wsp_mcp_register_native_tools() {
 				'image_url'     => array( 'type' => 'string', 'description' => 'Direct image URL to download and replace featured image.' ),
 			) ),
 			'callback'    => 'wsp_execute_woo_update_product',
-			'capability'  => 'edit_posts',
+			'capability'  => 'manage_woocommerce',
 			'enable_key'  => 'wsp/woo-update-product',
 		) );
 		WSP_MCP_Server::register_tool( 'wsp_woo_list_orders', array(
@@ -1279,7 +1281,7 @@ function wsp_mcp_register_native_tools() {
 				'status' => array( 'type' => 'string', 'description' => 'any | processing | completed | pending.' ),
 			) ),
 			'callback'    => 'wsp_execute_woo_list_orders',
-			'capability'  => 'edit_posts',
+			'capability'  => 'manage_woocommerce',
 			'enable_key'  => 'wsp/woo-list-orders',
 		) );
 		WSP_MCP_Server::register_tool( 'wsp_woo_update_order_status', array(
@@ -1289,7 +1291,7 @@ function wsp_mcp_register_native_tools() {
 				'status' => array( 'type' => 'string', 'description' => 'pending | processing | on-hold | completed | cancelled | refunded.' ),
 			) ),
 			'callback'    => 'wsp_execute_woo_update_order_status',
-			'capability'  => 'edit_posts',
+			'capability'  => 'manage_woocommerce',
 			'enable_key'  => 'wsp/woo-update-order-status',
 		) );
 		WSP_MCP_Server::register_tool( 'wsp_woo_refund_order', array(
@@ -1332,7 +1334,7 @@ function wsp_mcp_register_native_tools() {
 				'is_public' => array( 'type' => 'boolean', 'description' => 'True to make the note visible to the customer (email/account), false for internal only.' ),
 			) ),
 			'callback'    => 'wsp_execute_woo_create_order_note',
-			'capability'  => 'edit_posts',
+			'capability'  => 'manage_woocommerce',
 			'enable_key'  => 'wsp/woo-create-order-note',
 		) );
 		WSP_MCP_Server::register_tool( 'wsp_woo_list_customers', array(
@@ -1350,7 +1352,7 @@ function wsp_mcp_register_native_tools() {
 				'days' => array( 'type' => 'integer', 'description' => 'Number of past days to report. Default 30.' ),
 			) ),
 			'callback'    => 'wsp_execute_woo_report_sales',
-			'capability'  => 'edit_posts',
+			'capability'  => 'manage_woocommerce',
 			'enable_key'  => 'wsp/woo-report-sales',
 		) );
 		WSP_MCP_Server::register_tool( 'wsp_woo_get_low_stock', array(
@@ -1370,7 +1372,7 @@ function wsp_mcp_register_native_tools() {
 				'reply_text' => array( 'type' => 'string', 'description' => 'The reply text content (required only for reply action).' ),
 			) ),
 			'callback'    => 'wsp_execute_woo_moderate_review',
-			'capability'  => 'edit_posts',
+			'capability'  => 'manage_woocommerce',
 			'enable_key'  => 'wsp/woo-moderate-review',
 		) );
 		wsp_mcp_register_defs( wsp_mcp_woo_admin_tool_defs() ); // v2.9.5: delete / taxonomy / attributes / settings / tax / shipping / gateways
