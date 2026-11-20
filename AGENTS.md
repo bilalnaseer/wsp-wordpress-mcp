@@ -35,7 +35,7 @@ These three files give you complete project understanding without touching the c
 
 **Plugin Name:** WSP MCP - Free MCP Plugin for WordPress: Connect Claude, ChatGPT & AI Agents  
 (must match the `=== … ===` title line in `readme.txt` — Plugin Check flags a mismatch)  
-**Version:** 2.9.9
+**Version:** 3.0.0
 **Slug/prefix:** `wsp`  
 **WP option key:** `wsp_mcp_abilities`  
 **Constant prefix:** `WSP_MCP_`
@@ -200,7 +200,7 @@ must **reconnect** (fully restart Claude Desktop, not just open a new chat) befo
 ```
 wsp-wordpress-mcp/                        ← repo root (NOT the plugin — docs live here)
 ├── bin/generate-tools-list.php               ← regenerates docs/tools-list.md (stubs WP, forces every integration active)
-├── docs/tools-list.md                        ← generated: every MCP tool + read/write + description (291 at v2.9.9)
+├── docs/tools-list.md                        ← generated: every MCP tool + read/write + description (291 at v3.0.0)
 ├── .claude/settings.json + hooks/            ← PostToolUse hook that runs the generator on tool-file edits
 └── wsp-mcp-ai-agents-connector/          ← plugin root (the installable folder)
     ├── wsp-mcp-ai-agents-connector.php   ← main file: constants, requires, hooks, activation/migration
@@ -244,7 +244,7 @@ wsp-wordpress-mcp/                        ← repo root (NOT the plugin — docs
 
 | Constant | Value |
 |---|---|
-| `WSP_MCP_VERSION` | `'2.9.9'` |
+| `WSP_MCP_VERSION` | `'3.0.0'` |
 | `WSP_MCP_OPTION` | `'wsp_mcp_abilities'` (per-ability on/off toggles) |
 | `WSP_MCP_DIR` | `plugin_dir_path(__FILE__)` |
 
@@ -692,21 +692,21 @@ Only registered if `class_exists('WooCommerce')`. All 15 tools are OFF by defaul
 |---|---|---|---|---|---|
 | `wsp/woo-get-products` | List Products | read | OFF | `edit_posts` | `limit`, `status` |
 | `wsp/woo-get-product` | Get Single Product | read | OFF | `edit_posts` | `id`* |
-| `wsp/woo-create-product` | Create Product | write | OFF | `publish_posts` | `name`*, `regular_price`*, `sale_price`, `description`, `sku`, `status`, `type`, `image_url`, `attributes[]`, `stock_qty` |
+| `wsp/woo-create-product` | Create Product | write | OFF | `publish_posts` | `name`*, `regular_price`*, `sale_price`, `description`, `short_description`, `sku`, `status`, `type`, `image_url`, `attributes[]`, `stock_qty` |
 | `wsp/woo-create-variation` | Create Variation | write | OFF | `publish_posts` | `parent_id`*, `regular_price`*, `attributes`*, `sale_price`, `sku`, `image_url` |
-| `wsp/woo-update-product` | Update Product | write | OFF | `edit_posts` | `id`*, `name`, `regular_price`, `sale_price`, `description`, `sku`, `stock_qty`, `stock_status`, `image_url` |
-| `wsp/woo-list-orders` | List Orders | read | OFF | `edit_posts` | `limit`, `status` |
-| `wsp/woo-update-order-status` | Update Order Status | write | OFF | `edit_posts` | `id`*, `status`* (validated) |
+| `wsp/woo-update-product` | Update Product | write | OFF | `manage_woocommerce` | `id`*, `name`, `regular_price`, `sale_price`, `description`, `short_description`, `sku`, `stock_qty`, `stock_status`, `image_url` |
+| `wsp/woo-list-orders` | List Orders | read | OFF | `manage_woocommerce` | `limit`, `status` |
+| `wsp/woo-update-order-status` | Update Order Status | write | OFF | `manage_woocommerce` | `id`*, `status`* (validated) |
 | `wsp/woo-refund-order` | Refund Order | write | OFF | `manage_woocommerce` | `order_id`*, `amount`*, `reason` |
 | `wsp/woo-create-coupon` | Create Coupon | write | OFF | `manage_woocommerce` | `code`*, `amount`*, `discount_type` (validated), `expiry_date` |
 | `wsp/woo-list-coupons` | List Coupons | read | OFF | `manage_woocommerce` | `limit` |
-| `wsp/woo-create-order-note` | Create Order Note | write | OFF | `edit_posts` | `id`*, `note`*, `is_public` |
+| `wsp/woo-create-order-note` | Create Order Note | write | OFF | `manage_woocommerce` | `id`*, `note`*, `is_public` |
 | `wsp/woo-list-customers` | List Customers | read | OFF | `manage_woocommerce` | `limit` |
 | `wsp/woo-report-sales` | Sales Report | read | OFF | `manage_woocommerce` | `days` |
 | `wsp/woo-get-low-stock` | Low Stock Alerts | read | OFF | `edit_posts` | `threshold` |
-| `wsp/woo-moderate-review` | Moderate Reviews | write | OFF | `edit_posts` | `id`*, `action`* (validated), `reply_text` |
+| `wsp/woo-moderate-review` | Moderate Reviews | write | OFF | `manage_woocommerce` | `id`*, `action`* (validated), `reply_text` |
 
-- Financial/PII tools (`refund-order`, `create-coupon`, `list-coupons`, `list-customers`) require `manage_woocommerce`.
+- Financial/PII/order tools require `manage_woocommerce`: `refund-order`, `create-coupon`, `list-coupons`, `list-customers`, and (since v3.0.0, CVD VC-CVD-02069) `update-product`, `list-orders`, `update-order-status`, `create-order-note`, `report-sales`, `moderate-review`. These six were `edit_posts`, which Contributors hold — **do not lower them back**. Remaining `edit_posts` Woo tools: `get-products`, `get-product`, `get-low-stock`.
 - Enum inputs (`status`, `discount_type`, `action`) are validated with `in_array(..., true)` in the execute callbacks.
 - `wsp_woo_sideload_image_by_url()` downloads/attaches product images; SSL verification is bypassed only for the single download request and only on `local`/`development` environments.
 

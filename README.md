@@ -4,7 +4,7 @@
 
 > **By [WebSensePro](https://websensepro.com) — Official Shopify Partner & WordPress Agency**
 
-[![Version](https://img.shields.io/badge/Version-2.9.9-blue?style=for-the-badge)](https://github.com/bilalnaseer/wsp-wordpress-mcp/releases)
+[![Version](https://img.shields.io/badge/Version-3.0.0-blue?style=for-the-badge)](https://github.com/bilalnaseer/wsp-wordpress-mcp/releases)
 [![YouTube](https://img.shields.io/badge/YouTube-150K%2B%20Subscribers-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtube.com/websensepro)
 [![License](https://img.shields.io/badge/License-GPL%202.0-green?style=for-the-badge)](LICENSE)
 
@@ -61,7 +61,12 @@ WSP MCP is a **free MCP plugin for WordPress**. Install it, connect your AI app,
 
 ---
 
-## ✨ What's New in v2.9.9
+## ✨ What's New in v3.0.0
+
+- 🔒 **Tighter WooCommerce permissions** — six tools (`wsp_woo_update_product`, `wsp_woo_list_orders`, `wsp_woo_update_order_status`, `wsp_woo_create_order_note`, `wsp_woo_report_sales`, `wsp_woo_moderate_review`) were gated on `edit_posts`, which the Contributor role holds. They now require `manage_woocommerce`, so only Shop Managers and Administrators can use them. **Update recommended.**
+- 📝 **Product short description** — `wsp_woo_create_product` and `wsp_woo_update_product` accept `short_description`, the text shown near the price ([#67](https://github.com/bilalnaseer/wsp-wordpress-mcp/issues/67)).
+
+## v2.9.9
 
 - 🛒 **SEO tools now work on WooCommerce** — the Yoast SEO and Rank Math tools previously refused anything but posts and pages. They now work on products, variations and any other post type ([#64](https://github.com/bilalnaseer/wsp-wordpress-mcp/issues/64)).
 - 🏷️ **Taxonomy term SEO** — four new tools (off by default) read and update SEO title, description and focus keyword for terms such as `product_cat`, `product_tag` and `product_brand`, for both Yoast and Rank Math.
@@ -123,7 +128,7 @@ Contributed by [@dulaj44](https://github.com/dulaj44) in [#42](https://github.co
 - 🐛 **Audit Log accuracy** — permission-denied results from the new Read Post tool are now logged as denied, not success.
 - 🐛 **Add Menu Item validation** — an `object_id` whose post type doesn't match the requested `type` is now rejected instead of silently stored.
 
-**Recent releases:** v2.9.9 — SEO tools for WooCommerce products and taxonomy terms + Enable/Disable All toggle · v2.9.8 — scheduling fix for posts, pages and CPT items · v2.9.7 — ChatGPT connection guide + OAuth discovery fix for hosts blocking /.well-known/ · v2.9.6 — security hardening of authorization checks · v2.9.5 — Site Context + WooCommerce store management · v2.9.0 — Navigation Menus tool group + Read Post tool · v2.8.0 — one-click Claude Connector sign-in (OAuth 2.1) + Analytics dashboard · v2.7.1 — object-level authorization on write tools (Patchstack) · v2.7.0 — Audit Log · v2.6.x — WPForms, Contact Form 7, Gravity Forms, UAE, Elementor design tools.
+**Recent releases:** v3.0.0 — WooCommerce permission hardening + product short description · v2.9.9 — SEO tools for WooCommerce products and taxonomy terms + Enable/Disable All toggle · v2.9.8 — scheduling fix for posts, pages and CPT items · v2.9.7 — ChatGPT connection guide + OAuth discovery fix for hosts blocking /.well-known/ · v2.9.6 — security hardening of authorization checks · v2.9.5 — Site Context + WooCommerce store management · v2.9.0 — Navigation Menus tool group + Read Post tool · v2.8.0 — one-click Claude Connector sign-in (OAuth 2.1) + Analytics dashboard · v2.7.1 — object-level authorization on write tools (Patchstack) · v2.7.0 — Audit Log · v2.6.x — WPForms, Contact Form 7, Gravity Forms, UAE, Elementor design tools.
 
 📋 **Full history:** see [CHANGELOG.md](CHANGELOG.md).
 

@@ -4,7 +4,7 @@ Tags: mcp, ai, claude, chatgpt, ai agent
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.9.9
+Stable tag: 3.0.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -126,6 +126,10 @@ Watch the step-by-step video tutorial:
 https://youtu.be/hxhjs3IUYQE
 
 == Changelog ==
+
+= 3.0.0 =
+* Security: six WooCommerce tools (update product, list orders, update order status, add order note, sales report, moderate reviews) now require the manage_woocommerce capability instead of edit_posts, so Contributors can no longer use them. Only Shop Managers and Administrators can.
+* New: WooCommerce create and update product tools now support a short description.
 
 = 2.9.9 =
 * New: Enable All / Disable All button on MCP > Settings (asks for confirmation before enabling everything).
@@ -280,6 +284,9 @@ https://youtu.be/hxhjs3IUYQE
 * Elementor abilities, modular architecture, auto config generator.
 
 == Upgrade Notice ==
+
+= 3.0.0 =
+Security update: WooCommerce order, sales and product-update tools now require the manage_woocommerce capability. Update recommended.
 
 = 2.9.9 =
 Adds SEO meta tools for WooCommerce products and taxonomy terms (Yoast, Rank Math) and an Enable All / Disable All button on the Settings page.

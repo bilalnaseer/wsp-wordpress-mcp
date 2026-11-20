@@ -17,6 +17,14 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`docs/tools-list.md`** — generated list of all 291 tools (name, read/write, description) grouped by plugin integration, produced by `php bin/generate-tools-list.php`, which runs the real registration code against WordPress stubs with every integration forced active.
 - **Auto-regeneration hook:** `.claude/settings.json` + `.claude/hooks/regen-tools-list.sh` (Claude Code `PostToolUse`) rerun the generator whenever `registry.php` or a file in `includes/tools/` / `includes/abilities/` is edited, so the list can't drift. "How to add a NEW MCP tool" in `AGENTS.md` gains a step 5 for it.
 
+## [3.0.0] — 2026-11-20
+
+### Security
+- **Missing authorization in WooCommerce tools (CVD VC-CVD-02069).** `wsp_woo_update_product`, `wsp_woo_list_orders`, `wsp_woo_update_order_status`, `wsp_woo_create_order_note`, `wsp_woo_report_sales` and `wsp_woo_moderate_review` registered with capability `edit_posts`, which the Contributor role holds, so a Contributor-level Application Password could read orders/sales and change products, orders and reviews. They now require `manage_woocommerce` (Shop Manager / Administrator). **Migration:** non-admin, non-Shop-Manager users lose access to these six tools.
+
+### Added
+- **`short_description` on `wsp_woo_create_product` / `wsp_woo_update_product` (#67, PR #66).** Sanitized with `wp_kses_post()` like `description`; create only sets it when non-empty.
+
 ## [2.9.9] — 2026-11-18
 
 ### Added
