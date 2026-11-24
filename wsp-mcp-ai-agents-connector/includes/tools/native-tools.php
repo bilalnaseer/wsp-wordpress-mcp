@@ -1186,10 +1186,12 @@ function wsp_mcp_register_native_tools() {
 	// ---- WooCommerce (only when WooCommerce is active) ----
 	if ( class_exists( 'WooCommerce' ) ) {
 		WSP_MCP_Server::register_tool( 'wsp_woo_get_products', array(
-			'description' => 'List products with filtering and pagination.',
+			'description' => 'List products with filtering and pagination, newest first. "total" is the full count of matching products; when "has_more" is true, call again with "next_page" (or "next_offset") to get the rest.',
 			'inputSchema' => array( 'type' => 'object', 'properties' => array(
-				'limit'  => array( 'type' => 'integer', 'description' => 'Limit. Default 10.' ),
+				'limit'  => array( 'type' => 'integer', 'description' => 'Products per page. Default 10.' ),
 				'status' => array( 'type' => 'string', 'description' => 'publish | draft | any.' ),
+				'page'   => array( 'type' => 'integer', 'description' => 'Page number, starting at 1. Default 1.' ),
+				'offset' => array( 'type' => 'integer', 'description' => 'Number of products to skip. Overrides page when set.' ),
 			) ),
 			'callback'    => 'wsp_execute_woo_get_products',
 			'capability'  => 'edit_posts',

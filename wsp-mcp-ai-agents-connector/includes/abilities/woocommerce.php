@@ -79,11 +79,31 @@ function wsp_woo_set_product_attributes( $product, $attributes_input ) {
 
 function wsp_execute_woo_get_products( $input ) {
     $limit  = isset( $input['limit'] ) ? intval( $input['limit'] ) : 10;
+    if ( 0 === $limit || $limit < -1 ) {
+        $limit = 10; // -1 still means "all".
+    }
     $status = isset( $input['status'] ) ? sanitize_text_field( wp_unslash( $input['status'] ) ) : 'any';
+    $page  = isset( $input['page'] ) ? max( 1, intval( $input['page'] ) ) : 1;
+    $offset = isset( $input['offset'] ) ? max( 0, intval( $input['offset'] ) ) : null;
 
-    $products = wc_get_products( array( 'limit' => $limit, 'status' => $status ) );
+    $args = array(
+        'limit'    => $limit,
+        'status'   => $status,
+        // Newest first as before; ID breaks date ties so pages never overlap or skip.
+        'orderby'  => array( 'date' => 'DESC', 'ID' => 'DESC' ),
+        'paginate' => true,
+    );
+    // An explicit offset wins over page (WP_Query ignores "paged" when "offset" is set).
+    if ( null !== $offset ) {
+        $args['offset'] = $offset;
+    } else {
+        $args['page'] = $page;
+        $offset       = $limit > 0 ? ( $page - 1 ) * $limit : 0;
+    }
+
+    $query  = wc_get_products( $args );
     $result = array();
-    foreach ( $products as $p ) {
+    foreach ( $query->products as $p ) {
         $result[] = array(
             'id'            => $p->get_id(),
             'name'          => $p->get_name(),
@@ -94,7 +114,43 @@ function wsp_execute_woo_get_products( $input ) {
             'stock_status'  => $p->get_stock_status(),
         );
     }
-    return array( 'products' => $result, 'total' => count( $result ) );
+    $total    = (int) $query->total;
+    $count    = count( $result );
+    if ( 0 === $count && $offset > 0 ) {
+        // WP_Query skips the found-rows count when a page comes back empty, so a page past
+        // the end would report total 0. Ask for the real count with a one-item query.
+        $count_query = wc_get_products( array(
+            'limit'    => 1,
+            'status'   => $status,
+            'return'   => 'ids',
+            'paginate' => true,
+        ) );
+        $total = (int) $count_query->total;
+        if ( ! isset( $args['offset'] ) ) {
+            $query->max_num_pages = $limit > 0 ? (int) ceil( $total / $limit ) : 1;
+        }
+    }
+    $has_more = $limit > 0 && ( $offset + $count ) < $total;
+
+    $response = array(
+        'products'    => $result,
+        'total'       => $total,
+        'count'       => $count,
+        'limit'       => $limit,
+        'offset'      => $offset,
+        'has_more'    => $has_more,
+    );
+    if ( ! isset( $args['offset'] ) ) {
+        $response['page']        = $page;
+        $response['total_pages'] = $limit > 0 ? (int) $query->max_num_pages : 1;
+    }
+    if ( $has_more ) {
+        $response['next_offset'] = $offset + $count;
+        if ( isset( $response['page'] ) ) {
+            $response['next_page'] = $page + 1;
+        }
+    }
+    return $response;
 }
 
 function wsp_execute_woo_get_product( $input ) {
