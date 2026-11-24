@@ -218,6 +218,12 @@ function wsp_execute_woo_create_product( $input ) {
         if ( is_string( $brand_ids ) ) return array( 'success' => false, 'error' => $brand_ids );
     }
 
+    if ( isset( $input['gallery_image_ids'] ) ) {
+        $gallery = wsp_woo_validate_gallery_ids( $input['gallery_image_ids'] );
+        if ( is_string( $gallery ) ) return array( 'success' => false, 'error' => $gallery );
+        $p->set_gallery_image_ids( $gallery );
+    }
+
     if ( ! empty( $sku ) ) {
         $p->set_sku( $sku );
     }
@@ -253,6 +259,7 @@ function wsp_execute_woo_create_product( $input ) {
         'categories' => $p->get_category_ids(),
         'tags'       => $p->get_tag_ids(),
         'brands'     => wsp_woo_product_brands( $product_id ),
+        'gallery_image_ids' => array_map( 'intval', $p->get_gallery_image_ids() ),
         'permalink' => get_permalink( $product_id )
     );
 }
@@ -319,8 +326,18 @@ function wsp_execute_woo_update_product( $input ) {
         $brand_ids = wsp_woo_resolve_brand_ids( $input['brands'] );
         if ( is_string( $brand_ids ) ) return array( 'success' => false, 'error' => $brand_ids );
     }
+    $gallery = null;
+    if ( isset( $input['gallery_image_ids'] ) ) {
+        $gallery = wsp_woo_validate_gallery_ids( $input['gallery_image_ids'] );
+        if ( is_string( $gallery ) ) return array( 'success' => false, 'error' => $gallery );
+    }
 
     $updated = array();
+
+    if ( null !== $gallery ) {
+        $p->set_gallery_image_ids( $gallery );
+        $updated['gallery_image_ids'] = $gallery;
+    }
 
     if ( isset( $input['name'] ) ) {
         $value = sanitize_text_field( wp_unslash( $input['name'] ) );

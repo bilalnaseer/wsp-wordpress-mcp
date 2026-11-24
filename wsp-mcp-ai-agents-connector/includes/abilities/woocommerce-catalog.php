@@ -547,6 +547,33 @@ function wsp_woo_resolve_brand_ids( $items ) {
 	return array_values( array_unique( $ids ) );
 }
 
+/**
+ * Validate `gallery_image_ids` (array of media IDs, or a "1,2,3" string) for a product gallery.
+ * Every ID must be an image in the media library. Keeps the given order and drops duplicates.
+ * Returns int[] or an error string.
+ */
+function wsp_woo_validate_gallery_ids( $items ) {
+	if ( is_string( $items ) ) {
+		$items = '' === trim( $items ) ? array() : explode( ',', $items );
+	}
+	if ( ! is_array( $items ) ) return 'gallery_image_ids must be an array of media IDs.';
+	$ids = array();
+	foreach ( $items as $item ) {
+		if ( ! is_scalar( $item ) || ! ctype_digit( trim( (string) $item ) ) ) {
+			return 'gallery_image_ids must contain media IDs (integers) only.';
+		}
+		$id = (int) trim( (string) $item );
+		if ( $id <= 0 || 'attachment' !== get_post_type( $id ) ) {
+			return "Media ID {$id} not found in the media library. Upload it first with wsp_upload_media_from_url.";
+		}
+		if ( ! wp_attachment_is_image( $id ) ) {
+			return "Media ID {$id} is not an image.";
+		}
+		$ids[] = $id;
+	}
+	return array_values( array_unique( $ids ) );
+}
+
 /** Brands currently assigned to a product, as [ { id, name, slug } ]. */
 function wsp_woo_product_brands( $product_id ) {
 	if ( ! taxonomy_exists( 'product_brand' ) ) return array();
