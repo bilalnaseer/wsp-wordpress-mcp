@@ -211,12 +211,27 @@ function wsp_execute_woo_create_product( $input ) {
     $terms_err = wsp_woo_apply_product_terms( $p, $input );
     if ( $terms_err ) return array( 'success' => false, 'error' => $terms_err );
 
+    // Resolve brands before saving so an unknown brand never leaves a half-created product.
+    $brand_ids = null;
+    if ( isset( $input['brands'] ) ) {
+        $brand_ids = wsp_woo_resolve_brand_ids( $input['brands'] );
+        if ( is_string( $brand_ids ) ) return array( 'success' => false, 'error' => $brand_ids );
+    }
+
     if ( ! empty( $sku ) ) {
         $p->set_sku( $sku );
     }
 
     $product_id = $p->save();
     if ( ! $product_id ) return array( 'success' => false, 'error' => 'Could not save product.' );
+
+    if ( null !== $brand_ids ) {
+        // WC_Product has no brand setter; brands are plain terms on the product post.
+        $set = wp_set_object_terms( $product_id, $brand_ids, 'product_brand' );
+        if ( is_wp_error( $set ) ) {
+            return array( 'success' => false, 'error' => 'Product ' . $product_id . ' was created but the brand could not be set: ' . $set->get_error_message(), 'id' => $product_id );
+        }
+    }
 
     $image_id = false;
     if ( ! empty( $input['image_url'] ) ) {
@@ -237,6 +252,7 @@ function wsp_execute_woo_create_product( $input ) {
         'image_id'  => $image_id,
         'categories' => $p->get_category_ids(),
         'tags'       => $p->get_tag_ids(),
+        'brands'     => wsp_woo_product_brands( $product_id ),
         'permalink' => get_permalink( $product_id )
     );
 }
@@ -295,6 +311,13 @@ function wsp_execute_woo_update_product( $input ) {
     $p  = wc_get_product( $id );
     if ( ! $p ) {
         return array( 'success' => false, 'error' => 'Product not found.' );
+    }
+
+    // Resolve brands first so an unknown brand fails before anything is changed.
+    $brand_ids = null;
+    if ( isset( $input['brands'] ) ) {
+        $brand_ids = wsp_woo_resolve_brand_ids( $input['brands'] );
+        if ( is_string( $brand_ids ) ) return array( 'success' => false, 'error' => $brand_ids );
     }
 
     $updated = array();
@@ -369,10 +392,18 @@ function wsp_execute_woo_update_product( $input ) {
         if ( isset( $input['tags'] ) )       $updated['tags']       = $p->get_tag_ids();
     }
 
-    if ( ! empty( $updated ) ) {
-        $p->save();
-    } else {
+    if ( empty( $updated ) && null === $brand_ids ) {
         return array( 'success' => false, 'error' => 'No fields to update provided.' );
+    }
+    // Always save, even for a brands-only update, so WooCommerce clears its product caches.
+    $p->save();
+
+    if ( null !== $brand_ids ) {
+        $set = wp_set_object_terms( $id, $brand_ids, 'product_brand' );
+        if ( is_wp_error( $set ) ) {
+            return array( 'success' => false, 'error' => 'Could not set brands: ' . $set->get_error_message(), 'updated' => $updated );
+        }
+        $updated['brands'] = wsp_woo_product_brands( $id );
     }
 
     return array(

@@ -230,6 +230,45 @@ function wsp_execute_woo_get_product_tags( $input ) {
 	return wsp_woo_list_terms( 'products/tags', $input );
 }
 
+/**
+ * List product brands (product_brand taxonomy). Read with get_terms() rather than the
+ * wc/v3 REST route so it works on every WooCommerce version that registers the taxonomy.
+ */
+function wsp_execute_woo_get_product_brands( $input ) {
+	if ( $e = wsp_woo_guard() ) return $e;
+	if ( ! taxonomy_exists( 'product_brand' ) ) {
+		return wsp_woo_fail( 'Brands are not available on this site: the product_brand taxonomy is not registered (WooCommerce 9.6+ includes Brands).' );
+	}
+	$per_page = isset( $input['per_page'] ) ? max( 1, min( 100, intval( $input['per_page'] ) ) ) : 100;
+	$page     = isset( $input['page'] ) ? max( 1, intval( $input['page'] ) ) : 1;
+	$args     = array( 'taxonomy' => 'product_brand', 'hide_empty' => false );
+	if ( ! empty( $input['search'] ) ) $args['search'] = sanitize_text_field( wp_unslash( $input['search'] ) );
+
+	$total = wp_count_terms( $args );
+	if ( is_wp_error( $total ) ) return wsp_woo_fail( $total->get_error_message() );
+	$terms = get_terms( $args + array( 'number' => $per_page, 'offset' => ( $page - 1 ) * $per_page, 'orderby' => 'name', 'order' => 'ASC' ) );
+	if ( is_wp_error( $terms ) ) return wsp_woo_fail( $terms->get_error_message() );
+
+	$items = array();
+	foreach ( $terms as $t ) {
+		$items[] = array(
+			'id'          => (int) $t->term_id,
+			'name'        => $t->name,
+			'slug'        => $t->slug,
+			'parent'      => (int) $t->parent,
+			'description' => wp_strip_all_tags( $t->description ),
+			'count'       => (int) $t->count,
+		);
+	}
+	return wsp_woo_ok( array(
+		'items'    => $items,
+		'total'    => (int) $total,
+		'page'     => $page,
+		'per_page' => $per_page,
+		'has_more' => ( ( $page - 1 ) * $per_page + count( $items ) ) < (int) $total,
+	) );
+}
+
 /** Build REST params for a category create/update. */
 function wsp_woo_category_params( $input, $creating ) {
 	$p = array();
@@ -474,6 +513,50 @@ function wsp_woo_apply_product_terms( $product, $input ) {
 		$product->set_tag_ids( $ids );
 	}
 	return null;
+}
+
+/**
+ * Resolve `brands` input (term IDs, slugs or names; a single value is also accepted) to
+ * product_brand term IDs. Unknown brands are an error, not auto-created, so a typo can't
+ * add a duplicate brand. Returns int[] or an error string.
+ */
+function wsp_woo_resolve_brand_ids( $items ) {
+	if ( ! taxonomy_exists( 'product_brand' ) ) {
+		return 'Brands are not available on this site: the product_brand taxonomy is not registered (WooCommerce 9.6+ includes Brands).';
+	}
+	$ids = array();
+	foreach ( (array) $items as $item ) {
+		if ( ! is_scalar( $item ) ) return 'Each brand must be a brand ID, slug or name.';
+		$value = trim( sanitize_text_field( (string) $item ) );
+		if ( '' === $value ) continue;
+		$term = null;
+		if ( ctype_digit( $value ) ) {
+			$term = get_term( (int) $value, 'product_brand' );
+		}
+		if ( ! $term || is_wp_error( $term ) ) {
+			$term = get_term_by( 'slug', sanitize_title( $value ), 'product_brand' );
+		}
+		if ( ! $term ) {
+			$term = get_term_by( 'name', $value, 'product_brand' );
+		}
+		if ( ! $term || is_wp_error( $term ) ) {
+			return "Brand '{$value}' not found. Use wsp_woo_get_product_brands to list existing brands.";
+		}
+		$ids[] = (int) $term->term_id;
+	}
+	return array_values( array_unique( $ids ) );
+}
+
+/** Brands currently assigned to a product, as [ { id, name, slug } ]. */
+function wsp_woo_product_brands( $product_id ) {
+	if ( ! taxonomy_exists( 'product_brand' ) ) return array();
+	$terms = wp_get_object_terms( $product_id, 'product_brand' );
+	if ( is_wp_error( $terms ) ) return array();
+	$out = array();
+	foreach ( $terms as $t ) {
+		$out[] = array( 'id' => (int) $t->term_id, 'name' => $t->name, 'slug' => $t->slug );
+	}
+	return $out;
 }
 
 /**
