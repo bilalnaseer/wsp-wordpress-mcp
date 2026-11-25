@@ -1186,10 +1186,12 @@ function wsp_mcp_register_native_tools() {
 	// ---- WooCommerce (only when WooCommerce is active) ----
 	if ( class_exists( 'WooCommerce' ) ) {
 		WSP_MCP_Server::register_tool( 'wsp_woo_get_products', array(
-			'description' => 'List products with filtering and pagination.',
+			'description' => 'List products with filtering and pagination, newest first. "total" is the full count of matching products; when "has_more" is true, call again with "next_page" (or "next_offset") to get the rest.',
 			'inputSchema' => array( 'type' => 'object', 'properties' => array(
-				'limit'  => array( 'type' => 'integer', 'description' => 'Limit. Default 10.' ),
+				'limit'  => array( 'type' => 'integer', 'description' => 'Products per page. Default 10.' ),
 				'status' => array( 'type' => 'string', 'description' => 'publish | draft | any.' ),
+				'page'   => array( 'type' => 'integer', 'description' => 'Page number, starting at 1. Default 1.' ),
+				'offset' => array( 'type' => 'integer', 'description' => 'Number of products to skip. Overrides page when set.' ),
 			) ),
 			'callback'    => 'wsp_execute_woo_get_products',
 			'capability'  => 'edit_posts',
@@ -1234,6 +1236,8 @@ function wsp_mcp_register_native_tools() {
 				'stock_qty'     => array( 'type' => 'integer', 'description' => 'Manage stock quantity.' ),
 				'categories'    => array( 'type' => 'array', 'items' => array( 'type' => 'integer' ), 'description' => 'Product category term IDs (see wsp_woo_get_product_categories). Replaces existing.' ),
 				'tags'          => array( 'type' => 'array', 'items' => array( 'type' => 'integer' ), 'description' => 'Product tag term IDs (see wsp_woo_get_product_tags). Replaces existing.' ),
+				'brands'        => array( 'type' => 'array', 'items' => array( 'type' => array( 'integer', 'string' ) ), 'description' => 'Product brands (product_brand taxonomy) as brand IDs, slugs or names, e.g. ["FNIRSI"] (see wsp_woo_get_product_brands). Brands must already exist.' ),
+				'gallery_image_ids' => array( 'type' => 'array', 'items' => array( 'type' => 'integer' ), 'description' => 'Product gallery images: media library image IDs in display order (upload with wsp_upload_media_from_url first). The featured image is set separately with image_url.' ),
 			) ),
 			'callback'    => 'wsp_execute_woo_create_product',
 			'capability'  => 'publish_posts',
@@ -1266,6 +1270,8 @@ function wsp_mcp_register_native_tools() {
 				'stock_qty'     => array( 'type' => 'integer', 'description' => 'Manage stock quantity.' ),
 				'categories'    => array( 'type' => 'array', 'items' => array( 'type' => 'integer' ), 'description' => 'Product category term IDs (see wsp_woo_get_product_categories). Replaces existing.' ),
 				'tags'          => array( 'type' => 'array', 'items' => array( 'type' => 'integer' ), 'description' => 'Product tag term IDs (see wsp_woo_get_product_tags). Replaces existing.' ),
+				'brands'        => array( 'type' => 'array', 'items' => array( 'type' => array( 'integer', 'string' ) ), 'description' => 'Product brands (product_brand taxonomy) as brand IDs, slugs or names, e.g. ["FNIRSI"] (see wsp_woo_get_product_brands). Brands must already exist. Replaces existing; [] removes all brands.' ),
+				'gallery_image_ids' => array( 'type' => 'array', 'items' => array( 'type' => 'integer' ), 'description' => 'Product gallery images: media library image IDs in display order (upload with wsp_upload_media_from_url first). Replaces the whole gallery; [] removes all gallery images. The featured image is not changed.' ),
 				'attributes'    => array( 'type' => 'array', 'description' => 'Replace product attributes (same format as wsp_woo_create_product).', 'items' => array( 'type' => 'object' ) ),
 				'stock_status'  => array( 'type' => 'string', 'description' => 'instock | outofstock.' ),
 				'image_url'     => array( 'type' => 'string', 'description' => 'Direct image URL to download and replace featured image.' ),

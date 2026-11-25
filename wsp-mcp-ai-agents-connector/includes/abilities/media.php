@@ -140,6 +140,43 @@ function wsp_execute_delete_media( $input ) {
 }
 
 /**
+ * True for download failures a later attempt can plausibly fix: connection-level
+ * errors and gateway/overload HTTP statuses. A 404 or 403 will not change on retry.
+ */
+function wsp_media_is_transient_download_error( $error ) {
+    $code = (string) $error->get_error_code();
+    if ( 'http_request_failed' === $code ) {
+        return true;
+    }
+    if ( 0 === strpos( $code, 'http_' ) ) {
+        // download_url() reports every HTTP error as "http_404"; the real status is in the error data.
+        $data   = $error->get_error_data();
+        $status = ( is_array( $data ) && isset( $data['code'] ) ) ? (int) $data['code'] : 0;
+        return in_array( $status, array( 408, 429, 500, 502, 503, 504 ), true ) || ( $status >= 520 && $status <= 524 );
+    }
+    return false;
+}
+
+/**
+ * download_url() with up to 3 attempts (1s, then 2s pause) for transient failures.
+ * Stops early on permanent errors or once 60s have been spent.
+ * Returns the temp file path or the last WP_Error; $attempts reports how many tries were made.
+ */
+function wsp_media_download_with_retry( $url, &$attempts ) {
+    $start = microtime( true );
+    for ( $attempts = 1; ; $attempts++ ) {
+        $tmp = download_url( $url );
+        if ( ! is_wp_error( $tmp ) ) {
+            return $tmp;
+        }
+        if ( $attempts >= 3 || ! wsp_media_is_transient_download_error( $tmp ) || ( microtime( true ) - $start ) > 60 ) {
+            return $tmp;
+        }
+        sleep( $attempts );
+    }
+}
+
+/**
  * Download a file from a URL and sideload it into the media library.
  * Shared implementation for wsp_upload_media and wsp_upload_media_from_url.
  */
@@ -153,9 +190,14 @@ function wsp_execute_upload_media_from_url( $input ) {
     require_once ABSPATH . 'wp-admin/includes/media.php';
     require_once ABSPATH . 'wp-admin/includes/image.php';
 
-    $tmp = download_url( $url );
+    $attempts = 1;
+    $tmp      = wsp_media_download_with_retry( $url, $attempts );
     if ( is_wp_error( $tmp ) ) {
-        return array( 'success' => false, 'error' => $tmp->get_error_message() );
+        $retryable = wsp_media_is_transient_download_error( $tmp );
+        $error     = $retryable
+            ? sprintf( 'Download failed after %d attempts (%s). Nothing was added to the media library, so it is safe to retry this call.', $attempts, $tmp->get_error_message() )
+            : sprintf( 'Download failed (%s). This is not a temporary error, so retrying the same URL will not help.', $tmp->get_error_message() );
+        return array( 'success' => false, 'error' => $error, 'retryable' => $retryable, 'attempts' => $attempts );
     }
 
     $name = ! empty( $input['filename'] )
@@ -222,7 +264,11 @@ function wsp_execute_upload_media_from_url( $input ) {
         update_post_meta( $id, '_wp_attachment_image_alt', sanitize_text_field( wp_unslash( $input['alt'] ) ) );
     }
 
-    return array( 'success' => true, 'id' => $id, 'url' => wp_get_attachment_url( $id ), 'media' => wsp_media_item_data( $id ) );
+    $result = array( 'success' => true, 'id' => $id, 'url' => wp_get_attachment_url( $id ), 'media' => wsp_media_item_data( $id ) );
+    if ( $attempts > 1 ) {
+        $result['download_attempts'] = $attempts;
+    }
+    return $result;
 }
 
 /**

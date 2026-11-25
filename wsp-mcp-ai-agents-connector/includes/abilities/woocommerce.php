@@ -79,11 +79,31 @@ function wsp_woo_set_product_attributes( $product, $attributes_input ) {
 
 function wsp_execute_woo_get_products( $input ) {
     $limit  = isset( $input['limit'] ) ? intval( $input['limit'] ) : 10;
+    if ( 0 === $limit || $limit < -1 ) {
+        $limit = 10; // -1 still means "all".
+    }
     $status = isset( $input['status'] ) ? sanitize_text_field( wp_unslash( $input['status'] ) ) : 'any';
+    $page  = isset( $input['page'] ) ? max( 1, intval( $input['page'] ) ) : 1;
+    $offset = isset( $input['offset'] ) ? max( 0, intval( $input['offset'] ) ) : null;
 
-    $products = wc_get_products( array( 'limit' => $limit, 'status' => $status ) );
+    $args = array(
+        'limit'    => $limit,
+        'status'   => $status,
+        // Newest first as before; ID breaks date ties so pages never overlap or skip.
+        'orderby'  => array( 'date' => 'DESC', 'ID' => 'DESC' ),
+        'paginate' => true,
+    );
+    // An explicit offset wins over page (WP_Query ignores "paged" when "offset" is set).
+    if ( null !== $offset ) {
+        $args['offset'] = $offset;
+    } else {
+        $args['page'] = $page;
+        $offset       = $limit > 0 ? ( $page - 1 ) * $limit : 0;
+    }
+
+    $query  = wc_get_products( $args );
     $result = array();
-    foreach ( $products as $p ) {
+    foreach ( $query->products as $p ) {
         $result[] = array(
             'id'            => $p->get_id(),
             'name'          => $p->get_name(),
@@ -94,7 +114,43 @@ function wsp_execute_woo_get_products( $input ) {
             'stock_status'  => $p->get_stock_status(),
         );
     }
-    return array( 'products' => $result, 'total' => count( $result ) );
+    $total    = (int) $query->total;
+    $count    = count( $result );
+    if ( 0 === $count && $offset > 0 ) {
+        // WP_Query skips the found-rows count when a page comes back empty, so a page past
+        // the end would report total 0. Ask for the real count with a one-item query.
+        $count_query = wc_get_products( array(
+            'limit'    => 1,
+            'status'   => $status,
+            'return'   => 'ids',
+            'paginate' => true,
+        ) );
+        $total = (int) $count_query->total;
+        if ( ! isset( $args['offset'] ) ) {
+            $query->max_num_pages = $limit > 0 ? (int) ceil( $total / $limit ) : 1;
+        }
+    }
+    $has_more = $limit > 0 && ( $offset + $count ) < $total;
+
+    $response = array(
+        'products'    => $result,
+        'total'       => $total,
+        'count'       => $count,
+        'limit'       => $limit,
+        'offset'      => $offset,
+        'has_more'    => $has_more,
+    );
+    if ( ! isset( $args['offset'] ) ) {
+        $response['page']        = $page;
+        $response['total_pages'] = $limit > 0 ? (int) $query->max_num_pages : 1;
+    }
+    if ( $has_more ) {
+        $response['next_offset'] = $offset + $count;
+        if ( isset( $response['page'] ) ) {
+            $response['next_page'] = $page + 1;
+        }
+    }
+    return $response;
 }
 
 function wsp_execute_woo_get_product( $input ) {
@@ -155,12 +211,33 @@ function wsp_execute_woo_create_product( $input ) {
     $terms_err = wsp_woo_apply_product_terms( $p, $input );
     if ( $terms_err ) return array( 'success' => false, 'error' => $terms_err );
 
+    // Resolve brands before saving so an unknown brand never leaves a half-created product.
+    $brand_ids = null;
+    if ( isset( $input['brands'] ) ) {
+        $brand_ids = wsp_woo_resolve_brand_ids( $input['brands'] );
+        if ( is_string( $brand_ids ) ) return array( 'success' => false, 'error' => $brand_ids );
+    }
+
+    if ( isset( $input['gallery_image_ids'] ) ) {
+        $gallery = wsp_woo_validate_gallery_ids( $input['gallery_image_ids'] );
+        if ( is_string( $gallery ) ) return array( 'success' => false, 'error' => $gallery );
+        $p->set_gallery_image_ids( $gallery );
+    }
+
     if ( ! empty( $sku ) ) {
         $p->set_sku( $sku );
     }
 
     $product_id = $p->save();
     if ( ! $product_id ) return array( 'success' => false, 'error' => 'Could not save product.' );
+
+    if ( null !== $brand_ids ) {
+        // WC_Product has no brand setter; brands are plain terms on the product post.
+        $set = wp_set_object_terms( $product_id, $brand_ids, 'product_brand' );
+        if ( is_wp_error( $set ) ) {
+            return array( 'success' => false, 'error' => 'Product ' . $product_id . ' was created but the brand could not be set: ' . $set->get_error_message(), 'id' => $product_id );
+        }
+    }
 
     $image_id = false;
     if ( ! empty( $input['image_url'] ) ) {
@@ -181,6 +258,8 @@ function wsp_execute_woo_create_product( $input ) {
         'image_id'  => $image_id,
         'categories' => $p->get_category_ids(),
         'tags'       => $p->get_tag_ids(),
+        'brands'     => wsp_woo_product_brands( $product_id ),
+        'gallery_image_ids' => array_map( 'intval', $p->get_gallery_image_ids() ),
         'permalink' => get_permalink( $product_id )
     );
 }
@@ -241,7 +320,24 @@ function wsp_execute_woo_update_product( $input ) {
         return array( 'success' => false, 'error' => 'Product not found.' );
     }
 
+    // Resolve brands first so an unknown brand fails before anything is changed.
+    $brand_ids = null;
+    if ( isset( $input['brands'] ) ) {
+        $brand_ids = wsp_woo_resolve_brand_ids( $input['brands'] );
+        if ( is_string( $brand_ids ) ) return array( 'success' => false, 'error' => $brand_ids );
+    }
+    $gallery = null;
+    if ( isset( $input['gallery_image_ids'] ) ) {
+        $gallery = wsp_woo_validate_gallery_ids( $input['gallery_image_ids'] );
+        if ( is_string( $gallery ) ) return array( 'success' => false, 'error' => $gallery );
+    }
+
     $updated = array();
+
+    if ( null !== $gallery ) {
+        $p->set_gallery_image_ids( $gallery );
+        $updated['gallery_image_ids'] = $gallery;
+    }
 
     if ( isset( $input['name'] ) ) {
         $value = sanitize_text_field( wp_unslash( $input['name'] ) );
@@ -313,10 +409,18 @@ function wsp_execute_woo_update_product( $input ) {
         if ( isset( $input['tags'] ) )       $updated['tags']       = $p->get_tag_ids();
     }
 
-    if ( ! empty( $updated ) ) {
-        $p->save();
-    } else {
+    if ( empty( $updated ) && null === $brand_ids ) {
         return array( 'success' => false, 'error' => 'No fields to update provided.' );
+    }
+    // Always save, even for a brands-only update, so WooCommerce clears its product caches.
+    $p->save();
+
+    if ( null !== $brand_ids ) {
+        $set = wp_set_object_terms( $id, $brand_ids, 'product_brand' );
+        if ( is_wp_error( $set ) ) {
+            return array( 'success' => false, 'error' => 'Could not set brands: ' . $set->get_error_message(), 'updated' => $updated );
+        }
+        $updated['brands'] = wsp_woo_product_brands( $id );
     }
 
     return array(

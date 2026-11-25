@@ -52,7 +52,9 @@ function wsp_execute_get_post( $input ) {
     $post = $id ? get_post( $id ) : null;
     if ( ! $post || 'post' !== $post->post_type ) return new WP_Error( 'not_found', 'Post not found.' );
     if ( ! current_user_can( 'read_post', $id ) ) return new WP_Error( 'forbidden', 'You do not have permission to read object ' . $id . '.' );
-    return array(
+    // Wrapped in { success, data } (issue #73): ChatGPT showed an empty {} when the tool text was a
+    // JSON object with a top-level "content" key, which collides with the MCP result's own "content".
+    $data = array(
         'id'         => $post->ID,
         'title'      => $post->post_title,
         'content'    => $post->post_content,
@@ -64,6 +66,7 @@ function wsp_execute_get_post( $input ) {
         'tags'       => wp_get_post_tags( $post->ID, array( 'fields' => 'names' ) ),
         'excerpt'    => has_excerpt( $post->ID ) ? get_the_excerpt( $post ) : wp_trim_words( $post->post_content, 40 ),
     );
+    return array( 'success' => true, 'data' => $data );
 }
 
 function wsp_execute_create_post( $input ) {

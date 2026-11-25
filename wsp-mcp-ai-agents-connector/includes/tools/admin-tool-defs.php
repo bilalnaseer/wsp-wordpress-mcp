@@ -52,6 +52,7 @@ function wsp_mcp_woo_admin_tool_defs() {
 		'wsp_woo_update_product_tag'      => array( 'Update Product Tag', 'Update a product tag (name, slug, description). Returns the updated tag.', 'write', $W, array( 'id' => $id ) + $term, array( 'id' ) ),
 		'wsp_woo_assign_product_tags'     => array( 'Assign Product Tags (bulk)', 'Add, replace or remove tags on many products at once. Tags can be given as IDs and/or names (unknown names are created). Max 200 products per call. Returns per-product results.', 'write', $W, array( 'product_ids' => array( 'ia', 'Product IDs (max 200).' ), 'tag_ids' => array( 'ia', 'Existing product tag IDs.' ), 'tag_names' => array( 'sa', 'Tag names; missing ones are created.' ), 'mode' => array( 's', 'add (default) | replace | remove.' ) ), array( 'product_ids' ) ),
 		'wsp_woo_create_product_tag'      => array( 'Create Product Tag', 'Create a product tag.', 'write', $W, $term, array( 'name' ) ),
+		'wsp_woo_get_product_brands'      => array( 'List Product Brands', 'List product brands (product_brand taxonomy): id, name, slug, parent, description, count. Set a product\'s brand with the "brands" field of wsp_woo_create_product / wsp_woo_update_product.', 'read', $W, array( 'search' => array( 's', 'Search term.' ), 'per_page' => array( 'i', '1-100, default 100.' ), 'page' => array( 'i', 'Page number.' ) ), array() ),
 
 		// ---- Attributes ----
 		'wsp_woo_get_attributes'        => array( 'List Product Attributes', 'List global product attributes (e.g. Color, Size) with their taxonomy names.', 'read', $W, array(), array() ),
