@@ -4,7 +4,7 @@
 
 > **By [WebSensePro](https://websensepro.com) — Official Shopify Partner & WordPress Agency**
 
-[![Version](https://img.shields.io/badge/Version-3.0.0-blue?style=for-the-badge)](https://github.com/bilalnaseer/wsp-wordpress-mcp/releases)
+[![Version](https://img.shields.io/badge/Version-3.0.1-blue?style=for-the-badge)](https://github.com/bilalnaseer/wsp-wordpress-mcp/releases)
 [![YouTube](https://img.shields.io/badge/YouTube-150K%2B%20Subscribers-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtube.com/websensepro)
 [![License](https://img.shields.io/badge/License-GPL%202.0-green?style=for-the-badge)](LICENSE)
 
@@ -61,7 +61,17 @@ WSP MCP is a **free MCP plugin for WordPress**. Install it, connect your AI app,
 
 ---
 
-## ✨ What's New in v3.0.0
+## ✨ What's New in v3.0.1
+
+- 🏷️ **WooCommerce product brands** — `wsp_woo_create_product` and `wsp_woo_update_product` accept `brands` (IDs, slugs or names), and a new `wsp_woo_get_product_brands` tool lists the `product_brand` taxonomy. Unknown brands return an error instead of being created; `[]` removes all brands ([#69](https://github.com/bilalnaseer/wsp-wordpress-mcp/issues/69)).
+- 🖼️ **Product gallery images** — both product tools accept `gallery_image_ids` (media library image IDs, order kept, `[]` clears the gallery) ([#68](https://github.com/bilalnaseer/wsp-wordpress-mcp/issues/68)).
+- 📄 **Product list pagination** — `wsp_woo_get_products` takes `page` / `offset` and now returns the real matching `total` plus `count`, `has_more`, `total_pages` and `next_page` / `next_offset` ([#70](https://github.com/bilalnaseer/wsp-wordpress-mcp/issues/70)).
+- 🔁 **Media upload retries** — `wsp_upload_media_from_url` retries transient download failures (5xx, 429, 408, connection errors) up to 3 times, skips retries on permanent errors like 404, and reports `retryable` / `attempts` ([#71](https://github.com/bilalnaseer/wsp-wordpress-mcp/issues/71)).
+- 🤖 **ChatGPT `wsp_get_post` fix** — the post is now returned as `{ success, data }`, so ChatGPT no longer shows an empty `{}` ([#73](https://github.com/bilalnaseer/wsp-wordpress-mcp/issues/73)).
+
+Thanks to [@syedubada](https://github.com/syedubada) for the fixes.
+
+## v3.0.0
 
 - 🔒 **Tighter WooCommerce permissions** — six tools (`wsp_woo_update_product`, `wsp_woo_list_orders`, `wsp_woo_update_order_status`, `wsp_woo_create_order_note`, `wsp_woo_report_sales`, `wsp_woo_moderate_review`) were gated on `edit_posts`, which the Contributor role holds. They now require `manage_woocommerce`, so only Shop Managers and Administrators can use them. **Update recommended.**
 - 📝 **Product short description** — `wsp_woo_create_product` and `wsp_woo_update_product` accept `short_description`, the text shown near the price ([#67](https://github.com/bilalnaseer/wsp-wordpress-mcp/issues/67)).
@@ -128,7 +138,7 @@ Contributed by [@dulaj44](https://github.com/dulaj44) in [#42](https://github.co
 - 🐛 **Audit Log accuracy** — permission-denied results from the new Read Post tool are now logged as denied, not success.
 - 🐛 **Add Menu Item validation** — an `object_id` whose post type doesn't match the requested `type` is now rejected instead of silently stored.
 
-**Recent releases:** v3.0.0 — WooCommerce permission hardening + product short description · v2.9.9 — SEO tools for WooCommerce products and taxonomy terms + Enable/Disable All toggle · v2.9.8 — scheduling fix for posts, pages and CPT items · v2.9.7 — ChatGPT connection guide + OAuth discovery fix for hosts blocking /.well-known/ · v2.9.6 — security hardening of authorization checks · v2.9.5 — Site Context + WooCommerce store management · v2.9.0 — Navigation Menus tool group + Read Post tool · v2.8.0 — one-click Claude Connector sign-in (OAuth 2.1) + Analytics dashboard · v2.7.1 — object-level authorization on write tools (Patchstack) · v2.7.0 — Audit Log · v2.6.x — WPForms, Contact Form 7, Gravity Forms, UAE, Elementor design tools.
+**Recent releases:** v3.0.1 — WooCommerce brands, gallery images and product pagination + media upload retries + ChatGPT Read Post fix · v3.0.0 — WooCommerce permission hardening + product short description · v2.9.9 — SEO tools for WooCommerce products and taxonomy terms + Enable/Disable All toggle · v2.9.8 — scheduling fix for posts, pages and CPT items · v2.9.7 — ChatGPT connection guide + OAuth discovery fix for hosts blocking /.well-known/ · v2.9.6 — security hardening of authorization checks · v2.9.5 — Site Context + WooCommerce store management · v2.9.0 — Navigation Menus tool group + Read Post tool · v2.8.0 — one-click Claude Connector sign-in (OAuth 2.1) + Analytics dashboard · v2.7.1 — object-level authorization on write tools (Patchstack) · v2.7.0 — Audit Log · v2.6.x — WPForms, Contact Form 7, Gravity Forms, UAE, Elementor design tools.
 
 📋 **Full history:** see [CHANGELOG.md](CHANGELOG.md).
 

@@ -17,6 +17,19 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`docs/tools-list.md`** — generated list of all 291 tools (name, read/write, description) grouped by plugin integration, produced by `php bin/generate-tools-list.php`, which runs the real registration code against WordPress stubs with every integration forced active.
 - **Auto-regeneration hook:** `.claude/settings.json` + `.claude/hooks/regen-tools-list.sh` (Claude Code `PostToolUse`) rerun the generator whenever `registry.php` or a file in `includes/tools/` / `includes/abilities/` is edited, so the list can't drift. "How to add a NEW MCP tool" in `AGENTS.md` gains a step 5 for it.
 
+## [3.0.1] — 2026-11-25
+
+### Added
+- **WooCommerce product brands (#69).** `brands` (IDs, slugs or names) on `wsp_woo_create_product` / `wsp_woo_update_product`; new `wsp_woo_get_product_brands` tool. Unknown brands error instead of being created; `[]` removes all.
+- **Product gallery images (#68).** `gallery_image_ids` on create/update via `WC_Product::set_gallery_image_ids()`; IDs validated as library images before saving.
+- **Pagination on `wsp_woo_get_products` (#70).** `page` / `offset` inputs; `total` is now the real match count; adds `count`, `has_more`, `total_pages`, `next_page` / `next_offset`.
+
+### Changed
+- **`wsp_upload_media_from_url` retries (#71).** Up to 3 attempts on 5xx/429/408 and connection errors; no retry on permanent errors (404); returns `retryable` / `attempts`.
+
+### Fixed
+- **`wsp_get_post` empty in ChatGPT (#73).** Result is now `{ success: true, data: {...} }` because a top-level `content` key clashed with the MCP result's `content`. Errors unchanged.
+
 ## [3.0.0] — 2026-11-20
 
 ### Security

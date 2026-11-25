@@ -4,7 +4,7 @@ Tags: mcp, ai, claude, chatgpt, ai agent
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 3.0.0
+Stable tag: 3.0.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -126,6 +126,13 @@ Watch the step-by-step video tutorial:
 https://youtu.be/hxhjs3IUYQE
 
 == Changelog ==
+
+= 3.0.1 =
+* New: WooCommerce create and update product tools accept brands (IDs, slugs or names), and a new tool lists product brands.
+* New: WooCommerce create and update product tools accept gallery image IDs.
+* New: the WooCommerce list products tool supports page and offset pagination and returns the real total, has_more and next page details.
+* Improved: uploading media from a URL now retries temporary download failures (up to 3 attempts) and reports whether a failed call is safe to repeat.
+* Fixed: the Read Post tool now returns its result as success/data so ChatGPT no longer shows an empty response.
 
 = 3.0.0 =
 * Security: six WooCommerce tools (update product, list orders, update order status, add order note, sales report, moderate reviews) now require the manage_woocommerce capability instead of edit_posts, so Contributors can no longer use them. Only Shop Managers and Administrators can.
@@ -284,6 +291,9 @@ https://youtu.be/hxhjs3IUYQE
 * Elementor abilities, modular architecture, auto config generator.
 
 == Upgrade Notice ==
+
+= 3.0.1 =
+Adds WooCommerce product brands, gallery images and pagination, retries for media uploads from a URL, and fixes the Read Post tool showing an empty result in ChatGPT.
 
 = 3.0.0 =
 Security update: WooCommerce order, sales and product-update tools now require the manage_woocommerce capability. Update recommended.
