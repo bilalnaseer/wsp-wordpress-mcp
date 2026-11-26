@@ -43,12 +43,12 @@ function wsp_blocks_item_data( $post, $full = false ) {
 /** Posts that embed a reusable block (`<!-- wp:block {"ref":ID} /-->`), max 50, only those the caller can edit. */
 function wsp_blocks_used_in( $block_id ) {
 	$block_id = (int) $block_id;
+	// No explicit 'suppress_filters': get_posts() already defaults it to true, and setting it is a Plugin Check error.
 	$posts    = get_posts( array(
 		's'                => '"ref":' . $block_id,
 		'post_type'        => 'any',
 		'post_status'      => 'any',
 		'posts_per_page'   => 100,
-		'suppress_filters' => true,
 		'no_found_rows'    => true,
 	) );
 	$out = array();
