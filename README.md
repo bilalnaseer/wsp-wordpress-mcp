@@ -4,7 +4,7 @@
 
 > **By [WebSensePro](https://websensepro.com) — Official Shopify Partner & WordPress Agency**
 
-[![Version](https://img.shields.io/badge/Version-3.0.1-blue?style=for-the-badge)](https://github.com/bilalnaseer/wsp-wordpress-mcp/releases)
+[![Version](https://img.shields.io/badge/Version-3.0.2-blue?style=for-the-badge)](https://github.com/bilalnaseer/wsp-wordpress-mcp/releases)
 [![Tested up to](https://img.shields.io/badge/Tested%20up%20to-WordPress%207.2-21759B?style=for-the-badge&logo=wordpress&logoColor=white)](https://wordpress.org/)
 [![YouTube](https://img.shields.io/badge/YouTube-150K%2B%20Subscribers-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtube.com/websensepro)
 [![License](https://img.shields.io/badge/License-GPL%202.0-green?style=for-the-badge)](LICENSE)
@@ -62,11 +62,14 @@ WSP MCP is a **free MCP plugin for WordPress**. Install it, connect your AI app,
 
 ---
 
-## ✅ WordPress 7.2 Compatibility
+## ✨ What's New in v3.0.2
 
-WSP MCP is tested up to **WordPress 7.2**. The compatibility check also cleared a Plugin Check error in the reusable-blocks lookup (the "used in" list), with no change in behaviour ([#74](https://github.com/bilalnaseer/wsp-wordpress-mcp/pull/74), thanks [@syedubada](https://github.com/syedubada)).
+- ✅ **WordPress 7.2** — tested up to WordPress 7.2.
+- 🧹 **Plugin Check fix** — cleared an error in the reusable-blocks "used in" lookup, with no change in behaviour ([#74](https://github.com/bilalnaseer/wsp-wordpress-mcp/pull/74)).
 
-## ✨ What's New in v3.0.1
+Thanks to [@syedubada](https://github.com/syedubada) for the fix.
+
+## v3.0.1
 
 - 🏷️ **WooCommerce product brands** — `wsp_woo_create_product` and `wsp_woo_update_product` accept `brands` (IDs, slugs or names), and a new `wsp_woo_get_product_brands` tool lists the `product_brand` taxonomy. Unknown brands return an error instead of being created; `[]` removes all brands ([#69](https://github.com/bilalnaseer/wsp-wordpress-mcp/issues/69)).
 - 🖼️ **Product gallery images** — both product tools accept `gallery_image_ids` (media library image IDs, order kept, `[]` clears the gallery) ([#68](https://github.com/bilalnaseer/wsp-wordpress-mcp/issues/68)).
@@ -143,7 +146,7 @@ Contributed by [@dulaj44](https://github.com/dulaj44) in [#42](https://github.co
 - 🐛 **Audit Log accuracy** — permission-denied results from the new Read Post tool are now logged as denied, not success.
 - 🐛 **Add Menu Item validation** — an `object_id` whose post type doesn't match the requested `type` is now rejected instead of silently stored.
 
-**Recent releases:** v3.0.1 — WooCommerce brands, gallery images and product pagination + media upload retries + ChatGPT Read Post fix · v3.0.0 — WooCommerce permission hardening + product short description · v2.9.9 — SEO tools for WooCommerce products and taxonomy terms + Enable/Disable All toggle · v2.9.8 — scheduling fix for posts, pages and CPT items · v2.9.7 — ChatGPT connection guide + OAuth discovery fix for hosts blocking /.well-known/ · v2.9.6 — security hardening of authorization checks · v2.9.5 — Site Context + WooCommerce store management · v2.9.0 — Navigation Menus tool group + Read Post tool · v2.8.0 — one-click Claude Connector sign-in (OAuth 2.1) + Analytics dashboard · v2.7.1 — object-level authorization on write tools (Patchstack) · v2.7.0 — Audit Log · v2.6.x — WPForms, Contact Form 7, Gravity Forms, UAE, Elementor design tools.
+**Recent releases:** v3.0.2 — WordPress 7.2 compatibility + Plugin Check fix · v3.0.1 — WooCommerce brands, gallery images and product pagination + media upload retries + ChatGPT Read Post fix · v3.0.0 — WooCommerce permission hardening + product short description · v2.9.9 — SEO tools for WooCommerce products and taxonomy terms + Enable/Disable All toggle · v2.9.8 — scheduling fix for posts, pages and CPT items · v2.9.7 — ChatGPT connection guide + OAuth discovery fix for hosts blocking /.well-known/ · v2.9.6 — security hardening of authorization checks · v2.9.5 — Site Context + WooCommerce store management · v2.9.0 — Navigation Menus tool group + Read Post tool · v2.8.0 — one-click Claude Connector sign-in (OAuth 2.1) + Analytics dashboard · v2.7.1 — object-level authorization on write tools (Patchstack) · v2.7.0 — Audit Log · v2.6.x — WPForms, Contact Form 7, Gravity Forms, UAE, Elementor design tools.
 
 📋 **Full history:** see [CHANGELOG.md](CHANGELOG.md).
 

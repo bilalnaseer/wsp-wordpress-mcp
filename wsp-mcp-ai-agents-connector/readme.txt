@@ -4,7 +4,7 @@ Tags: mcp, ai, claude, chatgpt, ai agent
 Requires at least: 6.9
 Tested up to: 7.2
 Requires PHP: 7.4
-Stable tag: 3.0.1
+Stable tag: 3.0.2
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -126,6 +126,10 @@ Watch the step-by-step video tutorial:
 https://youtu.be/hxhjs3IUYQE
 
 == Changelog ==
+
+= 3.0.2 =
+* Tested up to WordPress 7.2.
+* Fixed: a Plugin Check error in the reusable blocks "used in" lookup. No change in behaviour.
 
 = 3.0.1 =
 * New: WooCommerce create and update product tools accept brands (IDs, slugs or names), and a new tool lists product brands.
@@ -291,6 +295,9 @@ https://youtu.be/hxhjs3IUYQE
 * Elementor abilities, modular architecture, auto config generator.
 
 == Upgrade Notice ==
+
+= 3.0.2 =
+Compatibility update: tested up to WordPress 7.2, and fixes a Plugin Check error.
 
 = 3.0.1 =
 Adds WooCommerce product brands, gallery images and pagination, retries for media uploads from a URL, and fixes the Read Post tool showing an empty result in ChatGPT.

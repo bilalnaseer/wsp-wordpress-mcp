@@ -13,15 +13,17 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added (repo tooling — not part of the plugin zip)
+- **`docs/tools-list.md`** — generated list of all 291 tools (name, read/write, description) grouped by plugin integration, produced by `php bin/generate-tools-list.php`, which runs the real registration code against WordPress stubs with every integration forced active.
+- **Auto-regeneration hook:** `.claude/settings.json` + `.claude/hooks/regen-tools-list.sh` (Claude Code `PostToolUse`) rerun the generator whenever `registry.php` or a file in `includes/tools/` / `includes/abilities/` is edited, so the list can't drift. "How to add a NEW MCP tool" in `AGENTS.md` gains a step 5 for it.
+
+## [3.0.2] — 2026-11-26
+
 ### Changed
 - **Tested up to WordPress 7.2** (`readme.txt` header; `README.md` badge and compatibility note).
 
 ### Fixed
 - **Plugin Check error in `wsp_blocks_used_in()` (#74):** removed the explicit `suppress_filters => true` from `get_posts()` (already its default), so results are unchanged.
-
-### Added (repo tooling — not part of the plugin zip)
-- **`docs/tools-list.md`** — generated list of all 291 tools (name, read/write, description) grouped by plugin integration, produced by `php bin/generate-tools-list.php`, which runs the real registration code against WordPress stubs with every integration forced active.
-- **Auto-regeneration hook:** `.claude/settings.json` + `.claude/hooks/regen-tools-list.sh` (Claude Code `PostToolUse`) rerun the generator whenever `registry.php` or a file in `includes/tools/` / `includes/abilities/` is edited, so the list can't drift. "How to add a NEW MCP tool" in `AGENTS.md` gains a step 5 for it.
 
 ## [3.0.1] — 2026-11-25
 
