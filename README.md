@@ -5,6 +5,7 @@
 > **By [WebSensePro](https://websensepro.com) — Official Shopify Partner & WordPress Agency**
 
 [![Version](https://img.shields.io/badge/Version-3.0.1-blue?style=for-the-badge)](https://github.com/bilalnaseer/wsp-wordpress-mcp/releases)
+[![Tested up to](https://img.shields.io/badge/Tested%20up%20to-WordPress%207.2-21759B?style=for-the-badge&logo=wordpress&logoColor=white)](https://wordpress.org/)
 [![YouTube](https://img.shields.io/badge/YouTube-150K%2B%20Subscribers-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtube.com/websensepro)
 [![License](https://img.shields.io/badge/License-GPL%202.0-green?style=for-the-badge)](LICENSE)
 
@@ -35,7 +36,7 @@ WSP MCP is a **free MCP plugin for WordPress**. Install it, connect your AI app,
 
 ## 🚀 Quick Start
 
-**Prerequisites:** WordPress 6.9+ (7.0.3 or 6.9.6+ recommended), PHP 7.4+ — **that's it.** Claude Desktop and OpenClaw use the `mcp-remote` bridge, which needs Node.js 18+; Cursor, Codex, Antigravity, and OpenCode connect natively.
+**Prerequisites:** WordPress 6.9+ (tested up to 7.2; on older branches 7.0.3 or 6.9.6+ recommended), PHP 7.4+ — **that's it.** Claude Desktop and OpenClaw use the `mcp-remote` bridge, which needs Node.js 18+; Cursor, Codex, Antigravity, and OpenCode connect natively.
 
 1. Install & activate this plugin
 2. Go to **MCP > Settings** in wp-admin and enable the abilities you need
@@ -60,6 +61,10 @@ WSP MCP is a **free MCP plugin for WordPress**. Install it, connect your AI app,
 | All tutorials & abilities directory | [wspmcp.com](https://wspmcp.com/) |
 
 ---
+
+## ✅ WordPress 7.2 Compatibility
+
+WSP MCP is tested up to **WordPress 7.2**. The compatibility check also cleared a Plugin Check error in the reusable-blocks lookup (the "used in" list), with no change in behaviour ([#74](https://github.com/bilalnaseer/wsp-wordpress-mcp/pull/74), thanks [@syedubada](https://github.com/syedubada)).
 
 ## ✨ What's New in v3.0.1
 
