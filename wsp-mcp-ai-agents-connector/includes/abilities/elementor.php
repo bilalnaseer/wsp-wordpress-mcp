@@ -883,7 +883,7 @@ function wsp_execute_elementor_get_page_settings( $input ) {
     return array(
         'success'       => true,
         'post_id'       => $post_id,
-        'page_template' => $template ?: 'default',
+        'page_template' => $template ? $template : 'default',
         'settings'      => $settings,
     );
 }

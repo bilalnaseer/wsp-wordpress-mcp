@@ -57,11 +57,11 @@ function wsp_plugins_is_self( $file ) {
 }
 
 /** Run an upgrader call with output buffered so nothing leaks into the JSON-RPC response. */
-function wsp_plugins_run_upgrader( $callable ) {
+function wsp_plugins_run_upgrader( $callback ) {
 	$level = ob_get_level();
 	ob_start();
 	try {
-		$result = call_user_func( $callable );
+		$result = call_user_func( $callback );
 	} finally {
 		while ( ob_get_level() > $level ) ob_end_clean();
 	}
@@ -116,7 +116,10 @@ function wsp_plugins_install_package( $package, $activate ) {
 }
 
 function wsp_execute_install_plugin( $input ) {
-	if ( $e = wsp_plugins_guard( 'install_plugins' ) ) return $e;
+	$e = wsp_plugins_guard( 'install_plugins' );
+	if ( $e ) {
+		return $e;
+	}
 	$slug = isset( $input['slug'] ) ? sanitize_title( wp_unslash( $input['slug'] ) ) : '';
 	if ( '' === $slug || ! preg_match( '/^[a-z0-9][a-z0-9-]{0,99}$/', $slug ) ) {
 		return wsp_plugins_fail( 'slug is required: the wordpress.org plugin slug, e.g. "woocommerce".' );
@@ -134,7 +137,10 @@ function wsp_execute_install_plugin( $input ) {
 }
 
 function wsp_execute_install_plugin_from_url( $input ) {
-	if ( $e = wsp_plugins_guard( 'install_plugins' ) ) return $e;
+	$e = wsp_plugins_guard( 'install_plugins' );
+	if ( $e ) {
+		return $e;
+	}
 	$raw = isset( $input['zip_url'] ) ? trim( (string) $input['zip_url'] ) : '';
 	$url = esc_url_raw( $raw, array( 'https' ) );
 	$parts = wp_parse_url( $url );
@@ -145,7 +151,10 @@ function wsp_execute_install_plugin_from_url( $input ) {
 }
 
 function wsp_execute_delete_plugin( $input ) {
-	if ( $e = wsp_plugins_guard( 'delete_plugins' ) ) return $e;
+	$e = wsp_plugins_guard( 'delete_plugins' );
+	if ( $e ) {
+		return $e;
+	}
 	$file = wsp_plugins_resolve_file( $input );
 	if ( is_array( $file ) ) return $file;
 	if ( wsp_plugins_is_self( $file ) ) return wsp_plugins_fail( 'Refusing to delete this MCP plugin itself.' );
@@ -162,7 +171,10 @@ function wsp_execute_delete_plugin( $input ) {
 }
 
 function wsp_execute_update_plugin( $input ) {
-	if ( $e = wsp_plugins_guard( 'update_plugins' ) ) return $e;
+	$e = wsp_plugins_guard( 'update_plugins' );
+	if ( $e ) {
+		return $e;
+	}
 	$file = wsp_plugins_resolve_file( $input );
 	if ( is_array( $file ) ) return $file;
 

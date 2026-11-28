@@ -29,7 +29,7 @@ function wsp_acf_validate_target( $target_id, $target_type = 'post', $is_write =
     }
 
     // Standardize options page target (Require manage_options for any read/write on Options)
-    if ( $target_id === 'option' || $target_id === 'options' || $target_type === 'option' ) {
+    if ( 'option' === $target_id || 'options' === $target_id || 'option' === $target_type ) {
         $opt_cap_check = wsp_acf_check_cap( 'manage_options' );
         if ( is_wp_error( $opt_cap_check ) ) {
             return $opt_cap_check;
@@ -51,7 +51,7 @@ function wsp_acf_validate_target( $target_id, $target_type = 'post', $is_write =
 
     if ( is_numeric( $clean_id ) ) {
         $id = intval( $clean_id );
-        if ( $target_type === 'post' || $target_type === 'page' ) {
+        if ( 'post' === $target_type || 'page' === $target_type ) {
             $post = get_post( $id );
             if ( ! $post ) {
                 return new WP_Error( 'post_not_found', 'Target post/page not found.' );
@@ -62,7 +62,7 @@ function wsp_acf_validate_target( $target_id, $target_type = 'post', $is_write =
                 return new WP_Error( 'forbidden', 'You do not have permission to view or edit this content.' );
             }
             return $id;
-        } elseif ( $target_type === 'user' ) {
+        } elseif ( 'user' === $target_type ) {
             $user = get_userdata( $id );
             if ( ! $user ) {
                 return new WP_Error( 'user_not_found', 'Target user not found.' );
@@ -73,14 +73,12 @@ function wsp_acf_validate_target( $target_id, $target_type = 'post', $is_write =
                 if ( ! current_user_can( 'edit_user', $id ) ) {
                     return new WP_Error( 'forbidden', 'You do not have permission to edit this user metadata.' );
                 }
-            } else {
-                // Reading user meta requires list_users capability (or if reading self) (Issue 3)
-                if ( ! current_user_can( 'list_users' ) && get_current_user_id() !== $id ) {
-                    return new WP_Error( 'forbidden', 'You do not have permission to view this user metadata.' );
-                }
+            } elseif ( ! current_user_can( 'list_users' ) && get_current_user_id() !== $id ) {
+                // Reading user meta requires list_users capability (or if reading self) (Issue 3).
+                return new WP_Error( 'forbidden', 'You do not have permission to view this user metadata.' );
             }
             return 'user_' . $id;
-        } elseif ( $target_type === 'term' ) {
+        } elseif ( 'term' === $target_type ) {
             $term = get_term( $id );
             if ( is_wp_error( $term ) || ! $term ) {
                 return new WP_Error( 'term_not_found', 'Target term not found.' );

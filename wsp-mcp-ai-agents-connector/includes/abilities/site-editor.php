@@ -181,8 +181,8 @@ function wsp_site_editor_template_to_array( $tpl, $with_content = false ) {
 }
 
 /** Validate an area for a template part; empty input falls back to $default. */
-function wsp_site_editor_resolve_area( $input, $default ) {
-	if ( ! isset( $input['area'] ) || '' === $input['area'] ) return $default;
+function wsp_site_editor_resolve_area( $input, $default_area ) {
+	if ( ! isset( $input['area'] ) || '' === $input['area'] ) return $default_area;
 	$area = sanitize_key( $input['area'] );
 	if ( ! in_array( $area, wsp_site_editor_template_part_areas(), true ) ) {
 		return new WP_Error( 'invalid_area', 'area must be one of: ' . implode( ', ', wsp_site_editor_template_part_areas() ) . '.' );

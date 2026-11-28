@@ -155,7 +155,7 @@ function wsp_blocks_normalize( $blocks, $depth, &$nodes ) {
 					return new WP_Error( 'invalid_blocks', 'innerContent of block #' . $i . ' may only hold strings and nulls.' );
 				}
 			}
-			if ( $slots !== count( $inner ) ) {
+			if ( count( $inner ) !== $slots ) {
 				return new WP_Error( 'invalid_blocks', 'innerContent of block #' . $i . ' needs exactly one null per inner block (' . count( $inner ) . ').' );
 			}
 		} else {

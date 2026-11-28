@@ -278,7 +278,7 @@ class WSP_MCP_OAuth_Store {
 		// even if the row was already expired.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$wpdb->delete( $table, array( 'code' => $code ), array( '%s' ) );
-		return $row ?: null;
+		return $row ? $row : null;
 	}
 
 	/* ---------- Tokens ---------- */
@@ -423,7 +423,7 @@ class WSP_MCP_OAuth_Store {
 			$hash,
 			$client_id
 		), ARRAY_A );
-		return $row ?: null;
+		return $row ? $row : null;
 	}
 
 	/** Remove expired codes, long-expired tokens, and abandoned clients (daily cron). */
