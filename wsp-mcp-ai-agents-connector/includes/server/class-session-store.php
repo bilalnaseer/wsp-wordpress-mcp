@@ -12,12 +12,19 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+/**
+ * Database-backed MCP sessions, bound to the user that created them.
+ */
 class WSP_MCP_Session_Store {
 
 	/** Session lifetime in seconds (24h). */
 	const TTL = 86400;
 
-	/** @return string Fully-qualified table name. */
+	/**
+	 * Name of the sessions table.
+	 *
+	 * @return string Fully-qualified table name.
+	 */
 	private static function table() {
 		global $wpdb;
 		return $wpdb->prefix . 'wsp_mcp_sessions';
@@ -140,7 +147,11 @@ class WSP_MCP_Session_Store {
 		) );
 	}
 
-	/** Delete a session. */
+	/**
+	 * Delete a session.
+	 *
+	 * @param string $session_id Session ID.
+	 */
 	public static function delete_session( $session_id ) {
 		global $wpdb;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery

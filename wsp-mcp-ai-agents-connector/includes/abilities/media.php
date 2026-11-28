@@ -1,4 +1,10 @@
 <?php
+/**
+ * Media library abilities: list, read, update, delete and upload attachments, and set featured images.
+ *
+ * @package WSP_MCP
+ */
+
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
@@ -42,6 +48,20 @@ function wsp_media_item_data( $attachment ) {
 
 /**
  * Browse and search the media library by type, keyword, or date.
+ *
+ * MCP tool: `wsp_list_media`. Requires the `upload_files` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $per_page Optional. Items per page. Default 20.
+ *     @type int $page Optional. Page number. Default 1.
+ *     @type string $type Optional. MIME type filter, e.g. image or image/png.
+ *     @type string $search Optional. Keyword to search titles/filenames.
+ *     @type int $year Optional. Filter by upload year.
+ *     @type int $month Optional. Filter by upload month (1-12).
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
  */
 function wsp_execute_list_media( $input ) {
     $args = array(
@@ -77,6 +97,15 @@ function wsp_execute_list_media( $input ) {
 
 /**
  * Retrieve the full metadata of a specific media file by ID.
+ *
+ * MCP tool: `wsp_get_media`. Requires the `upload_files` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Attachment ID.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
  */
 function wsp_execute_get_media( $input ) {
     $id   = isset( $input['id'] ) ? intval( $input['id'] ) : 0;
@@ -89,6 +118,11 @@ function wsp_execute_get_media( $input ) {
 
 /**
  * Get media library counts grouped by MIME type, plus a total.
+ *
+ * MCP tool: `wsp_count_media`. Requires the `upload_files` capability.
+ *
+ * @param array $input Tool arguments (this tool takes none).
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
  */
 function wsp_execute_count_media( $input ) {
     $counts = (array) wp_count_attachments();
@@ -104,6 +138,19 @@ function wsp_execute_count_media( $input ) {
 
 /**
  * Update the title, alt text, caption, or description of a media file by ID.
+ *
+ * MCP tool: `wsp_update_media`. Requires the `upload_files` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Attachment ID.
+ *     @type string $title Optional.
+ *     @type string $alt Optional. Alternative text.
+ *     @type string $caption Optional.
+ *     @type string $description Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
  */
 function wsp_execute_update_media( $input ) {
     $guard = wsp_mcp_guard_edit_post( isset( $input['id'] ) ? $input['id'] : 0, 'attachment' );
@@ -128,6 +175,15 @@ function wsp_execute_update_media( $input ) {
 
 /**
  * Permanently delete a media file from the media library by ID.
+ *
+ * MCP tool: `wsp_delete_media`. Requires the `delete_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Attachment ID.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
  */
 function wsp_execute_delete_media( $input ) {
     $guard = wsp_mcp_guard_delete_post( isset( $input['id'] ) ? $input['id'] : 0, 'attachment' );
@@ -140,8 +196,13 @@ function wsp_execute_delete_media( $input ) {
 }
 
 /**
- * True for download failures a later attempt can plausibly fix: connection-level
- * errors and gateway/overload HTTP statuses. A 404 or 403 will not change on retry.
+ * True for download failures a later attempt can plausibly fix: connection-level errors and
+ * gateway/overload HTTP statuses.
+ *
+ * A 404 or 403 will not change on retry.
+ *
+ * @param WP_Error $error Error returned by download_url().
+ * @return bool True when a later attempt could succeed.
  */
 function wsp_media_is_transient_download_error( $error ) {
     $code = (string) $error->get_error_code();
@@ -158,9 +219,15 @@ function wsp_media_is_transient_download_error( $error ) {
 }
 
 /**
- * download_url() with up to 3 attempts (1s, then 2s pause) for transient failures.
- * Stops early on permanent errors or once 60s have been spent.
- * Returns the temp file path or the last WP_Error; $attempts reports how many tries were made.
+ * Download a file, retrying transient failures up to three times.
+ *
+ * Uses download_url() with up to 3 attempts (1s, then 2s pause) for transient failures. Stops early on
+ * permanent errors or once 60s have been spent. Returns the temp file path or the last WP_Error;
+ * $attempts reports how many tries were made.
+ *
+ * @param string $url      URL to download.
+ * @param int    $attempts Number of attempts made, set by reference.
+ * @return string|WP_Error Path of the temporary file, or the last error.
  */
 function wsp_media_download_with_retry( $url, &$attempts ) {
     $start = microtime( true );
@@ -178,7 +245,22 @@ function wsp_media_download_with_retry( $url, &$attempts ) {
 
 /**
  * Download a file from a URL and sideload it into the media library.
+ *
  * Shared implementation for wsp_upload_media and wsp_upload_media_from_url.
+ *
+ * MCP tool: `wsp_upload_media_from_url`. Requires the `upload_files` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $url Required. Source URL of the image to import.
+ *     @type string $filename Optional. Optional destination filename.
+ *     @type string $title Optional.
+ *     @type string $alt Optional.
+ *     @type string $caption Optional.
+ *     @type int $post_id Optional. Optional post ID to attach the media to.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
  */
 function wsp_execute_upload_media_from_url( $input ) {
     $url = isset( $input['url'] ) ? esc_url_raw( trim( (string) $input['url'] ) ) : '';
@@ -273,14 +355,15 @@ function wsp_execute_upload_media_from_url( $input ) {
 
 /**
  * Decode base64 file content and sideload it into the media library.
- * Lets an MCP client upload a file attached to the chat directly, without
- * first hosting it at a public URL.
  *
- * Accepts:
- *   - data      (req) base64 string; a `data:<mime>;base64,` prefix is stripped if present.
- *   - filename  optional destination filename (extension inferred from mime/data URI if missing).
- *   - mime_type optional MIME type hint (e.g. image/png) when there is no data URI prefix.
- *   - title / alt / caption / post_id  same as the URL uploader.
+ * Lets an MCP client upload a file attached to the chat directly, without first hosting it at a public
+ * URL. Accepts: - data      (req) base64 string; a `data:<mime>;base64,` prefix is stripped if
+ * present. - filename  optional destination filename (extension inferred from mime/data URI if
+ * missing). - mime_type optional MIME type hint (e.g. image/png) when there is no data URI prefix. -
+ * title / alt / caption / post_id  same as the URL uploader.
+ *
+ * @param array $input Tool arguments with the base64 "data" and optional filename, mime_type,
+ *                     title, alt, caption and post_id.
  */
 function wsp_execute_upload_media_from_data( $input ) {
     // Undo any slashing a transport/client may have added (e.g. `image\/png`, `\/` in the payload).
@@ -398,9 +481,27 @@ function wsp_execute_upload_media_from_data( $input ) {
 /**
  * Upload an image or file into the media library.
  *
- * Accepts EITHER base64 file content in "data" (a file attached to the chat,
- * uploaded directly with no public URL needed) OR a source "url". If both are
- * present, "data" wins.
+ * Accepts EITHER base64 file content in "data" (a file attached to the chat, uploaded directly with no
+ * public URL needed) OR a source "url". If both are present, "data" wins.
+ *
+ * MCP tool: `wsp_upload_media`. Requires the `upload_files` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $data Optional. Base64-encoded file content. A "data:<mime>;base64," prefix is
+ *         accepted. Use this to upload a file straight from the chat without a URL.
+ *     @type string $mime_type Optional. MIME type of the base64 data (e.g. image/png), used when
+ *         "data" has no data-URI prefix and "filename" has no extension.
+ *     @type string $url Optional. Source URL of the file to upload (used only when "data" is not
+ *         provided).
+ *     @type string $filename Optional. Optional destination filename.
+ *     @type string $title Optional.
+ *     @type string $alt Optional.
+ *     @type string $caption Optional.
+ *     @type int $post_id Optional. Optional post ID to attach the media to.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
  */
 function wsp_execute_upload_media( $input ) {
     if ( isset( $input['data'] ) && '' !== trim( (string) $input['data'] ) ) {
@@ -411,6 +512,16 @@ function wsp_execute_upload_media( $input ) {
 
 /**
  * Set an image as the featured image (thumbnail) for a post or page.
+ *
+ * MCP tool: `wsp_set_featured_image`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $post_id Required. The post or page ID.
+ *     @type int $attachment_id Required. The media attachment ID to set as featured.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
  */
 function wsp_execute_set_featured_image( $input ) {
     $post_id       = isset( $input['post_id'] ) ? intval( $input['post_id'] ) : 0;

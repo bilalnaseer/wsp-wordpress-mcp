@@ -98,7 +98,12 @@ function wsp_mcp_context_sanitize( $text, $trim = true ) {
 	return $text;
 }
 
-/** Rough token estimate (≈4 chars/token) for the admin page. */
+/**
+ * Rough token estimate (≈4 chars/token) for the admin page.
+ *
+ * @param string $text Text to measure.
+ * @return int Estimated token count.
+ */
 function wsp_mcp_context_estimate_tokens( $text ) {
 	return (int) ceil( mb_strlen( (string) $text ) / 4 );
 }
@@ -146,7 +151,7 @@ function wsp_mcp_context_instructions() {
 /**
  * Tool callback: wsp_get_site_context.
  *
- * @param array $input { file?: 'all'|'agents'|'changelog' }
+ * @param array $input Tool arguments. Optional "file": all, agents or changelog.
  * @return array|WP_Error
  */
 function wsp_execute_get_site_context( $input ) {
@@ -175,6 +180,8 @@ function wsp_execute_get_site_context( $input ) {
  * so the agent knows when the stored copy would be incomplete.
  *
  * @param array $input {
+ *     Tool arguments.
+ *
  *     @type string $file    Required. 'agents' | 'changelog'.
  *     @type string $content Required. Markdown ('' with mode=replace clears the document).
  *     @type string $mode    'replace' (default) | 'append' | 'prepend'.

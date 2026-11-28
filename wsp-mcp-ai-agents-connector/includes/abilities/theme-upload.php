@@ -54,8 +54,14 @@ function wsp_theme_binary_extensions() {
 }
 
 /**
- * Validate and normalize one theme-relative path. Returns the path or WP_Error.
- * Rejects absolute paths, traversal, empty / hidden segments and unknown extensions.
+ * Validate and normalize one theme-relative path.
+ *
+ * Returns the path or WP_Error. Rejects absolute paths, traversal, empty / hidden segments and unknown
+ * extensions.
+ *
+ * @param string   $path        Path relative to the theme folder.
+ * @param string[] $allowed_ext File extensions that may be uploaded.
+ * @return string|WP_Error The normalised path, or an error.
  */
 function wsp_theme_normalize_path( $path, $allowed_ext ) {
 	$path = str_replace( '\\', '/', trim( (string) $path ) );
@@ -79,7 +85,14 @@ function wsp_theme_normalize_path( $path, $allowed_ext ) {
 	return $path;
 }
 
-/** Decode a base64 string strictly (accepts data: URIs and URL-safe base64). Returns bytes or false. */
+/**
+ * Decode a base64 string strictly (accepts data: URIs and URL-safe base64).
+ *
+ * Returns bytes or false.
+ *
+ * @param string $raw Base64 data, a data: URI or URL-safe base64.
+ * @return string|false The decoded bytes, or false when invalid.
+ */
 function wsp_theme_b64_decode( $raw ) {
 	$raw = trim( (string) $raw );
 	$raw = preg_replace( '#^data:[\w.+/-]*;base64,#i', '', $raw );
@@ -91,7 +104,12 @@ function wsp_theme_b64_decode( $raw ) {
 
 /**
  * Write a zip of $entries ( zip path => bytes ) to $zip_path.
+ *
  * Uses ZipArchive, falling back to core's bundled PclZip (virtual file content).
+ *
+ * @param string $zip_path Where to write the zip.
+ * @param array  $entries  Map of zip path to file contents.
+ * @return true|WP_Error
  */
 function wsp_theme_write_zip( $zip_path, $entries ) {
 	if ( class_exists( 'ZipArchive' ) ) {
@@ -157,7 +175,12 @@ function wsp_theme_preflight( $slug, $entries, $provided ) {
 
 /**
  * Existing files of an installed theme as zip entries, skipping paths in $skip.
+ *
  * Only files the upload path would itself accept are carried over.
+ *
+ * @param string   $slug Stylesheet slug of the installed theme.
+ * @param string[] $skip Paths to leave out.
+ * @return array Map of zip path to file contents.
  */
 function wsp_theme_collect_existing( $slug, $skip ) {
 	$dir = trailingslashit( get_theme_root() ) . $slug;
@@ -181,7 +204,15 @@ function wsp_theme_collect_existing( $slug, $skip ) {
 	return $out;
 }
 
-/** Copy an installed theme folder to {slug}-backup-{timestamp}. Returns the backup slug, '' if none, or WP_Error. */
+/**
+ * Copy an installed theme folder to {slug}-backup-{timestamp}.
+ *
+ * Returns the backup slug, '' if none, or WP_Error.
+ *
+ * @param string $slug Stylesheet slug of the installed theme.
+ * @return string|WP_Error Backup slug, an empty string when there was nothing to back up, or an
+ *        error.
+ */
 function wsp_theme_backup( $slug ) {
 	global $wp_filesystem;
 	$src = trailingslashit( get_theme_root() ) . $slug;
@@ -201,7 +232,14 @@ function wsp_theme_backup( $slug ) {
 
 /**
  * Build a temp zip from the `files` / `binary_files` inputs.
+ *
  * Returns the temp zip path or WP_Error. Caller deletes the file.
+ *
+ * @param string $slug           Theme slug.
+ * @param array  $files          Map of relative path to text content.
+ * @param array  $binary_files   Map of relative path to base64 content.
+ * @param bool   $merge_existing Keep existing theme files that are not replaced. Default false.
+ * @return string|WP_Error Path of the temporary zip, or an error.
  */
 function wsp_theme_zip_from_files( $slug, $files, $binary_files, $merge_existing = false ) {
 	if ( ! is_array( $files ) || empty( $files ) ) {
@@ -280,7 +318,14 @@ function wsp_theme_zip_from_files( $slug, $files, $binary_files, $merge_existing
 	return $tmp;
 }
 
-/** Decode the `data` input (base64 zip) to a temp file. Returns path or WP_Error. */
+/**
+ * Decode the `data` input (base64 zip) to a temp file.
+ *
+ * Returns path or WP_Error.
+ *
+ * @param string $data Base64-encoded zip.
+ * @return string|WP_Error Path of the temporary file, or an error.
+ */
 function wsp_theme_zip_from_data( $data ) {
 	$bytes = wsp_theme_b64_decode( $data );
 	if ( false === $bytes ) {
@@ -325,7 +370,14 @@ function wsp_theme_zip_from_data( $data ) {
 	return $tmp;
 }
 
-/** Activate an installed theme. Returns true or WP_Error. */
+/**
+ * Activate an installed theme.
+ *
+ * Returns true or WP_Error.
+ *
+ * @param string $theme Stylesheet slug.
+ * @return true|WP_Error
+ */
 function wsp_theme_activate( $theme ) {
 	if ( ! current_user_can( 'switch_themes' ) ) {
 		return new WP_Error( 'forbidden', 'The theme was installed, but you do not have permission to activate themes (switch_themes).' );
@@ -354,6 +406,48 @@ function wsp_theme_activate( $theme ) {
 // Tool
 // ---------------------------------------------------------------------------
 
+/**
+ * Installs a WordPress theme into wp-content/themes — use this to install a theme you generated.
+ *
+ * Provide EXACTLY ONE source: "files" (recommended for generated themes: an object mapping relative
+ * paths to text content, e.g. {"style.css": "/*\nTheme Name: Acme\n...* /", "functions.php": "<?php
+ * ...", "templates/index.html": "<!-- wp:... -->"}, plus "slug" for the folder name and optional
+ * "binary_files" for base64 images/fonts such as screenshot.png), "data" (a base64 .zip whose root
+ * contains the theme folder), or "url" (public http(s) link to a theme .zip). style.css with a "Theme
+ * Name:" header is required; a classic theme also needs index.php, a block theme needs
+ * templates/index.html; a child theme sets "Template: <parent-slug>" and a missing parent is fetched
+ * from WordPress.org. Installs through WordPress core's Theme_Upgrader (same as Appearance > Themes >
+ * Upload). Existing themes are only replaced with overwrite=true. activate=true switches the site to
+ * the theme after install. Returns { slug, name, version, is_block_theme, parent, parent_installed,
+ * replaced, activated, active_theme, preview_url } (+ activation_error if install succeeded but
+ * activation did not).
+ *
+ * MCP tool: `wsp_upload_theme`. Requires the `install_themes` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $slug Optional. Theme folder name (required with "files"): lowercase letters,
+ *         digits, "-" or "_". Ignored for zips (the zip's root folder is used).
+ *     @type array $files Optional. Theme files as { "relative/path.ext": "text content" }. Allowed:
+ *         .php .css .scss .js .mjs .map .json .html .htm .txt .md .svg .xml .pot .po. No "..",
+ *         absolute or hidden (dot) paths.
+ *     @type array $binary_files Optional. Binary theme files as { "relative/path.ext": "base64" } —
+ *         only with "files". Allowed: .png .jpg .jpeg .gif .webp .avif .ico .svg .woff .woff2 .ttf
+ *         .otf .eot .mo.
+ *     @type string $data Optional. A theme .zip as base64 (data: URI prefix allowed).
+ *     @type string $url Optional. Public http(s) URL of a theme .zip.
+ *     @type bool $overwrite Optional. Update an already-installed theme with the same folder name.
+ *         With "files", a partial map is MERGED into the installed theme (files you do not send are
+ *         kept, so you can patch single files) and the old folder is first backed up to
+ *         {slug}-backup-{timestamp}. Default false.
+ *     @type bool $replace_all Optional. Only with "files" + overwrite: delete every installed file
+ *         not in "files" (clean replace). Default false.
+ *     @type bool $activate Optional. Activate the theme after installing it (needs switch_themes).
+ *         Default false.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_upload_theme( $input ) {
 	if ( ! wp_is_file_mod_allowed( 'wsp_mcp_upload_theme' ) ) {
 		return new WP_Error( 'file_mods_disabled', 'Installing themes is disabled on this site (DISALLOW_FILE_MODS).' );

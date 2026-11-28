@@ -21,7 +21,13 @@ if ( ! defined( 'WSP_BLOCKS_MAX_DEPTH' ) ) define( 'WSP_BLOCKS_MAX_DEPTH', 20 );
 
 /* ---------------------------------------------------------------- helpers */
 
-/** Normalize one reusable block row. */
+/**
+ * Normalize one reusable block row.
+ *
+ * @param WP_Post $post Reusable block (wp_block) post.
+ * @param bool    $full Include the block markup. Default false.
+ * @return array Plain-array representation of the block.
+ */
 function wsp_blocks_item_data( $post, $full = false ) {
 	$sync = get_post_meta( $post->ID, 'wp_pattern_sync_status', true );
 	$data = array(
@@ -40,7 +46,13 @@ function wsp_blocks_item_data( $post, $full = false ) {
 	return $data;
 }
 
-/** Posts that embed a reusable block (`<!-- wp:block {"ref":ID} /-->`), max 50, only those the caller can edit. */
+/**
+ * Posts that embed a reusable block (`<!-- wp:block {"ref":ID} /-->`), max 50, only those the caller
+ * can edit.
+ *
+ * @param int $block_id ID of the wp_block post.
+ * @return array Up to 50 posts that embed the block.
+ */
 function wsp_blocks_used_in( $block_id ) {
 	$block_id = (int) $block_id;
 	// No explicit 'suppress_filters': get_posts() already defaults it to true, and setting it is a Plugin Check error.
@@ -67,7 +79,11 @@ function wsp_blocks_used_in( $block_id ) {
 	return $out;
 }
 
-/** Validate a sync_status input. */
+/**
+ * Validate a sync_status input.
+ *
+ * @param array $input Tool arguments that may contain "sync_status".
+ */
 function wsp_blocks_sync_status( $input ) {
 	if ( ! isset( $input['sync_status'] ) ) {
 		return null;
@@ -76,7 +92,12 @@ function wsp_blocks_sync_status( $input ) {
 	return in_array( $s, array( 'synced', 'unsynced' ), true ) ? $s : new WP_Error( 'invalid_param', "sync_status must be 'synced' or 'unsynced'." );
 }
 
-/** Persist sync status the way the block editor does: meta only for "unsynced". */
+/**
+ * Persist sync status the way the block editor does: meta only for "unsynced".
+ *
+ * @param int    $post_id ID of the wp_block post.
+ * @param string $sync    "synced" or "unsynced".
+ */
 function wsp_blocks_save_sync_status( $post_id, $sync ) {
 	if ( 'unsynced' === $sync ) {
 		update_post_meta( $post_id, 'wp_pattern_sync_status', 'unsynced' );
@@ -85,7 +106,12 @@ function wsp_blocks_save_sync_status( $post_id, $sync ) {
 	}
 }
 
-/** Recursively kses block attribute strings; keys are plain text. */
+/**
+ * Recursively kses block attribute strings; keys are plain text.
+ *
+ * @param mixed $value Block attribute value: a string, an array or a scalar.
+ * @return mixed The sanitized value.
+ */
 function wsp_blocks_sanitize_attrs( $value ) {
 	if ( is_array( $value ) ) {
 		$out = array();
@@ -103,9 +129,9 @@ function wsp_blocks_sanitize_attrs( $value ) {
 /**
  * Turn caller JSON into the array shape serialize_blocks() expects.
  *
- * @param mixed    $blocks Caller-supplied list.
- * @param int      $depth  Current nesting depth.
- * @param int      $nodes  Running node count (by reference).
+ * @param mixed $blocks Caller-supplied list.
+ * @param int   $depth  Current nesting depth.
+ * @param int   $nodes  Running node count (by reference).
  * @return array|WP_Error
  */
 function wsp_blocks_normalize( $blocks, $depth, &$nodes ) {
@@ -176,7 +202,13 @@ function wsp_blocks_normalize( $blocks, $depth, &$nodes ) {
 	return $out;
 }
 
-/** parse_blocks() output → compact JSON-friendly tree (drops whitespace-only freeform chunks). */
+/**
+ * Convert parse_blocks() output into a compact, JSON-friendly tree, dropping whitespace-only freeform
+ * chunks.
+ *
+ * @param array $blocks Parsed block tree, as returned by parse_blocks().
+ * @return array The simplified tree.
+ */
 function wsp_blocks_simplify( $blocks ) {
 	$out = array();
 	foreach ( $blocks as $b ) {
@@ -194,7 +226,12 @@ function wsp_blocks_simplify( $blocks ) {
 	return $out;
 }
 
-/** Count blocks in a parsed tree. */
+/**
+ * Count blocks in a parsed tree.
+ *
+ * @param array $blocks Parsed block tree.
+ * @return int Total number of blocks, including nested ones.
+ */
 function wsp_blocks_count( $blocks ) {
 	$n = 0;
 	foreach ( $blocks as $b ) {
@@ -203,13 +240,39 @@ function wsp_blocks_count( $blocks ) {
 	return $n;
 }
 
-/** Resolve a `wp_block` post for update/delete, enforcing the guards. */
+/**
+ * Resolve a `wp_block` post for update/delete, enforcing the guards.
+ *
+ * @param int  $id         ID of the wp_block post.
+ * @param bool $for_delete Whether the caller is deleting (needs the delete capability) rather than
+ *                         editing. Default false.
+ * @return WP_Post|WP_Error The post, or an error when the caller may not touch it.
+ */
 function wsp_blocks_guard( $id, $for_delete = false ) {
 	return $for_delete ? wsp_mcp_guard_delete_post( $id, 'wp_block' ) : wsp_mcp_guard_edit_post( $id, 'wp_block' );
 }
 
 /* ------------------------------------------------- reusable blocks (wp_block) */
 
+/**
+ * Lists reusable blocks (the "wp_block" post type: saved synced/unsynced patterns).
+ *
+ * Returns { blocks: [{ id, title, slug, status, sync_status, modified }], total, returned, pages }.
+ * Non-published statuses need permission to edit others' blocks.
+ *
+ * MCP tool: `wsp_list_blocks`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $search Optional.
+ *     @type string $status Optional. Default publish. One of: publish, draft, pending, private,
+ *         trash, any.
+ *     @type int $per_page Optional. Default 20.
+ *     @type int $page Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_list_blocks( $input ) {
 	$per_page = isset( $input['per_page'] ) ? max( 1, min( 100, intval( $input['per_page'] ) ) ) : 20;
 	$status   = isset( $input['status'] ) ? sanitize_key( $input['status'] ) : 'publish';
@@ -240,6 +303,20 @@ function wsp_execute_list_blocks( $input ) {
 	return array( 'blocks' => $items, 'total' => (int) $q->found_posts, 'returned' => count( $items ), 'pages' => (int) $q->max_num_pages );
 }
 
+/**
+ * Reads one reusable block: title, status, sync_status, full block markup in "content", and "used_in"
+ * (up to 50 editable posts that embed it). parse=true also returns the parsed block tree.
+ *
+ * MCP tool: `wsp_get_block`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Reusable block (wp_block) ID from wsp_list_blocks.
+ *     @type bool $parse Optional. Also return "blocks", the parsed tree. Default false.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_block( $input ) {
 	if ( empty( $input['id'] ) ) {
 		return new WP_Error( 'missing_param', 'id is required.' );
@@ -255,6 +332,27 @@ function wsp_execute_get_block( $input ) {
 	return $data;
 }
 
+/**
+ * Creates a reusable block.
+ *
+ * "content" is Gutenberg block markup, e.g. "<!-- wp:paragraph --><p>Hello</p><!-- /wp:paragraph -->".
+ * Markup is sanitized with wp_kses_post (scripts and event handlers are stripped). Default status
+ * publish. Returns { success, block }.
+ *
+ * MCP tool: `wsp_create_block`. Requires the `publish_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $title Required.
+ *     @type string $content Required. Block markup.
+ *     @type string $status Optional. One of: publish, draft, pending, private.
+ *     @type string $slug Optional.
+ *     @type string $sync_status Optional. synced (default): edits change every post using the
+ *         block. unsynced: inserted as an independent copy. One of: synced, unsynced.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_create_block( $input ) {
 	if ( empty( $input['title'] ) || ! isset( $input['content'] ) || '' === $input['content'] ) {
 		return new WP_Error( 'missing_param', 'title and content (block markup) are required.' );
@@ -291,6 +389,26 @@ function wsp_execute_create_block( $input ) {
 	return array( 'success' => true, 'block' => wsp_blocks_item_data( get_post( $id ), true ) );
 }
 
+/**
+ * Updates a reusable block (only the fields you pass).
+ *
+ * For a synced block this changes every post that embeds it — check "used_in" via wsp_get_block first.
+ * Markup is sanitized with wp_kses_post. Returns { success, block }.
+ *
+ * MCP tool: `wsp_update_block`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Reusable block (wp_block) ID from wsp_list_blocks.
+ *     @type string $title Optional.
+ *     @type string $content Optional. New block markup (replaces the old).
+ *     @type string $status Optional. One of: publish, draft, pending, private.
+ *     @type string $sync_status Optional. synced (default): edits change every post using the
+ *         block. unsynced: inserted as an independent copy. One of: synced, unsynced.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_update_block( $input ) {
 	if ( empty( $input['id'] ) ) {
 		return new WP_Error( 'missing_param', 'id is required.' );
@@ -334,6 +452,22 @@ function wsp_execute_update_block( $input ) {
 	return array( 'success' => true, 'block' => wsp_blocks_item_data( get_post( $post->ID ), true ) );
 }
 
+/**
+ * Moves a reusable block to the trash (restorable), or with force=true deletes it permanently.
+ *
+ * Returns { success, id, permanent, used_in, warning } — posts still embedding the block will render
+ * nothing for it.
+ *
+ * MCP tool: `wsp_delete_block`. Requires the `delete_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Reusable block (wp_block) ID from wsp_list_blocks.
+ *     @type bool $force Optional. Delete permanently instead of trashing. Default false.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_delete_block( $input ) {
 	if ( empty( $input['id'] ) ) {
 		return new WP_Error( 'missing_param', 'id is required.' );
@@ -359,6 +493,26 @@ function wsp_execute_delete_block( $input ) {
 
 /* ---------------------------------------------------------------- patterns */
 
+/**
+ * Lists registered block patterns (from WordPress core, the active theme and plugins; not user-saved
+ * reusable blocks — use wsp_list_blocks for those).
+ *
+ * Returns { patterns: [{ name, title, description, categories, keywords, block_types, content? }],
+ * total, returned, categories: [{ name, label }] }.
+ *
+ * MCP tool: `wsp_list_patterns`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $search Optional.
+ *     @type string $category Optional. Pattern category slug.
+ *     @type bool $include_content Optional. Include each pattern's block markup (large). Default
+ *         false.
+ *     @type int $limit Optional. Default 50.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_list_patterns( $input ) {
 	$search   = ! empty( $input['search'] ) ? strtolower( sanitize_text_field( wp_unslash( $input['search'] ) ) ) : '';
 	$category = ! empty( $input['category'] ) ? sanitize_key( $input['category'] ) : '';
@@ -402,6 +556,26 @@ function wsp_execute_list_patterns( $input ) {
 
 /* -------------------------------------------------------------- block types */
 
+/**
+ * Lists registered block types (core/*, plugin and theme blocks).
+ *
+ * Returns { block_types: [{ name, title, category, description, parent, is_dynamic, attributes? }],
+ * total, returned }. Use it to find valid blockName values and attribute names for
+ * wsp_update_post_blocks.
+ *
+ * MCP tool: `wsp_list_block_types`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $search Optional.
+ *     @type string $namespace Optional. e.g. "core".
+ *     @type bool $include_attributes Optional. Include attribute names, types and defaults. Default
+ *         false.
+ *     @type int $limit Optional. Default 200.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_list_block_types( $input ) {
 	$search = ! empty( $input['search'] ) ? strtolower( sanitize_text_field( wp_unslash( $input['search'] ) ) ) : '';
 	$ns     = ! empty( $input['namespace'] ) ? sanitize_key( $input['namespace'] ) : '';
@@ -444,6 +618,13 @@ function wsp_execute_list_block_types( $input ) {
 
 /* ------------------------------------------------------- per-post block tree */
 
+/**
+ * Resolve and authorise the post that a block tool operates on.
+ *
+ * @param array $input Tool arguments. Must contain "post_id".
+ * @return WP_Post|WP_Error The post, or an error when it is missing, not editable or has no block
+ *        content.
+ */
 function wsp_blocks_resolve_post( $input ) {
 	if ( empty( $input['post_id'] ) ) {
 		return new WP_Error( 'missing_param', 'post_id is required.' );
@@ -458,6 +639,22 @@ function wsp_blocks_resolve_post( $input ) {
 	return $post;
 }
 
+/**
+ * Reads the block tree of a post, page or custom post type item (via parse_blocks).
+ *
+ * Returns { post_id, post_type, title, has_blocks, block_count, blocks: [{ blockName, attrs,
+ * innerHTML, innerContent, innerBlocks }] }. Whitespace-only freeform chunks are dropped. Pass the
+ * same shape back to wsp_update_post_blocks.
+ *
+ * MCP tool: `wsp_get_post_blocks`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $post_id Required.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_post_blocks( $input ) {
 	$post = wsp_blocks_resolve_post( $input );
 	if ( is_wp_error( $post ) ) {
@@ -474,6 +671,28 @@ function wsp_execute_get_post_blocks( $input ) {
 	);
 }
 
+/**
+ * Replaces a post's entire block content.
+ *
+ * Provide EXACTLY ONE of: "blocks" (array of { blockName, attrs, innerHTML, innerContent, innerBlocks
+ * } — the shape wsp_get_post_blocks returns; blockName must be a registered type, see
+ * wsp_list_block_types; for a container with inner blocks give innerContent as HTML strings with one
+ * null per inner block, e.g. ["<div class=\"wp-block-group\">", null, "</div>"]) or "content" (raw
+ * block markup string). Markup is sanitized with wp_kses_post. This replaces ALL content, so read the
+ * current blocks first; WordPress keeps the previous version as a revision. Returns { success,
+ * post_id, block_count, revisions, link }.
+ *
+ * MCP tool: `wsp_update_post_blocks`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $post_id Required.
+ *     @type array $blocks Optional.
+ *     @type string $content Optional. Raw block markup (alternative to blocks).
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_update_post_blocks( $input ) {
 	$post = wsp_blocks_resolve_post( $input );
 	if ( is_wp_error( $post ) ) {

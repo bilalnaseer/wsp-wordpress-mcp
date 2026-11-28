@@ -6,17 +6,36 @@
  * WP_Ajax_Upgrader_Skin (the wp-admin code path), so core does the validation.
  * Envelope: { success, data, error }. Plugin code is NOT sanitized — a plugin is PHP;
  * the safety boundary is the install_plugins capability + the OFF-by-default toggles.
+ *
+ * @package WSP_MCP
  */
+
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+/**
+ * Build a success envelope for the plugin-management tools.
+ *
+ * @param array $data Result data. Default empty.
+ * @return array Envelope with success, data and error.
+ */
 function wsp_plugins_ok( $data = array() ) {
 	return array( 'success' => true, 'data' => $data, 'error' => null );
 }
 
+/**
+ * Build a failure envelope for the plugin-management tools.
+ *
+ * @param string $message Error message.
+ * @return array Envelope with success, data and error.
+ */
 function wsp_plugins_fail( $message ) {
 	return array( 'success' => false, 'data' => null, 'error' => (string) $message );
 }
 
+/**
+ * Load the wp-admin files that the plugin installer and upgrader classes need, which REST requests do
+ * not load.
+ */
 function wsp_plugins_load_admin_includes() {
 	require_once ABSPATH . 'wp-admin/includes/file.php';
 	require_once ABSPATH . 'wp-admin/includes/misc.php';
@@ -25,7 +44,14 @@ function wsp_plugins_load_admin_includes() {
 	require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
 }
 
-/** Capability + file-mod gate. Returns an error envelope or null. */
+/**
+ * Capability + file-mod gate.
+ *
+ * Returns an error envelope or null.
+ *
+ * @param string $cap Capability the caller needs.
+ * @return array|null An error envelope, or null when the caller may proceed.
+ */
 function wsp_plugins_guard( $cap ) {
 	if ( ! current_user_can( $cap ) ) {
 		return wsp_plugins_fail( "You do not have permission ({$cap}) to perform this action." );
@@ -40,7 +66,12 @@ function wsp_plugins_guard( $cap ) {
 	return null;
 }
 
-/** Validate a plugin file path against installed plugins; returns the file or an error envelope. */
+/**
+ * Validate a plugin file path against installed plugins; returns the file or an error envelope.
+ *
+ * @param array $input Tool arguments containing "file".
+ * @return string|array The plugin file, or an error envelope.
+ */
 function wsp_plugins_resolve_file( $input ) {
 	$file = isset( $input['file'] ) ? sanitize_text_field( wp_unslash( $input['file'] ) ) : '';
 	if ( '' === $file || false !== strpos( $file, '..' ) ) {
@@ -52,11 +83,22 @@ function wsp_plugins_resolve_file( $input ) {
 	return $file;
 }
 
+/**
+ * Whether a plugin file is this plugin.
+ *
+ * @param string $file Plugin basename, e.g. "akismet/akismet.php".
+ * @return bool
+ */
 function wsp_plugins_is_self( $file ) {
 	return plugin_basename( WSP_MCP_DIR . 'wsp-mcp-ai-agents-connector.php' ) === $file;
 }
 
-/** Run an upgrader call with output buffered so nothing leaks into the JSON-RPC response. */
+/**
+ * Run an upgrader call with output buffered so nothing leaks into the JSON-RPC response.
+ *
+ * @param callable $callable Function that performs the upgrader call.
+ * @return mixed Whatever the callable returns.
+ */
 function wsp_plugins_run_upgrader( $callable ) {
 	$level = ob_get_level();
 	ob_start();
@@ -68,7 +110,13 @@ function wsp_plugins_run_upgrader( $callable ) {
 	return $result;
 }
 
-/** Normalize the failure modes of an Upgrader run into an error string, or null on success. */
+/**
+ * Normalize the failure modes of an Upgrader run into an error string, or null on success.
+ *
+ * @param mixed            $result Return value of the upgrader call.
+ * @param WP_Upgrader_Skin $skin   Skin the upgrader used.
+ * @return string|null Error message, or null on success.
+ */
 function wsp_plugins_upgrader_error( $result, $skin ) {
 	if ( is_wp_error( $result ) ) return $result->get_error_message();
 	if ( is_wp_error( $skin->result ) ) return $skin->result->get_error_message();
@@ -77,7 +125,13 @@ function wsp_plugins_upgrader_error( $result, $skin ) {
 	return null;
 }
 
-/** Shared tail of both install tools: run the upgrader, optionally activate, report. */
+/**
+ * Shared tail of both install tools: run the upgrader, optionally activate, report.
+ *
+ * @param string $package  Download URL of the plugin zip.
+ * @param bool   $activate Whether to activate the plugin after installing.
+ * @return array Result envelope.
+ */
 function wsp_plugins_install_package( $package, $activate ) {
 	if ( $activate && ! current_user_can( 'activate_plugins' ) ) {
 		return wsp_plugins_fail( 'activate=true needs the activate_plugins capability.' );
@@ -115,13 +169,26 @@ function wsp_plugins_install_package( $package, $activate ) {
 	return wsp_plugins_ok( $data );
 }
 
+/**
+ * Install a plugin from wordpress.org by slug, optionally activating it.
+ *
+ * MCP tool: `wsp_install_plugin`. Requires the `install_plugins` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $slug Required. wordpress.org plugin slug, e.g. woocommerce.
+ *     @type bool $activate Optional. Activate after install. Default false.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_install_plugin( $input ) {
 	if ( $e = wsp_plugins_guard( 'install_plugins' ) ) return $e;
 	$slug = isset( $input['slug'] ) ? sanitize_title( wp_unslash( $input['slug'] ) ) : '';
 	if ( '' === $slug || ! preg_match( '/^[a-z0-9][a-z0-9-]{0,99}$/', $slug ) ) {
 		return wsp_plugins_fail( 'slug is required: the wordpress.org plugin slug, e.g. "woocommerce".' );
 	}
-	// Already installed? (folder name == slug)
+	// Already installed? (folder name == slug).
 	foreach ( array_keys( get_plugins() ) as $f ) {
 		if ( 0 === strpos( $f, $slug . '/' ) ) {
 			return wsp_plugins_fail( "A plugin with slug '{$slug}' is already installed ({$f}). Use wsp_activate_plugin or wsp_update_plugin." );
@@ -133,6 +200,21 @@ function wsp_execute_install_plugin( $input ) {
 	return wsp_plugins_install_package( $api->download_link, wsp_woo_flag( $input, 'activate' ) );
 }
 
+/**
+ * Install a plugin from a public https .zip URL.
+ *
+ * Only use sources you trust: the zip runs as PHP code.
+ *
+ * MCP tool: `wsp_install_plugin_from_url`. Requires the `install_plugins` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $zip_url Required. https:// URL of the plugin zip.
+ *     @type bool $activate Optional. Activate after install. Default false.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_install_plugin_from_url( $input ) {
 	if ( $e = wsp_plugins_guard( 'install_plugins' ) ) return $e;
 	$raw = isset( $input['zip_url'] ) ? trim( (string) $input['zip_url'] ) : '';
@@ -144,6 +226,18 @@ function wsp_execute_install_plugin_from_url( $input ) {
 	return wsp_plugins_install_package( $url, wsp_woo_flag( $input, 'activate' ) );
 }
 
+/**
+ * Delete an installed plugin (must be deactivated first; this plugin cannot delete itself).
+ *
+ * MCP tool: `wsp_delete_plugin`. Requires the `delete_plugins` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $file Required. Plugin file path, e.g. akismet/akismet.php.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_delete_plugin( $input ) {
 	if ( $e = wsp_plugins_guard( 'delete_plugins' ) ) return $e;
 	$file = wsp_plugins_resolve_file( $input );
@@ -161,6 +255,18 @@ function wsp_execute_delete_plugin( $input ) {
 	return wsp_plugins_ok( array( 'file' => $file, 'name' => $name, 'deleted' => true ) );
 }
 
+/**
+ * Update an installed plugin to its latest available version.
+ *
+ * MCP tool: `wsp_update_plugin`. Requires the `update_plugins` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $file Required. Plugin file path, e.g. akismet/akismet.php.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_update_plugin( $input ) {
 	if ( $e = wsp_plugins_guard( 'update_plugins' ) ) return $e;
 	$file = wsp_plugins_resolve_file( $input );

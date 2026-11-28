@@ -18,6 +18,9 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+/**
+ * Redirect manager and 404 log: table storage plus the front-end runtime that applies redirects.
+ */
 class WSP_MCP_Redirects {
 
 	const DB_VERSION     = '1';
@@ -34,11 +37,21 @@ class WSP_MCP_Redirects {
 		return array( '/wp-admin', '/wp-login.php', '/wp-json', '/wp-cron.php', '/xmlrpc.php' );
 	}
 
+	/**
+	 * Name of the redirects table.
+	 *
+	 * @return string
+	 */
 	public static function redirects_table() {
 		global $wpdb;
 		return $wpdb->prefix . 'wsp_mcp_redirects';
 	}
 
+	/**
+	 * Name of the 404 log table.
+	 *
+	 * @return string
+	 */
 	public static function log_table() {
 		global $wpdb;
 		return $wpdb->prefix . 'wsp_mcp_404_log';
@@ -46,6 +59,9 @@ class WSP_MCP_Redirects {
 
 	/* ---------------------------------------------------------------- boot */
 
+	/**
+	 * Install or upgrade the tables and hook the runtime into WordPress.
+	 */
 	public static function init() {
 		if ( get_option( self::DB_OPTION ) !== self::DB_VERSION ) {
 			self::install();
@@ -112,7 +128,12 @@ class WSP_MCP_Redirects {
 
 	/* ------------------------------------------------------ path handling */
 
-	/** GMT MySQL datetime -> ISO 8601 UTC. */
+	/**
+	 * GMT MySQL datetime -> ISO 8601 UTC.
+	 *
+	 * @param string $mysql_gmt MySQL datetime in GMT.
+	 * @return string|null
+	 */
 	public static function iso( $mysql_gmt ) {
 		if ( empty( $mysql_gmt ) || 0 === strpos( $mysql_gmt, '0000' ) ) {
 			return null;
@@ -121,7 +142,13 @@ class WSP_MCP_Redirects {
 		return $ts ? gmdate( 'c', $ts ) : null;
 	}
 
-	/** Canonical site-relative path: leading slash, no duplicate/trailing slashes, home sub-directory removed. */
+	/**
+	 * Canonical site-relative path: leading slash, no duplicate/trailing slashes, home sub-directory
+	 * removed.
+	 *
+	 * @param string $path Path or URL path.
+	 * @return string
+	 */
 	public static function normalize_path( $path ) {
 		$path = preg_replace( '/[\x00-\x1F\x7F]/', '', (string) $path );
 		$path = str_replace( '\\', '/', (string) $path );
@@ -137,7 +164,12 @@ class WSP_MCP_Redirects {
 		return ( strlen( $path ) > 1 ) ? rtrim( $path, '/' ) : '/';
 	}
 
-	/** Case-insensitive lookup key for a normalized path. */
+	/**
+	 * Case-insensitive lookup key for a normalized path.
+	 *
+	 * @param string $path Normalized path.
+	 * @return string
+	 */
 	public static function hash( $path ) {
 		return md5( function_exists( 'mb_strtolower' ) ? mb_strtolower( $path, 'UTF-8' ) : strtolower( $path ) );
 	}
@@ -159,7 +191,14 @@ class WSP_MCP_Redirects {
 		return self::normalize_path( rawurldecode( $path ) );
 	}
 
-	/** Absolute URL to send the visitor to. Relative destinations are rooted at home_url(). */
+	/**
+	 * Absolute URL to send the visitor to.
+	 *
+	 * Relative destinations are rooted at home_url().
+	 *
+	 * @param string $destination Stored destination: a "/path" or a full URL.
+	 * @return string
+	 */
 	public static function resolve_destination( $destination ) {
 		return ( 0 === strpos( $destination, '/' ) ) ? home_url( $destination ) : $destination;
 	}
@@ -169,7 +208,8 @@ class WSP_MCP_Redirects {
 	/**
 	 * Validate a caller-supplied redirect source.
 	 *
-	 * @return string|WP_Error Normalized site-relative path.
+	 * @param mixed $raw Source supplied by the caller.
+	 * @return string|WP_Error Normalized path, or an error.
 	 */
 	public static function validate_source( $raw ) {
 		$raw = is_string( $raw ) ? trim( $raw ) : '';
@@ -212,10 +252,13 @@ class WSP_MCP_Redirects {
 
 	/**
 	 * Validate a destination: an internal path ("/new-page?x=1"), or an http(s) URL.
-	 * Other hosts are refused unless $allow_external is true — a redirect to a foreign
-	 * domain is an open-redirect/phishing primitive, so it must be asked for explicitly.
 	 *
-	 * @return array|WP_Error { destination: string, external: bool }
+	 * Other hosts are refused unless $allow_external is true — a redirect to a foreign domain is an
+	 * open-redirect/phishing primitive, so it must be asked for explicitly.
+	 *
+	 * @param mixed $raw            Destination supplied by the caller.
+	 * @param bool  $allow_external Whether other domains are allowed.
+	 * @return string|WP_Error The destination, or an error.
 	 */
 	public static function validate_destination( $raw, $allow_external ) {
 		$raw = is_string( $raw ) ? trim( $raw ) : '';
@@ -261,7 +304,7 @@ class WSP_MCP_Redirects {
 		for ( $i = 0; $i < 10; $i++ ) {
 			$p = wp_parse_url( self::resolve_destination( $dest ) );
 			if ( empty( $p['host'] ) || 0 !== strcasecmp( $p['host'], (string) wp_parse_url( home_url(), PHP_URL_HOST ) ) ) {
-				return false; // left the site
+				return false; // left the site.
 			}
 			$hash = self::hash( self::normalize_path( rawurldecode( isset( $p['path'] ) ? $p['path'] : '/' ) ) );
 			if ( $hash === $start ) {
@@ -274,12 +317,12 @@ class WSP_MCP_Redirects {
 			}
 			$dest = $next;
 		}
-		return true; // chain longer than 10 hops: treat as a loop
+		return true; // chain longer than 10 hops: treat as a loop.
 	}
 
 	/* ------------------------------------------------------ runtime */
 
-	/** template_redirect @1: send the visitor on if the path has a stored redirect. */
+	/** Handle template_redirect at priority 1: send the visitor on if the path has a stored redirect. */
 	public static function handle_redirect() {
 		if ( ! (int) get_option( self::COUNT_OPTION, 0 ) ) {
 			return;
@@ -317,7 +360,7 @@ class WSP_MCP_Redirects {
 		exit;
 	}
 
-	/** template_redirect @999: record a 404 — only while the admin has the 404-log ability enabled. */
+	/** Handle template_redirect at priority 999: record a 404 — only while the admin has the 404-log ability enabled. */
 	public static function log_404() {
 		if ( ! is_404() ) {
 			return;

@@ -19,12 +19,22 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-/** Meta keys: letters, digits and _ - : . only, 1–255 chars. */
+/**
+ * Meta keys: letters, digits and _ - : . only, 1–255 chars.
+ *
+ * @param string $key Meta key.
+ * @return bool
+ */
 function wsp_post_meta_valid_key( $key ) {
 	return is_string( $key ) && 1 === preg_match( '/^[A-Za-z0-9_\-:.]{1,255}$/', $key );
 }
 
-/** Recursively sanitize a meta value: strings through wp_kses_post, keys through sanitize_text_field. */
+/**
+ * Recursively sanitize a meta value: strings through wp_kses_post, keys through sanitize_text_field.
+ *
+ * @param mixed $value Meta value.
+ * @return mixed The sanitized value.
+ */
 function wsp_post_meta_sanitize_value( $value ) {
 	if ( is_array( $value ) ) {
 		$out = array();
@@ -42,7 +52,13 @@ function wsp_post_meta_sanitize_value( $value ) {
 	return '';
 }
 
-/** Resolve the target post and the key, running the shared guards. */
+/**
+ * Resolve the target post and the key, running the shared guards.
+ *
+ * @param array $input    Tool arguments with "post_id" and, when required, "key".
+ * @param bool  $need_key Whether a key is required. Default true.
+ * @return array|WP_Error The resolved post and key, or an error.
+ */
 function wsp_post_meta_resolve( $input, $need_key = true ) {
 	if ( empty( $input['post_id'] ) ) {
 		return new WP_Error( 'missing_param', 'post_id is required.' );
@@ -66,6 +82,26 @@ function wsp_post_meta_resolve( $input, $need_key = true ) {
 	return array( $post, $key );
 }
 
+/**
+ * Reads custom fields (post meta) of a post, page, attachment or custom post type item.
+ *
+ * With "key": returns { post_id, key, exists, value }. Without "key": returns { post_id, post_type,
+ * meta: { <key>: value }, returned, truncated } for all public keys (max 200). Protected keys
+ * (starting with an underscore, e.g. _elementor_data, _thumbnail_id) are never returned. For Yoast SEO
+ * use the wsp_yoast_* tools.
+ *
+ * MCP tool: `wsp_get_post_meta`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $post_id Required. Post / page / CPT item ID.
+ *     @type string $key Optional. Meta key. Omit to list all public meta.
+ *     @type bool $single Optional. With key: true (default) returns one value; false returns an
+ *         array of every value stored under the key.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_post_meta( $input ) {
 	$resolved = wsp_post_meta_resolve( $input, false );
 	if ( is_wp_error( $resolved ) ) {
@@ -110,6 +146,27 @@ function wsp_execute_get_post_meta( $input ) {
 	);
 }
 
+/**
+ * Creates or updates a custom field on a post. value may be a string, number, boolean, array or object
+ * (stored serialized).
+ *
+ * Every string is passed through wp_kses_post, so script tags and event handlers are stripped.
+ * Protected keys (leading underscore) are refused. With prev_value, only the row holding that value is
+ * changed (for keys with several rows). Returns { success, changed, created, post_id, key,
+ * previous_value, value }.
+ *
+ * MCP tool: `wsp_update_post_meta`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $post_id Required.
+ *     @type string $key Required. Letters, digits, _ - : . only.
+ *     @type mixed $value Required. New value (any JSON type).
+ *     @type mixed $prev_value Optional. Optional: only update the row currently holding this value.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_update_post_meta( $input ) {
 	$resolved = wsp_post_meta_resolve( $input );
 	if ( is_wp_error( $resolved ) ) {
@@ -151,6 +208,24 @@ function wsp_execute_update_post_meta( $input ) {
 	);
 }
 
+/**
+ * Deletes a custom field from a post: every row for the key, or with "value" only rows holding that
+ * value.
+ *
+ * Protected keys (leading underscore) are refused. Returns { success, post_id, key, previous_value }.
+ * Not undoable (post meta has no trash) — read the value first.
+ *
+ * MCP tool: `wsp_delete_post_meta`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $post_id Required.
+ *     @type string $key Required.
+ *     @type mixed $value Optional. Optional: only delete rows holding this value.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_delete_post_meta( $input ) {
 	$resolved = wsp_post_meta_resolve( $input );
 	if ( is_wp_error( $resolved ) ) {

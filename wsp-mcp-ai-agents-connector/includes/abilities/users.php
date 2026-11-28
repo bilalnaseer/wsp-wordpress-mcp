@@ -1,6 +1,20 @@
 <?php
+/**
+ * User abilities: list, create and update user accounts.
+ *
+ * @package WSP_MCP
+ */
+
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+/**
+ * Lists registered users.
+ *
+ * MCP tool: `wsp_get_users`. Requires the `list_users` capability.
+ *
+ * @param array $input Tool arguments (this tool takes none).
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_users( $input ) {
     $users  = get_users();
     $result = array();
@@ -16,6 +30,22 @@ function wsp_execute_get_users( $input ) {
     return array( 'users' => $result );
 }
 
+/**
+ * Create a new WordPress user account.
+ *
+ * MCP tool: `wsp_create_user`. Requires the `create_users` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $username Required.
+ *     @type string $email Required.
+ *     @type string $password Optional. Optional; auto-generated if omitted.
+ *     @type string $role Optional. Defaults to subscriber.
+ *     @type string $display_name Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_create_user( $input ) {
     if ( empty( $input['username'] ) || empty( $input['email'] ) ) {
         return array( 'success' => false, 'error' => 'username and email are required.' );
@@ -39,6 +69,22 @@ function wsp_execute_create_user( $input ) {
     return array( 'success' => true, 'id' => $id, 'username' => $username, 'email' => $email );
 }
 
+/**
+ * Update a user's email, display name, role, or password.
+ *
+ * MCP tool: `wsp_update_user`. Requires the `edit_users` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required.
+ *     @type string $email Optional.
+ *     @type string $display_name Optional.
+ *     @type string $role Optional.
+ *     @type string $password Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_update_user( $input ) {
     if ( empty( $input['id'] ) ) return array( 'success' => false, 'error' => 'id is required.' );
     $id   = intval( $input['id'] );

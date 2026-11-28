@@ -89,7 +89,11 @@ function wsp_mcp_enqueue_analytics_assets() {
 	} );
 }
 
-/** Render a status pill (shared look with the Audit Log page). */
+/**
+ * Render a status pill (shared look with the Audit Log page).
+ *
+ * @param string $status Audit-log status: success, denied or error.
+ */
 function wsp_mcp_analytics_status_badge( $status ) {
 	$labels = array(
 		WSP_MCP_Audit_Log::STATUS_SUCCESS => 'Success',
@@ -104,7 +108,11 @@ function wsp_mcp_analytics_status_badge( $status ) {
 	);
 }
 
-/** Render a duration cell, colour-coded by rough response-time thresholds. */
+/**
+ * Render a duration cell, colour-coded by rough response-time thresholds.
+ *
+ * @param int $ms Duration in milliseconds.
+ */
 function wsp_mcp_analytics_duration_cell( $ms ) {
 	$ms    = (int) $ms;
 	$class = 'wsp-duration';

@@ -1,6 +1,25 @@
 <?php
+/**
+ * Post abilities: list, read, create, update and trash blog posts.
+ *
+ * @package WSP_MCP
+ */
+
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+/**
+ * Returns blog posts with full metadata.
+ *
+ * MCP tool: `wsp_get_posts`. Any authenticated user may call it.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $per_page Optional. Number of posts. Default 10.
+ *     @type string $status Optional. publish | draft | all. Default publish.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_posts( $input ) {
     $per_page = isset( $input['per_page'] ) ? intval( $input['per_page'] ) : 10;
     $status   = isset( $input['status'] )   ? sanitize_key( wp_unslash( $input['status'] ) ) : 'publish';
@@ -47,6 +66,18 @@ function wsp_execute_get_posts( $input ) {
     return array( 'posts' => $posts, 'total' => $q->found_posts );
 }
 
+/**
+ * Gets a single post by ID with full content, any status (draft/publish/etc).
+ *
+ * MCP tool: `wsp_get_post`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_post( $input ) {
     $id   = isset( $input['id'] ) ? intval( $input['id'] ) : 0;
     $post = $id ? get_post( $id ) : null;
@@ -69,6 +100,29 @@ function wsp_execute_get_post( $input ) {
     return array( 'success' => true, 'data' => $data );
 }
 
+/**
+ * Creates a new blog post.
+ *
+ * To schedule it, pass status "future" (or "publish") with a future date.
+ *
+ * MCP tool: `wsp_create_post`. Requires the `publish_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $title Required.
+ *     @type string $content Required.
+ *     @type string $status Optional.
+ *     @type string $date Optional. Publish date, ISO 8601 (e.g. 2026-12-01T09:00:00). Site timezone
+ *         unless an offset or Z is given. A future date with status "publish" or "future" schedules
+ *         the item; status "future" requires a future date.
+ *     @type array $categories Optional.
+ *     @type array $tags Optional.
+ *     @type string $excerpt Optional.
+ *     @type string $slug Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_create_post( $input ) {
     $args = array(
         'post_title'   => sanitize_text_field( wp_unslash( $input['title'] ) ),
@@ -87,6 +141,26 @@ function wsp_execute_create_post( $input ) {
     return array( 'success' => true, 'id' => $id, 'url' => get_permalink( $id ), 'status' => get_post_status( $id ), 'date' => get_post_field( 'post_date', $id ) );
 }
 
+/**
+ * Updates an existing post by ID.
+ *
+ * MCP tool: `wsp_update_post`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required.
+ *     @type string $title Optional.
+ *     @type string $content Optional.
+ *     @type string $status Optional.
+ *     @type string $date Optional. Publish date, ISO 8601 (e.g. 2026-12-01T09:00:00). Site timezone
+ *         unless an offset or Z is given. A future date with status "publish" or "future" schedules
+ *         the item; status "future" requires a future date.
+ *     @type array $categories Optional.
+ *     @type array $tags Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_update_post( $input ) {
     $post = wsp_mcp_guard_edit_post( isset( $input['id'] ) ? $input['id'] : 0, 'post' );
     if ( is_wp_error( $post ) ) return $post;
@@ -107,6 +181,18 @@ function wsp_execute_update_post( $input ) {
     return array( 'success' => true, 'id' => $id, 'url' => get_permalink( $id ), 'status' => get_post_status( $id ), 'date' => get_post_field( 'post_date', $id ) );
 }
 
+/**
+ * Moves a post to trash by ID.
+ *
+ * MCP tool: `wsp_delete_post`. Requires the `delete_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_delete_post( $input ) {
     $post = wsp_mcp_guard_delete_post( isset( $input['id'] ) ? $input['id'] : 0, 'post' );
     if ( is_wp_error( $post ) ) return $post;

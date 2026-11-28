@@ -81,6 +81,9 @@ function wsp_mcp_oauth_min_capability() {
 	return (string) apply_filters( 'wsp_mcp_oauth_min_capability', 'edit_posts' );
 }
 
+/**
+ * OAuth 2.1 authorization server: discovery, dynamic client registration, consent screen and token endpoint.
+ */
 class WSP_MCP_OAuth_Server {
 
 	/**
@@ -117,6 +120,8 @@ class WSP_MCP_OAuth_Server {
 	}
 
 	/**
+	 * Get the site origin.
+	 *
 	 * @return string Scheme + host (+ non-default port) — no path. The site
 	 * origin, used to turn a raw REQUEST_URI back into an absolute URL. For the
 	 * OAuth issuer *identifier* use as_issuer(), which includes the base path.
@@ -176,6 +181,8 @@ class WSP_MCP_OAuth_Server {
 	}
 
 	/**
+	 * Get the path component of home_url().
+	 *
 	 * @return string home_url()'s own path component, no trailing slash ('' for a
 	 * root install, e.g. '/mcp' for a site whose WordPress Address has a base path).
 	 * The .well-known/* documents are served both here and (for a root install) at
@@ -275,6 +282,11 @@ class WSP_MCP_OAuth_Server {
 
 	/* ---------- Discovery documents ---------- */
 
+	/**
+	 * Build the RFC 9728 protected-resource metadata document.
+	 *
+	 * @return array
+	 */
 	private static function protected_resource_metadata() {
 		return array(
 			'resource'              => esc_url_raw( rest_url( 'wsp-mcp/v1/mcp' ) ),
@@ -287,6 +299,11 @@ class WSP_MCP_OAuth_Server {
 		);
 	}
 
+	/**
+	 * Build the RFC 8414 authorization-server metadata document.
+	 *
+	 * @return array
+	 */
 	private static function authorization_server_metadata() {
 		$issuer = self::as_issuer();
 		return array(
@@ -305,6 +322,9 @@ class WSP_MCP_OAuth_Server {
 
 	/* ---------- Dynamic Client Registration (RFC 7591) ---------- */
 
+	/**
+	 * Handle dynamic client registration (RFC 7591).
+	 */
 	private static function handle_register() {
 		// This endpoint cannot require a credential (the caller has none yet),
 		// so it is throttled per source IP and backed by an absolute row
@@ -377,6 +397,11 @@ class WSP_MCP_OAuth_Server {
 
 	/* ---------- Authorization endpoint (login + consent) ---------- */
 
+	/**
+	 * Handle the authorization endpoint: show the consent screen on GET and process the decision on POST.
+	 *
+	 * @param string $method HTTP method.
+	 */
 	private static function handle_authorize( $method ) {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- this is the OAuth authorize request itself; params are validated below, and the consent POST is nonce-protected separately.
 		$params = ( 'POST' === $method ) ? wp_unslash( $_POST ) : wp_unslash( $_GET );
@@ -500,26 +525,27 @@ class WSP_MCP_OAuth_Server {
 	}
 
 	/**
-	 * Minimal, escaped consent screen. No theme dependency — this runs before
-	 * template_redirect.
+	 * Minimal, escaped consent screen.
 	 *
-	 * What the person approving this needs to see, and why:
+	 * No theme dependency — this runs before template_redirect. What the person approving this needs to
+	 * see, and why: - **The destination host, not just a name.** `client_name` is whatever the client sent
+	 * to the (unauthenticated) registration endpoint — it is a self-assigned label, not an identity, and
+	 * anyone can register a client calling itself "WordPress Security Update". Showing only that name
+	 * turns this page into a one-click account-handover: register a client pointing at your own callback,
+	 * send a logged-in editor the /authorize link, and their "Allow" mints a token bound to their user.
+	 * Naming the host the code will actually be sent to is what lets a human catch that, so the host is
+	 * displayed prominently and the name is explicitly flagged as unverified. - **It must not be
+	 * frameable.** This page renders on `init`, outside wp-admin, so WordPress's own admin framing
+	 * protection never applies to it. Without the headers below, the Allow button can be overlaid in an
+	 * invisible iframe and clickjacked, which skips the phishing step entirely.
 	 *
-	 * - **The destination host, not just a name.** `client_name` is whatever
-	 *   the client sent to the (unauthenticated) registration endpoint — it is
-	 *   a self-assigned label, not an identity, and anyone can register a
-	 *   client calling itself "WordPress Security Update". Showing only that
-	 *   name turns this page into a one-click account-handover: register a
-	 *   client pointing at your own callback, send a logged-in editor the
-	 *   /authorize link, and their "Allow" mints a token bound to their user.
-	 *   Naming the host the code will actually be sent to is what lets a human
-	 *   catch that, so the host is displayed prominently and the name is
-	 *   explicitly flagged as unverified.
-	 * - **It must not be frameable.** This page renders on `init`, outside
-	 *   wp-admin, so WordPress's own admin framing protection never applies to
-	 *   it. Without the headers below, the Allow button can be overlaid in an
-	 *   invisible iframe and clickjacked, which skips the phishing step
-	 *   entirely.
+	 * @param array  $client       Registered client.
+	 * @param string $client_id    Client identifier.
+	 * @param string $redirect_uri Redirect URI the client asked for.
+	 * @param string $state        Opaque client state.
+	 * @param string $challenge    PKCE code challenge.
+	 * @param string $challenge_m  PKCE challenge method.
+	 * @param string $scope        Requested scope.
 	 */
 	private static function render_consent_page( $client, $client_id, $redirect_uri, $state, $challenge, $challenge_m, $scope ) {
 		nocache_headers();
@@ -655,6 +681,11 @@ class WSP_MCP_OAuth_Server {
 		header( 'Referrer-Policy: strict-origin-when-cross-origin' );
 	}
 
+	/**
+	 * Render a minimal, non-frameable error page.
+	 *
+	 * @param string $message Message to show.
+	 */
 	private static function render_error_page( $message ) {
 		nocache_headers();
 		self::send_frame_protection_headers();
@@ -665,11 +696,17 @@ class WSP_MCP_OAuth_Server {
 	}
 
 	/**
-	 * Every call site reaches here only after $redirect_uri has already been
-	 * matched exactly against the registered client's redirect_uris (see
-	 * handle_authorize()), so — like the success path above — wp_redirect() is
-	 * used deliberately instead of wp_safe_redirect(), which would otherwise
-	 * block a redirect back to the client's own (different-host) callback.
+	 * Redirect back to the client with an OAuth error.
+	 *
+	 * Every call site reaches here only after $redirect_uri has already been matched exactly against the
+	 * registered client's redirect_uris (see handle_authorize()), so — like the success path above —
+	 * wp_redirect() is used deliberately instead of wp_safe_redirect(), which would otherwise block a
+	 * redirect back to the client's own (different-host) callback.
+	 *
+	 * @param string $redirect_uri Validated redirect URI.
+	 * @param string $state        Opaque client state.
+	 * @param string $error        OAuth error code.
+	 * @param string $description  Human-readable description. Default empty.
 	 */
 	private static function redirect_with_error( $redirect_uri, $state, $error, $description = '' ) {
 		if ( '' === $redirect_uri ) {
@@ -686,6 +723,9 @@ class WSP_MCP_OAuth_Server {
 
 	/* ---------- Token endpoint (RFC 6749 + PKCE) ---------- */
 
+	/**
+	 * Handle the token endpoint: dispatch on grant_type.
+	 */
 	private static function handle_token() {
 		// Brute-forcing a PKCE verifier or refresh token is an offline-guessing
 		// attack made online only by this endpoint — throttle per source IP
@@ -704,6 +744,9 @@ class WSP_MCP_OAuth_Server {
 		}
 	}
 
+	/**
+	 * Exchange an authorization code and PKCE verifier for tokens.
+	 */
 	private static function token_exchange_code() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- see handle_token().
 		$code          = isset( $_POST['code'] ) ? sanitize_text_field( wp_unslash( $_POST['code'] ) ) : '';
@@ -746,6 +789,9 @@ class WSP_MCP_OAuth_Server {
 		) );
 	}
 
+	/**
+	 * Exchange a refresh token for a new token pair.
+	 */
 	private static function token_refresh() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- see handle_token().
 		$refresh_token = isset( $_POST['refresh_token'] ) ? sanitize_text_field( wp_unslash( $_POST['refresh_token'] ) ) : '';
@@ -825,7 +871,13 @@ class WSP_MCP_OAuth_Server {
 		return filter_var( $ip, FILTER_VALIDATE_IP ) ? $ip : '';
 	}
 
-	/** RFC 7636 S256 PKCE verification. */
+	/**
+	 * RFC 7636 S256 PKCE verification.
+	 *
+	 * @param string $code_verifier  Verifier sent to the token endpoint.
+	 * @param string $code_challenge Challenge stored with the code.
+	 * @return bool
+	 */
 	private static function pkce_matches( $code_verifier, $code_challenge ) {
 		if ( '' === $code_verifier || '' === $code_challenge ) {
 			return false;
@@ -837,6 +889,12 @@ class WSP_MCP_OAuth_Server {
 
 	/* ---------- Response helper ---------- */
 
+	/**
+	 * Send a JSON response and stop.
+	 *
+	 * @param array $data   Response body.
+	 * @param int   $status HTTP status. Default 200.
+	 */
 	private static function send_json( array $data, $status = 200 ) {
 		// Discards any stray output another active plugin/theme printed
 		// earlier on this request (see includes/response-guard.php) so it

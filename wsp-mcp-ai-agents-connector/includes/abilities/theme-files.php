@@ -17,7 +17,12 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 define( 'WSP_THEME_READ_MAX_BYTES', 512 * KB_IN_BYTES );
 
-/** Resolve an installed theme's directory (no traversal: slug must be an installed stylesheet). */
+/**
+ * Resolve an installed theme's directory (no traversal: slug must be an installed stylesheet).
+ *
+ * @param string $theme Stylesheet slug of an installed theme.
+ * @return string|WP_Error Absolute directory path, or an error.
+ */
 function wsp_theme_files_dir( $theme ) {
 	$slug = sanitize_title( (string) $theme );
 	if ( '' === $slug || ! wp_get_theme( $slug )->exists() ) {
@@ -26,6 +31,21 @@ function wsp_theme_files_dir( $theme ) {
 	return array( $slug, trailingslashit( get_theme_root( $slug ) ) . $slug );
 }
 
+/**
+ * Lists the files of an installed theme (omit "path"), or reads one text file from it (returns
+ * content, bytes, sha256; content is capped at 512 KB with truncated:true).
+ *
+ * MCP tool: `wsp_get_theme_file`. Requires the `install_themes` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $theme Required. Theme folder slug (see wsp_get_themes).
+ *     @type string $path Optional. Relative file path, e.g. "functions.php" or
+ *         "templates/index.html". Omit to list all files.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_theme_file( $input ) {
 	$r = wsp_theme_files_dir( isset( $input['theme'] ) ? $input['theme'] : '' );
 	if ( is_wp_error( $r ) ) return $r;
@@ -64,6 +84,24 @@ function wsp_execute_get_theme_file( $input ) {
 	);
 }
 
+/**
+ * Creates or overwrites ONE file in an installed theme without re-uploading the whole theme.
+ *
+ * PHP files are syntax-checked and literal require/include targets must exist, otherwise nothing is
+ * written. The previous version is copied to uploads/wsp-mcp-theme-backups/ (returned as "backup").
+ * Same path/extension rules as wsp_upload_theme.
+ *
+ * MCP tool: `wsp_update_theme_file`. Requires the `install_themes` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $theme Required. Theme folder slug.
+ *     @type string $path Required. Relative file path inside the theme.
+ *     @type string $content Required. Full new file content.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_update_theme_file( $input ) {
 	if ( ! wp_is_file_mod_allowed( 'wsp_mcp_update_theme_file' ) ) {
 		return new WP_Error( 'file_mods_disabled', 'Modifying theme files is disabled on this site (DISALLOW_FILE_MODS).' );
@@ -123,11 +161,40 @@ function wsp_execute_update_theme_file( $input ) {
 	);
 }
 
-/** Temp file that accumulates one chunked upload (per user + upload_id). */
+/**
+ * Temp file that accumulates one chunked upload (per user + upload_id).
+ *
+ * @param string $upload_id Identifier of the chunked upload.
+ * @return string Path of the temporary file.
+ */
 function wsp_theme_chunk_file( $upload_id ) {
 	return trailingslashit( get_temp_dir() ) . 'wsp-theme-chunk-' . md5( get_current_user_id() . '|' . $upload_id ) . '.b64';
 }
 
+/**
+ * Uploads a large theme .zip in pieces.
+ *
+ * Send base64 slices of the zip as part=0,1,2,… with the same upload_id (part 0 restarts); on the last
+ * piece set complete=true (plus overwrite/activate) and the assembled zip is installed exactly like
+ * wsp_upload_theme "data". Returns next_part until complete.
+ *
+ * MCP tool: `wsp_upload_theme_chunk`. Requires the `install_themes` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $upload_id Required. Any short unique id, identical for all pieces of one
+ *         upload.
+ *     @type int $part Required. 0-based piece number, sent in order.
+ *     @type string $data Required. Base64 slice of the .zip (slice the base64 string, not the
+ *         binary).
+ *     @type bool $complete Optional. true on the final piece: assemble and install.
+ *     @type bool $overwrite Optional. Final piece only: replace an installed theme of the same
+ *         name.
+ *     @type bool $activate Optional. Final piece only: activate after install.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_upload_theme_chunk( $input ) {
 	$upload_id = isset( $input['upload_id'] ) ? sanitize_key( (string) $input['upload_id'] ) : '';
 	if ( '' === $upload_id || strlen( $upload_id ) > 64 ) {

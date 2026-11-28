@@ -415,7 +415,7 @@ function wsp_mcp_register_native_tools() {
 		'enable_key'  => 'wsp/deactivate-plugin',
 	) );
 
-	wsp_mcp_register_defs( wsp_mcp_plugin_admin_tool_defs() ); // v2.9.5: install / install-from-url / delete / update
+	wsp_mcp_register_defs( wsp_mcp_plugin_admin_tool_defs() ); // v2.9.5: install / install-from-url / delete / update.
 
 	// ---- Themes ----
 	WSP_MCP_Server::register_tool( 'wsp_get_themes', array(
@@ -1381,7 +1381,7 @@ function wsp_mcp_register_native_tools() {
 			'capability'  => 'manage_woocommerce',
 			'enable_key'  => 'wsp/woo-moderate-review',
 		) );
-		wsp_mcp_register_defs( wsp_mcp_woo_admin_tool_defs() ); // v2.9.5: delete / taxonomy / attributes / settings / tax / shipping / gateways
+		wsp_mcp_register_defs( wsp_mcp_woo_admin_tool_defs() ); // v2.9.5: delete / taxonomy / attributes / settings / tax / shipping / gateways.
 	}
 
 	// ---- Elementor (only when Elementor is active) ----

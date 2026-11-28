@@ -1,6 +1,19 @@
 <?php
+/**
+ * WooCommerce abilities: products, variations, orders, refunds, coupons, customers, reports and reviews.
+ *
+ * @package WSP_MCP
+ */
+
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+/**
+ * Download an image from a URL into the media library and attach it to a post.
+ *
+ * @param string $url     Image URL.
+ * @param int    $post_id Post to attach the image to.
+ * @return int|false Attachment ID, or false on failure.
+ */
 function wsp_woo_sideload_image_by_url( $url, $post_id ) {
     if ( ! filter_var( $url, FILTER_VALIDATE_URL ) ) {
         return false;
@@ -9,7 +22,7 @@ function wsp_woo_sideload_image_by_url( $url, $post_id ) {
     require_once ABSPATH . 'wp-admin/includes/file.php';
     require_once ABSPATH . 'wp-admin/includes/media.php';
 
-    // Scoped SSL bypass only for this specific image download
+    // Scoped SSL bypass only for this specific image download.
     $ssl_bypass = function( $args, $req_url ) use ( $url ) {
         if ( $req_url === $url ) {
             if ( function_exists( 'wp_get_environment_type' ) ) {
@@ -24,7 +37,7 @@ function wsp_woo_sideload_image_by_url( $url, $post_id ) {
 
     $tmp = download_url( $url );
 
-    // Remove the filter immediately so it doesn't affect the rest of the site
+    // Remove the filter immediately so it doesn't affect the rest of the site.
     remove_filter( 'http_request_args', $ssl_bypass, 10 );
 
     if ( is_wp_error( $tmp ) ) {
@@ -45,6 +58,12 @@ function wsp_woo_sideload_image_by_url( $url, $post_id ) {
     return $id;
 }
 
+/**
+ * Apply attribute definitions to a product object.
+ *
+ * @param WC_Product $product          Product object.
+ * @param array      $attributes_input Attributes with name and options.
+ */
 function wsp_woo_set_product_attributes( $product, $attributes_input ) {
     if ( ! is_array( $attributes_input ) ) {
         return;
@@ -77,6 +96,24 @@ function wsp_woo_set_product_attributes( $product, $attributes_input ) {
 // EXECUTE CALLBACKS
 // ---------------------------------------------
 
+/**
+ * List products with filtering and pagination, newest first.
+ *
+ * "total" is the full count of matching products; when "has_more" is true, call again with "next_page"
+ * (or "next_offset") to get the rest.
+ *
+ * MCP tool: `wsp_woo_get_products`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $limit Optional. Products per page. Default 10.
+ *     @type string $status Optional. publish | draft | any.
+ *     @type int $page Optional. Page number, starting at 1. Default 1.
+ *     @type int $offset Optional. Number of products to skip. Overrides page when set.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_get_products( $input ) {
     $limit  = isset( $input['limit'] ) ? intval( $input['limit'] ) : 10;
     if ( 0 === $limit || $limit < -1 ) {
@@ -153,6 +190,18 @@ function wsp_execute_woo_get_products( $input ) {
     return $response;
 }
 
+/**
+ * Get single product details by ID.
+ *
+ * MCP tool: `wsp_woo_get_product`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Product ID.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_get_product( $input ) {
     $id = intval( $input['id'] );
     $p  = wc_get_product( $id );
@@ -169,6 +218,42 @@ function wsp_execute_woo_get_product( $input ) {
     );
 }
 
+/**
+ * Create a new simple or variable product in the store.
+ *
+ * MCP tool: `wsp_woo_create_product`. Requires the `publish_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $name Required. Product name.
+ *     @type string $regular_price Required. Regular price.
+ *     @type string $sale_price Optional. Sale/discount price (optional).
+ *     @type string $description Optional. Full product description (long description).
+ *     @type string $short_description Optional. Product short description shown near the price.
+ *     @type string $sku Optional. Unique SKU.
+ *     @type string $status Optional. publish | draft. Default draft.
+ *     @type string $type Optional. simple | variable. Default simple.
+ *     @type string $image_url Optional. Direct image URL to download and set as product featured
+ *         image.
+ *     @type array $attributes Optional. Product attributes (any product type; replaces existing).
+ *         Custom: {"name":"Color","options":["Red","Blue"]}. Global:
+ *         {"attribute_id":2,"options":["Red"]} or {"taxonomy":"pa_color",...} (missing terms are
+ *         created). Optional visible (default true) and variation (default true for variable
+ *         products, false otherwise).
+ *     @type int $stock_qty Optional. Manage stock quantity.
+ *     @type array $categories Optional. Product category term IDs (see
+ *         wsp_woo_get_product_categories). Replaces existing.
+ *     @type array $tags Optional. Product tag term IDs (see wsp_woo_get_product_tags). Replaces
+ *         existing.
+ *     @type array $brands Optional. Product brands (product_brand taxonomy) as brand IDs, slugs or
+ *         names, e.g. ["FNIRSI"] (see wsp_woo_get_product_brands). Brands must already exist.
+ *     @type array $gallery_image_ids Optional. Product gallery images: media library image IDs in
+ *         display order (upload with wsp_upload_media_from_url first). The featured image is set
+ *         separately with image_url.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_create_product( $input ) {
     $name        = sanitize_text_field( wp_unslash( $input['name'] ) );
     $price       = sanitize_text_field( wp_unslash( $input['regular_price'] ) );
@@ -264,6 +349,24 @@ function wsp_execute_woo_create_product( $input ) {
     );
 }
 
+/**
+ * Creates a variation for an existing variable product.
+ *
+ * MCP tool: `wsp_woo_create_variation`. Requires the `publish_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $parent_id Required. The ID of the parent variable product.
+ *     @type string $regular_price Required. Variation regular price.
+ *     @type array $attributes Required. Key-value pairs of attributes, e.g. {"size": "large",
+ *         "color": "blue"}.
+ *     @type string $sale_price Optional. Variation sale/discount price (optional).
+ *     @type string $sku Optional. Variation unique SKU.
+ *     @type string $image_url Optional. Direct image URL to download for this specific variation.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_create_variation( $input ) {
     $parent_id = intval( $input['parent_id'] );
     $parent    = wc_get_product( $parent_id );
@@ -313,6 +416,39 @@ function wsp_execute_woo_create_variation( $input ) {
     );
 }
 
+/**
+ * Update an existing product details.
+ *
+ * MCP tool: `wsp_woo_update_product`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. The ID of the product to update.
+ *     @type string $name Optional. Product name.
+ *     @type string $regular_price Optional. Regular price.
+ *     @type string $sale_price Optional. Sale/discount price.
+ *     @type string $description Optional. Full product description (long description).
+ *     @type string $short_description Optional. Product short description shown near the price.
+ *     @type string $sku Optional. Unique SKU.
+ *     @type int $stock_qty Optional. Manage stock quantity.
+ *     @type array $categories Optional. Product category term IDs (see
+ *         wsp_woo_get_product_categories). Replaces existing.
+ *     @type array $tags Optional. Product tag term IDs (see wsp_woo_get_product_tags). Replaces
+ *         existing.
+ *     @type array $brands Optional. Product brands (product_brand taxonomy) as brand IDs, slugs or
+ *         names, e.g. ["FNIRSI"] (see wsp_woo_get_product_brands). Brands must already exist.
+ *         Replaces existing; [] removes all brands.
+ *     @type array $gallery_image_ids Optional. Product gallery images: media library image IDs in
+ *         display order (upload with wsp_upload_media_from_url first). Replaces the whole gallery;
+ *         [] removes all gallery images. The featured image is not changed.
+ *     @type array $attributes Optional. Replace product attributes (same format as
+ *         wsp_woo_create_product).
+ *     @type string $stock_status Optional. instock | outofstock.
+ *     @type string $image_url Optional. Direct image URL to download and replace featured image.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_update_product( $input ) {
     $id = intval( $input['id'] );
     $p  = wc_get_product( $id );
@@ -430,12 +566,27 @@ function wsp_execute_woo_update_product( $input ) {
     );
 }
 
+/**
+ * Create a new coupon code (percentage or fixed discount).
+ *
+ * MCP tool: `wsp_woo_create_coupon`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $code Required. Coupon code name, e.g. SUMMER20.
+ *     @type string $amount Required. Discount amount, e.g. 20 or 15.50.
+ *     @type string $discount_type Optional. percent | fixed_cart | fixed_product. Default percent.
+ *     @type string $expiry_date Optional. Expiry date format YYYY-MM-DD (optional).
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_create_coupon( $input ) {
     $code   = sanitize_text_field( wp_unslash( $input['code'] ) );
     $amount = sanitize_text_field( wp_unslash( $input['amount'] ) );
     $type   = isset( $input['discount_type'] ) ? sanitize_text_field( wp_unslash( $input['discount_type'] ) ) : 'percent';
 
-    // Fixed: Added validation for discount_type
+    // Fixed: Added validation for discount_type.
     $allowed_types = array( 'percent', 'fixed_cart', 'fixed_product' );
     if ( ! in_array( $type, $allowed_types, true ) ) {
         return array( 'success' => false, 'error' => 'Invalid discount_type. Allowed values: percent, fixed_cart, fixed_product' );
@@ -462,6 +613,18 @@ function wsp_execute_woo_create_coupon( $input ) {
     );
 }
 
+/**
+ * List all active store coupons with usage stats.
+ *
+ * MCP tool: `wsp_woo_list_coupons`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $limit Optional. Number of coupons to fetch. Default 20.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_list_coupons( $input ) {
     $limit = isset( $input['limit'] ) ? intval( $input['limit'] ) : 20;
     
@@ -486,6 +649,21 @@ function wsp_execute_woo_list_coupons( $input ) {
     return array( 'coupons' => $result, 'total' => count( $result ) );
 }
 
+/**
+ * Add a note to an existing order (internal or customer-facing).
+ *
+ * MCP tool: `wsp_woo_create_order_note`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Order ID.
+ *     @type string $note Required. The note text.
+ *     @type bool $is_public Optional. True to make the note visible to the customer
+ *         (email/account), false for internal only.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_create_order_note( $input ) {
     $id        = intval( $input['id'] );
     $note      = sanitize_textarea_field( wp_unslash( $input['note'] ) );
@@ -505,6 +683,18 @@ function wsp_execute_woo_create_order_note( $input ) {
     );
 }
 
+/**
+ * List registered customers with billing details.
+ *
+ * MCP tool: `wsp_woo_list_customers`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $limit Optional. Number of customers to list. Default 10.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_list_customers( $input ) {
     $limit = isset( $input['limit'] ) ? intval( $input['limit'] ) : 10;
     
@@ -528,6 +718,18 @@ function wsp_execute_woo_list_customers( $input ) {
     return array( 'customers' => $result, 'total' => count( $result ) );
 }
 
+/**
+ * Get sales, orders, net revenue, and average order value reports.
+ *
+ * MCP tool: `wsp_woo_report_sales`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $days Optional. Number of past days to report. Default 30.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_report_sales( $input ) {
     $days = isset( $input['days'] ) ? intval( $input['days'] ) : 30;
     $date_after = gmdate( 'Y-m-d H:i:s', time() - ( $days * DAY_IN_SECONDS ) );
@@ -565,6 +767,18 @@ function wsp_execute_woo_report_sales( $input ) {
     );
 }
 
+/**
+ * Inspect and list products running low on stock.
+ *
+ * MCP tool: `wsp_woo_get_low_stock`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $threshold Optional. Stock alert threshold. Default 10.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_get_low_stock( $input ) {
     $threshold = isset( $input['threshold'] ) ? intval( $input['threshold'] ) : 10;
     $products = wc_get_products( array(
@@ -606,11 +820,25 @@ function wsp_execute_woo_get_low_stock( $input ) {
     );
 }
 
+/**
+ * Approve, spam, trash, or reply to product reviews.
+ *
+ * MCP tool: `wsp_woo_moderate_review`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. The review/comment ID.
+ *     @type string $action Required. approve | spam | trash | reply.
+ *     @type string $reply_text Optional. The reply text content (required only for reply action).
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_moderate_review( $input ) {
     $review_id = intval( $input['id'] );
     $action    = sanitize_text_field( wp_unslash( $input['action'] ) ); 
     
-    // Fixed: Added validation for action
+    // Fixed: Added validation for action.
     $allowed_actions = array( 'approve', 'spam', 'trash', 'reply' );
     if ( ! in_array( $action, $allowed_actions, true ) ) {
         return array( 'success' => false, 'error' => 'Invalid action. Allowed values: approve, spam, trash, reply' );
@@ -652,6 +880,19 @@ function wsp_execute_woo_moderate_review( $input ) {
     return array( 'success' => true, 'message' => 'Review status updated to: ' . $status );
 }
 
+/**
+ * List recent orders with status filtering.
+ *
+ * MCP tool: `wsp_woo_list_orders`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $limit Optional. Number of orders. Default 10.
+ *     @type string $status Optional. any | processing | completed | pending.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_list_orders( $input ) {
     $limit  = isset( $input['limit'] ) ? intval( $input['limit'] ) : 10;
     $status = isset( $input['status'] ) ? sanitize_text_field( wp_unslash( $input['status'] ) ) : 'any';
@@ -669,11 +910,25 @@ function wsp_execute_woo_list_orders( $input ) {
     return array( 'orders' => $result, 'total' => count( $result ) );
 }
 
+/**
+ * Update the status of an order.
+ *
+ * MCP tool: `wsp_woo_update_order_status`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Order ID.
+ *     @type string $status Required. pending | processing | on-hold | completed | cancelled |
+ *         refunded.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_update_order_status( $input ) {
     $id     = intval( $input['id'] );
     $status = sanitize_text_field( wp_unslash( $input['status'] ) );
 
-    // Fixed: Added validation for order status
+    // Fixed: Added validation for order status.
     $allowed = array( 'pending', 'processing', 'on-hold', 'completed', 'cancelled', 'refunded', 'failed' );
     if ( ! in_array( str_replace('wc-', '', $status), $allowed, true ) ) {
         return array( 'success' => false, 'error' => 'Invalid status. Allowed values: ' . implode(', ', $allowed) );
@@ -688,6 +943,20 @@ function wsp_execute_woo_update_order_status( $input ) {
     return array( 'success' => true, 'id' => $id, 'new_status' => $status );
 }
 
+/**
+ * Create a full or partial refund for an order.
+ *
+ * MCP tool: `wsp_woo_refund_order`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $order_id Required. The ID of the order to refund.
+ *     @type string $amount Required. Refund amount, e.g. 10.50.
+ *     @type string $reason Optional. Reason for refund.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_refund_order( $input ) {
     $order_id = intval( $input['order_id'] );
     $amount   = (float) $input['amount'];

@@ -79,6 +79,23 @@ function wsp_revisions_item_data( $revision, $parent, $full = false ) {
 	return $data;
 }
 
+/**
+ * Lists the saved revisions of a post, page, or custom post type item, newest first.
+ *
+ * Returns { post_id, post_type, post_title, total, returned, revisions: [{ id, parent_id, date_gmt,
+ * author, is_autosave, title, content_chars, changed_fields (which of title / content / excerpt differ
+ * from the live post) }] }. Use a revision id with wsp_get_revision or wsp_restore_revision.
+ *
+ * MCP tool: `wsp_get_revisions`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $post_id Required. ID of the post, page, or custom post type item.
+ *     @type int $limit Optional. Default 20.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_revisions( $input ) {
 	if ( empty( $input['post_id'] ) ) {
 		return new WP_Error( 'missing_param', 'post_id is required.' );
@@ -107,6 +124,19 @@ function wsp_execute_get_revisions( $input ) {
 	);
 }
 
+/**
+ * Reads one revision in full: title, content, excerpt, date, author, plus a "current" block with the
+ * live post's title, content and excerpt so the two can be compared.
+ *
+ * MCP tool: `wsp_get_revision`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Revision ID from wsp_get_revisions.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_revision( $input ) {
 	if ( empty( $input['id'] ) ) {
 		return new WP_Error( 'missing_param', 'id is required.' );
@@ -127,6 +157,22 @@ function wsp_execute_get_revision( $input ) {
 	return $data;
 }
 
+/**
+ * Rolls a post back to a revision: restores its title, content and excerpt (not status, slug,
+ * taxonomies or custom fields).
+ *
+ * The version that was live is saved as a new revision first, so the restore can be undone. Read the
+ * revision with wsp_get_revision before restoring.
+ *
+ * MCP tool: `wsp_restore_revision`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Revision ID from wsp_get_revisions.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_restore_revision( $input ) {
 	if ( empty( $input['id'] ) ) {
 		return new WP_Error( 'missing_param', 'id is required.' );

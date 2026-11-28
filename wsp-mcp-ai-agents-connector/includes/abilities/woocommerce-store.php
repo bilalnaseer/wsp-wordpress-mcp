@@ -5,18 +5,32 @@
  * Everything goes through WooCommerce's own wc/v3 REST controllers (wsp_woo_rest(), defined in
  * woocommerce-catalog.php) so validation, sanitization and per-option capability checks are
  * WooCommerce's, not ours. Envelope: { success, data, error }.
+ *
+ * @package WSP_MCP
  */
+
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 const WSP_WOO_SECRET_MASK = '********';
 
-/** True when an option/setting id or type looks like a credential that must never be echoed. */
+/**
+ * True when an option/setting id or type looks like a credential that must never be echoed.
+ *
+ * @param string $id   Setting or option ID.
+ * @param string $type Setting type. Default empty.
+ * @return bool
+ */
 function wsp_woo_is_secret_field( $id, $type = '' ) {
 	if ( 'password' === $type ) return true;
 	return (bool) preg_match( '/(secret|token|passw|private|api_?key|_key$|signature|webhook|salt)/i', (string) $id );
 }
 
-/** Mask the `value` of a settings row (REST setting shape) when it's a secret and non-empty. */
+/**
+ * Mask the `value` of a settings row (REST setting shape) when it's a secret and non-empty.
+ *
+ * @param array $row Setting row in REST shape.
+ * @return array The row with a secret value masked.
+ */
 function wsp_woo_mask_setting_row( $row ) {
 	if ( is_array( $row ) && isset( $row['id'] ) && wsp_woo_is_secret_field( $row['id'], isset( $row['type'] ) ? $row['type'] : '' ) ) {
 		foreach ( array( 'value', 'default' ) as $k ) {
@@ -30,10 +44,21 @@ function wsp_woo_mask_setting_row( $row ) {
 // SETTINGS
 // ---------------------------------------------
 
+/**
+ * List the settings groups that the settings tools can read and write.
+ *
+ * @return string[]
+ */
 function wsp_woo_settings_groups() {
 	return array( 'general', 'products', 'tax', 'shipping', 'checkout', 'account', 'email' );
 }
 
+/**
+ * Read the "group" input and return it only when it is a known settings group.
+ *
+ * @param array $input Tool arguments.
+ * @return string|null
+ */
 function wsp_woo_settings_group_arg( $input ) {
 	$group = isset( $input['group'] ) ? sanitize_key( $input['group'] ) : '';
 	return in_array( $group, wsp_woo_settings_groups(), true ) ? $group : null;
@@ -41,6 +66,31 @@ function wsp_woo_settings_group_arg( $input ) {
 
 const WSP_WOO_SETTINGS_MAX_CHARS = 50000;
 
+/**
+ * Read WooCommerce settings for a group: general (currency, position, separators, store address,
+ * selling/shipping countries, enable taxes), products, tax, shipping, checkout, account, email.
+ *
+ * Returns id, label, type, default and value only; dropdown choices (countries, currencies) are
+ * omitted unless include_options=true (each dropdown then shows options_count). Use setting_id /
+ * setting_ids to fetch just the settings you need, e.g. woocommerce_currency. Secret values are
+ * masked.
+ *
+ * MCP tool: `wsp_woo_get_settings`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $group Required. general | products | tax | shipping | checkout | account |
+ *         email.
+ *     @type string $setting_id Optional. Return only this setting, e.g. woocommerce_currency or
+ *         woocommerce_default_country.
+ *     @type array $setting_ids Optional. Return only these settings.
+ *     @type bool $include_options Optional. Include the full options list of select/multiselect
+ *         settings. Default false. Best combined with setting_id; if the response would exceed
+ *         ~50,000 characters, options are dropped and truncated_options:true is returned.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_get_settings( $input ) {
 	if ( $e = wsp_woo_guard( 'manage_options' ) ) return $e;
 	if ( $e = wsp_woo_guard( 'manage_woocommerce' ) ) return $e;
@@ -94,6 +144,23 @@ function wsp_execute_woo_get_settings( $input ) {
 	return wsp_woo_ok( $data );
 }
 
+/**
+ * Update WooCommerce settings in a group.
+ *
+ * Use option ids exactly as returned by wsp_woo_get_settings, e.g.
+ * {"woocommerce_currency":"EUR","woocommerce_calc_taxes":"yes"}.
+ *
+ * MCP tool: `wsp_woo_update_settings`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $group Required. general | products | tax | shipping | checkout | account |
+ *         email.
+ *     @type array $settings Required. Option id => value pairs.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_update_settings( $input ) {
 	if ( $e = wsp_woo_guard( 'manage_options' ) ) return $e;
 	if ( $e = wsp_woo_guard( 'manage_woocommerce' ) ) return $e;
@@ -148,10 +215,28 @@ function wsp_execute_woo_update_settings( $input ) {
 // TAX
 // ---------------------------------------------
 
+/**
+ * Reduce a REST tax rate to the fields returned to the client.
+ *
+ * @param array $r REST tax rate.
+ * @return array
+ */
 function wsp_woo_tax_rate_row( $r ) {
 	return wsp_woo_pick( $r, array( 'id', 'country', 'state', 'postcode', 'city', 'rate', 'name', 'priority', 'compound', 'shipping', 'order', 'class' ) );
 }
 
+/**
+ * List tax classes and whether taxes are enabled; optionally include configured tax rates.
+ *
+ * MCP tool: `wsp_woo_get_tax_classes`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type bool $include_rates Optional. Also return up to 100 tax rates.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_get_tax_classes( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	$classes = wsp_woo_rest( 'GET', 'taxes/classes' );
@@ -167,6 +252,12 @@ function wsp_execute_woo_get_tax_classes( $input ) {
 	return wsp_woo_ok( $data );
 }
 
+/**
+ * Map tool input to REST parameters for a tax-rate create or update.
+ *
+ * @param array $input Tool arguments.
+ * @return array
+ */
 function wsp_woo_tax_rate_params( $input ) {
 	$p = array();
 	if ( isset( $input['country'] ) )  $p['country']  = strtoupper( sanitize_text_field( wp_unslash( $input['country'] ) ) );
@@ -186,6 +277,27 @@ function wsp_woo_tax_rate_params( $input ) {
 	return $p;
 }
 
+/**
+ * Create a tax rate.
+ *
+ * MCP tool: `wsp_woo_create_tax_rate`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $rate Required. Tax rate percentage 0-100, e.g. "7.5".
+ *     @type string $country Optional. 2-letter ISO country code, e.g. US. Empty = all.
+ *     @type string $state Optional. State code, e.g. CA.
+ *     @type string $postcode Optional. Postcode(s), ";"-separated, wildcards allowed.
+ *     @type string $city Optional. City name(s), ";"-separated.
+ *     @type string $name Optional. Rate label shown to customers, e.g. VAT.
+ *     @type int $priority Optional. Priority (>=1).
+ *     @type bool $compound Optional. Compound on top of other taxes.
+ *     @type bool $shipping Optional. Apply to shipping.
+ *     @type string $class Optional. Tax class slug ("" = standard).
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_create_tax_rate( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	if ( ! isset( $input['rate'] ) ) return wsp_woo_fail( 'rate is required.' );
@@ -196,6 +308,28 @@ function wsp_execute_woo_create_tax_rate( $input ) {
 	return wsp_woo_ok( wsp_woo_tax_rate_row( $res ) );
 }
 
+/**
+ * Update a tax rate.
+ *
+ * MCP tool: `wsp_woo_update_tax_rate`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Item ID.
+ *     @type string $country Optional. 2-letter ISO country code, e.g. US. Empty = all.
+ *     @type string $state Optional. State code, e.g. CA.
+ *     @type string $postcode Optional. Postcode(s), ";"-separated, wildcards allowed.
+ *     @type string $city Optional. City name(s), ";"-separated.
+ *     @type string $rate Optional. Tax rate percentage 0-100, e.g. "7.5".
+ *     @type string $name Optional. Rate label shown to customers, e.g. VAT.
+ *     @type int $priority Optional. Priority (>=1).
+ *     @type bool $compound Optional. Compound on top of other taxes.
+ *     @type bool $shipping Optional. Apply to shipping.
+ *     @type string $class Optional. Tax class slug ("" = standard).
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_update_tax_rate( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	$id = isset( $input['id'] ) ? intval( $input['id'] ) : 0;
@@ -208,6 +342,20 @@ function wsp_execute_woo_update_tax_rate( $input ) {
 	return wsp_woo_ok( wsp_woo_tax_rate_row( $res ) );
 }
 
+/**
+ * Permanently delete a tax rate (force=true required).
+ *
+ * MCP tool: `wsp_woo_delete_tax_rate`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Item ID.
+ *     @type bool $force Required. Must be true: this item cannot be trashed and is deleted
+ *         permanently.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_delete_tax_rate( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	$id = isset( $input['id'] ) ? intval( $input['id'] ) : 0;
@@ -222,6 +370,13 @@ function wsp_execute_woo_delete_tax_rate( $input ) {
 // SHIPPING
 // ---------------------------------------------
 
+/**
+ * Reduce a REST shipping method to the fields returned to the client, with settings flattened to key
+ * => value.
+ *
+ * @param array $m REST shipping method.
+ * @return array
+ */
 function wsp_woo_shipping_method_row( $m ) {
 	$row = wsp_woo_pick( $m, array( 'id', 'instance_id', 'title', 'order', 'enabled', 'method_id', 'method_title' ) );
 	if ( isset( $m['settings'] ) && is_array( $m['settings'] ) ) {
@@ -233,7 +388,13 @@ function wsp_woo_shipping_method_row( $m ) {
 	return $row;
 }
 
-/** Turn ["US", "US:CA", "postcode:90210", "continent:EU"] (or {code,type} objects) into REST location objects. */
+/**
+ * Turn ["US", "US:CA", "postcode:90210", "continent:EU"] (or {code,type} objects) into REST location
+ * objects.
+ *
+ * @param array $locations Location codes or {code,type} objects.
+ * @return array REST location objects.
+ */
 function wsp_woo_parse_zone_locations( $locations ) {
 	$out = array();
 	foreach ( (array) $locations as $loc ) {
@@ -255,9 +416,13 @@ function wsp_woo_parse_zone_locations( $locations ) {
 }
 
 /**
- * Replace a zone's locations via WC_Shipping_Zone and save. (The REST locations endpoint reads the
- * raw JSON body as the list, so wrapping it in {"locations":[...]} silently saved nothing.)
- * Returns true or an error string.
+ * Replace a zone's locations via WC_Shipping_Zone and save.
+ *
+ * (The REST locations endpoint reads the raw JSON body as the list, so wrapping it in
+ * {"locations":[...]} silently saved nothing.) Returns true or an error string.
+ *
+ * @param int   $zone_id   Shipping zone ID.
+ * @param array $locations REST location objects.
  */
 function wsp_woo_zone_set_locations( $zone_id, $locations ) {
 	$zone = new WC_Shipping_Zone( intval( $zone_id ) );
@@ -270,7 +435,12 @@ function wsp_woo_zone_set_locations( $zone_id, $locations ) {
 	return true;
 }
 
-/** Re-read a zone's saved locations from the database as [{code,type}]. */
+/**
+ * Re-read a zone's saved locations from the database as [{code,type}].
+ *
+ * @param int $zone_id Shipping zone ID.
+ * @return array Locations as code and type.
+ */
 function wsp_woo_zone_read_locations( $zone_id ) {
 	$zone = new WC_Shipping_Zone( intval( $zone_id ) );
 	$out  = array();
@@ -280,6 +450,14 @@ function wsp_woo_zone_read_locations( $zone_id ) {
 	return $out;
 }
 
+/**
+ * List shipping zones with their locations and methods.
+ *
+ * MCP tool: `wsp_woo_get_shipping_zones`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input Tool arguments (this tool takes none).
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_get_shipping_zones( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	$zones = wsp_woo_rest( 'GET', 'shipping/zones' );
@@ -298,6 +476,19 @@ function wsp_execute_woo_get_shipping_zones( $input ) {
 	return wsp_woo_ok( array( 'zones' => $out, 'total' => count( $out ) ) );
 }
 
+/**
+ * Create a shipping zone. locations: "US", "US:CA", "postcode:90210", "continent:EU".
+ *
+ * MCP tool: `wsp_woo_create_shipping_zone`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $name Required. Zone name.
+ *     @type array $locations Optional. Location codes.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_create_shipping_zone( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	if ( empty( $input['name'] ) ) return wsp_woo_fail( 'name is required.' );
@@ -317,6 +508,25 @@ function wsp_execute_woo_create_shipping_zone( $input ) {
 	return wsp_woo_ok( $data );
 }
 
+/**
+ * Update a shipping zone name, order and locations.
+ *
+ * When locations is provided it REPLACES the existing list ([] clears it). Each location is {code,
+ * type} with type country, state, postcode or continent (strings like "US:CA" also work). Zone 0
+ * cannot be edited.
+ *
+ * MCP tool: `wsp_woo_update_shipping_zone`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Zone ID.
+ *     @type string $name Optional. Zone name.
+ *     @type int $order Optional. Sort order.
+ *     @type array $locations Optional. Replacement locations.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_update_shipping_zone( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	if ( ! isset( $input['id'] ) ) return wsp_woo_fail( 'id is required.' );
@@ -356,6 +566,21 @@ function wsp_execute_woo_update_shipping_zone( $input ) {
 	) );
 }
 
+/**
+ * Permanently delete a shipping zone AND all of its shipping methods.
+ *
+ * Returns the zone name and the number of removed methods. Zone 0 ("Locations not covered by your
+ * other zones") cannot be deleted.
+ *
+ * MCP tool: `wsp_woo_delete_shipping_zone`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Zone ID (not 0).
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_delete_shipping_zone( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	if ( ! isset( $input['id'] ) ) return wsp_woo_fail( 'id is required.' );
@@ -370,6 +595,18 @@ function wsp_execute_woo_delete_shipping_zone( $input ) {
 	return wsp_woo_ok( array( 'id' => $id, 'name' => $zone['name'], 'removed_methods' => $count, 'trashed' => false, 'permanent' => true, 'result' => 'permanently_deleted' ) );
 }
 
+/**
+ * List the shipping methods of a zone (zone_id 0 = locations not covered by other zones).
+ *
+ * MCP tool: `wsp_woo_get_shipping_methods`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $zone_id Required. Zone ID.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_get_shipping_methods( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	if ( ! isset( $input['zone_id'] ) ) return wsp_woo_fail( 'zone_id is required (0 = "Locations not covered by your other zones").' );
@@ -379,6 +616,12 @@ function wsp_execute_woo_get_shipping_methods( $input ) {
 	return wsp_woo_ok( array( 'zone_id' => $zid, 'methods' => array_map( 'wsp_woo_shipping_method_row', $res ) ) );
 }
 
+/**
+ * Read the "settings" object of a shipping-method tool call as key => string.
+ *
+ * @param array $input Tool arguments.
+ * @return array|string The settings, or an error message when they are not an object.
+ */
 function wsp_woo_method_settings( $input ) {
 	if ( ! isset( $input['settings'] ) ) return array();
 	if ( ! is_array( $input['settings'] ) ) return 'settings must be an object of key => value.';
@@ -389,6 +632,23 @@ function wsp_woo_method_settings( $input ) {
 	return $out;
 }
 
+/**
+ * Add a shipping method to a zone: flat_rate, free_shipping, local_pickup (or another installed method
+ * id).
+ *
+ * MCP tool: `wsp_woo_add_shipping_method`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $zone_id Required. Zone ID.
+ *     @type string $method_id Required. flat_rate | free_shipping | local_pickup | ...
+ *     @type bool $enabled Optional. Enabled.
+ *     @type array $settings Optional. Method settings key/value, e.g. {"title":"Flat
+ *         rate","cost":"10"}.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_add_shipping_method( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	if ( ! isset( $input['zone_id'] ) || empty( $input['method_id'] ) ) return wsp_woo_fail( 'zone_id and method_id are required.' );
@@ -415,6 +675,23 @@ function wsp_execute_woo_add_shipping_method( $input ) {
 	return wsp_woo_ok( array( 'zone_id' => $zid, 'method' => wsp_woo_shipping_method_row( $created ) ) );
 }
 
+/**
+ * Update a zone shipping method (settings, enabled, order).
+ *
+ * MCP tool: `wsp_woo_update_shipping_method`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $zone_id Required. Zone ID.
+ *     @type int $instance_id Required. Method instance ID.
+ *     @type bool $enabled Optional. Enabled.
+ *     @type int $order Optional. Sort order.
+ *     @type array $settings Optional. Method settings key/value, e.g. {"title":"Flat
+ *         rate","cost":"10"}.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_update_shipping_method( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	if ( ! isset( $input['zone_id'] ) || empty( $input['instance_id'] ) ) return wsp_woo_fail( 'zone_id and instance_id are required.' );
@@ -432,6 +709,21 @@ function wsp_execute_woo_update_shipping_method( $input ) {
 	return wsp_woo_ok( array( 'zone_id' => $zid, 'method' => wsp_woo_shipping_method_row( $res ) ) );
 }
 
+/**
+ * Permanently remove a shipping method from a zone (force=true required).
+ *
+ * MCP tool: `wsp_woo_delete_shipping_method`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $zone_id Required. Zone ID.
+ *     @type int $instance_id Required. Method instance ID.
+ *     @type bool $force Required. Must be true: this item cannot be trashed and is deleted
+ *         permanently.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_delete_shipping_method( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	if ( ! isset( $input['zone_id'] ) || empty( $input['instance_id'] ) ) return wsp_woo_fail( 'zone_id and instance_id are required.' );
@@ -447,6 +739,12 @@ function wsp_execute_woo_delete_shipping_method( $input ) {
 // PAYMENT GATEWAYS (secrets are always masked)
 // ---------------------------------------------
 
+/**
+ * Reduce a REST payment gateway to the fields returned to the client, masking secret settings.
+ *
+ * @param array $g REST payment gateway.
+ * @return array
+ */
 function wsp_woo_gateway_row( $g ) {
 	$row = wsp_woo_pick( $g, array( 'id', 'title', 'description', 'order', 'enabled', 'method_title', 'method_description' ) );
 	$row['settings'] = array();
@@ -459,6 +757,16 @@ function wsp_woo_gateway_row( $g ) {
 	return $row;
 }
 
+/**
+ * List payment gateways with enabled state, title and settings.
+ *
+ * Secret keys/tokens are masked.
+ *
+ * MCP tool: `wsp_woo_get_payment_gateways`. Requires the `manage_options` capability.
+ *
+ * @param array $input Tool arguments (this tool takes none).
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_get_payment_gateways( $input ) {
 	if ( $e = wsp_woo_guard( 'manage_options' ) ) return $e;
 	if ( $e = wsp_woo_guard( 'manage_woocommerce' ) ) return $e;
@@ -467,6 +775,24 @@ function wsp_execute_woo_get_payment_gateways( $input ) {
 	return wsp_woo_ok( array( 'gateways' => array_map( 'wsp_woo_gateway_row', $rows ), 'total' => count( $rows ) ) );
 }
 
+/**
+ * Enable/disable a gateway or change its title, description and settings.
+ *
+ * Masked secret values are never written back.
+ *
+ * MCP tool: `wsp_woo_update_payment_gateway`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $id Required. Gateway id, e.g. bacs, cheque, cod, stripe.
+ *     @type bool $enabled Optional. Enabled.
+ *     @type string $title Optional. Checkout title.
+ *     @type string $description Optional. Checkout description.
+ *     @type array $settings Optional. Gateway settings key/value.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_update_payment_gateway( $input ) {
 	if ( $e = wsp_woo_guard( 'manage_options' ) ) return $e;
 	if ( $e = wsp_woo_guard( 'manage_woocommerce' ) ) return $e;
@@ -480,7 +806,7 @@ function wsp_execute_woo_update_payment_gateway( $input ) {
 		if ( ! is_array( $input['settings'] ) ) return wsp_woo_fail( 'settings must be an object of key => value.' );
 		$settings = array();
 		foreach ( $input['settings'] as $k => $v ) {
-			if ( ! is_scalar( $v ) || WSP_WOO_SECRET_MASK === $v ) continue; // never write a masked placeholder back
+			if ( ! is_scalar( $v ) || WSP_WOO_SECRET_MASK === $v ) continue; // never write a masked placeholder back.
 			$settings[ sanitize_key( $k ) ] = sanitize_textarea_field( (string) $v );
 		}
 		if ( $settings ) $p['settings'] = $settings;

@@ -1,6 +1,20 @@
 <?php
+/**
+ * Site abilities: site information, plugins, site settings, permalink structure and Site Context.
+ *
+ * @package WSP_MCP
+ */
+
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+/**
+ * Returns site name, URL, tagline, WP version, and language.
+ *
+ * MCP tool: `wsp_get_site_info`. Any authenticated user may call it.
+ *
+ * @param array $input Tool arguments (this tool takes none).
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_site_info( $input ) {
     return array(
         'name'        => get_bloginfo( 'name' ),
@@ -12,6 +26,15 @@ function wsp_execute_get_site_info( $input ) {
     );
 }
 
+/**
+ * Lists installed plugins with name, version, author, active status and update availability
+ * (active_plugins = active only; plugins = all).
+ *
+ * MCP tool: `wsp_get_plugins`. Requires the `activate_plugins` capability.
+ *
+ * @param array $input Tool arguments (this tool takes none).
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_plugins( $input ) {
     if ( ! function_exists( 'get_plugins' ) ) {
         require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -38,6 +61,20 @@ function wsp_execute_get_plugins( $input ) {
     return array( 'active_plugins' => $active, 'plugins' => $result, 'total' => count( $active ), 'total_installed' => count( $result ) );
 }
 
+/**
+ * Update the site title, tagline, and/or admin email.
+ *
+ * MCP tool: `wsp_update_site_info`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $name Optional.
+ *     @type string $tagline Optional.
+ *     @type string $admin_email Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_update_site_info( $input ) {
     if ( isset( $input['name'] ) )    update_option( 'blogname', sanitize_text_field( wp_unslash( $input['name'] ) ) );
     if ( isset( $input['tagline'] ) ) update_option( 'blogdescription', sanitize_text_field( wp_unslash( $input['tagline'] ) ) );
@@ -49,6 +86,18 @@ function wsp_execute_update_site_info( $input ) {
     return array( 'success' => true );
 }
 
+/**
+ * Change the site permalink structure.
+ *
+ * MCP tool: `wsp_update_permalink_structure`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $structure Required. e.g. /%postname%/, or empty string for plain.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_update_permalink_structure( $input ) {
     if ( ! isset( $input['structure'] ) ) return array( 'success' => false, 'error' => 'structure is required.' );
     $structure = sanitize_text_field( wp_unslash( $input['structure'] ) );
@@ -57,6 +106,18 @@ function wsp_execute_update_permalink_structure( $input ) {
     return array( 'success' => true, 'structure' => $structure );
 }
 
+/**
+ * Activate an installed plugin by file path.
+ *
+ * MCP tool: `wsp_activate_plugin`. Requires the `activate_plugins` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $file Required. Plugin file path, e.g. akismet/akismet.php.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_activate_plugin( $input ) {
     if ( empty( $input['file'] ) ) return array( 'success' => false, 'error' => 'file is required.' );
     $file = sanitize_text_field( wp_unslash( $input['file'] ) );
@@ -69,6 +130,18 @@ function wsp_execute_activate_plugin( $input ) {
     return array( 'success' => true, 'file' => $file );
 }
 
+/**
+ * Deactivate an active plugin by file path.
+ *
+ * MCP tool: `wsp_deactivate_plugin`. Requires the `activate_plugins` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $file Required.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_deactivate_plugin( $input ) {
     if ( empty( $input['file'] ) ) return array( 'success' => false, 'error' => 'file is required.' );
     $file = sanitize_text_field( wp_unslash( $input['file'] ) );

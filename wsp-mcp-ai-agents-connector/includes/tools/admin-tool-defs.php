@@ -9,9 +9,17 @@
  * integer[], string[]).
  * Ability key is derived: wsp_woo_get_tax_classes -> wsp/woo-get-tax-classes.
  * Callback is derived:    wsp_woo_get_tax_classes -> wsp_execute_woo_get_tax_classes.
+ *
+ * @package WSP_MCP
  */
+
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+/**
+ * Table of the WooCommerce store-management tools, keyed by tool name.
+ *
+ * @return array
+ */
 function wsp_mcp_woo_admin_tool_defs() {
 	$id    = array( 'i', 'Item ID.' );
 	$force = array( 'b', 'Must be true: this item cannot be trashed and is deleted permanently.' );
@@ -89,6 +97,11 @@ function wsp_mcp_woo_admin_tool_defs() {
 	);
 }
 
+/**
+ * Table of the plugin-management tools, keyed by tool name.
+ *
+ * @return array
+ */
 function wsp_mcp_plugin_admin_tool_defs() {
 	$file = array( 's', 'Plugin file path, e.g. akismet/akismet.php.' );
 	return array(
@@ -99,7 +112,13 @@ function wsp_mcp_plugin_admin_tool_defs() {
 	);
 }
 
-/** Convert a defs row's prop table into a JSON-Schema inputSchema. */
+/**
+ * Convert a defs row's prop table into a JSON-Schema inputSchema.
+ *
+ * @param array    $props    Property table: name => [ type code, description ].
+ * @param string[] $required Names of required properties.
+ * @return array JSON Schema.
+ */
 function wsp_mcp_defs_schema( $props, $required ) {
 	$types = array( 'i' => 'integer', 's' => 'string', 'b' => 'boolean', 'o' => 'object' );
 	$out   = array();
@@ -117,7 +136,11 @@ function wsp_mcp_defs_schema( $props, $required ) {
 	return $schema;
 }
 
-/** Register a defs table with the native server. */
+/**
+ * Register a defs table with the native server.
+ *
+ * @param array $defs Tool table.
+ */
 function wsp_mcp_register_defs( $defs ) {
 	foreach ( $defs as $tool => $d ) {
 		WSP_MCP_Server::register_tool( $tool, array(
@@ -130,7 +153,13 @@ function wsp_mcp_register_defs( $defs ) {
 	}
 }
 
-/** Convert a defs table to ability-registry rows for the given settings-page group. */
+/**
+ * Convert a defs table to ability-registry rows for the given settings-page group.
+ *
+ * @param array  $defs  Tool table.
+ * @param string $group Settings-page group.
+ * @return array Ability-registry rows.
+ */
 function wsp_mcp_defs_registry_rows( $defs, $group ) {
 	$rows = array();
 	foreach ( $defs as $tool => $d ) {

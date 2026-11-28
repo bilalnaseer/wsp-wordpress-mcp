@@ -23,7 +23,7 @@ function wsp_mcp_add_connection_menu() {
 		'wsp_mcp_connection_page'
 	);
 
-	// Safely enqueue scripts and styles only on this specific page
+	// Safely enqueue scripts and styles only on this specific page.
 	add_action( 'load-' . $page_hook, 'wsp_mcp_enqueue_connection_assets' );
 }
 add_action( 'admin_menu', 'wsp_mcp_add_connection_menu', 20 );
@@ -275,7 +275,7 @@ function wsp_mcp_connection_page() {
 
 	// Cursor "one-click connect" deep link — opens Cursor directly and lets it
 	// add the server itself, so there is no config file to create or edit at all.
-	// https://cursor.com/docs/mcp/install-links
+	// See https://cursor.com/docs/mcp/install-links.
 	$cursor_deeplink = 'cursor://anysphere.cursor-deeplink/mcp/install?' . http_build_query( array(
 		'name'   => $conn,
 		'config' => base64_encode( wp_json_encode(

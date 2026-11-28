@@ -27,11 +27,18 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+/**
+ * Authentication and capability checks for MCP requests.
+ */
 class WSP_MCP_Auth {
 
 	const OPTION_KEY = 'wsp_mcp_api_key';
 
-	/** @return string The plugin API key, generating one on first access. */
+	/**
+	 * Get the plugin API key.
+	 *
+	 * @return string The plugin API key, generating one on first access.
+	 */
 	public static function get_api_key() {
 		$key = get_option( self::OPTION_KEY, '' );
 		if ( '' === $key ) {

@@ -1,4 +1,13 @@
 <?php
+/**
+ * Ability registry and settings helpers.
+ *
+ * Holds the master list of abilities that the MCP > Settings page toggles, and the
+ * helpers that read and sanitize their on/off state.
+ *
+ * @package WSP_MCP
+ */
+
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
@@ -6,6 +15,11 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  * Defined here defensively in case registry.php loads before acf.php.
  */
 if ( ! function_exists( 'wsp_acf_is_active' ) ) {
+    /**
+     * Whether Advanced Custom Fields is active.
+     *
+     * @return bool True when ACF is loaded.
+     */
     function wsp_acf_is_active() {
         return class_exists( 'ACF' ) || function_exists( 'get_field' );
     }
@@ -17,6 +31,11 @@ if ( ! function_exists( 'wsp_acf_is_active' ) ) {
  * Defined here defensively in case registry.php loads before uae.php.
  */
 if ( ! function_exists( 'wsp_uae_is_active' ) ) {
+    /**
+     * Whether Ultimate Addons for Elementor is active.
+     *
+     * @return bool
+     */
     function wsp_uae_is_active() {
         return defined( 'UAEL_FILE' )
             || defined( 'UAEL_VER' )
@@ -27,23 +46,43 @@ if ( ! function_exists( 'wsp_uae_is_active' ) ) {
 }
 
 if ( ! function_exists( 'wsp_gravity_is_active' ) ) {
+    /**
+     * Whether Gravity Forms is active.
+     *
+     * @return bool
+     */
     function wsp_gravity_is_active() {
         return class_exists( 'GFAPI' ) || class_exists( 'GFCommon' );
     }
 }
 
 if ( ! function_exists( 'wsp_cf7_is_active' ) ) {
+    /**
+     * Whether Contact Form 7 is active.
+     *
+     * @return bool
+     */
     function wsp_cf7_is_active() {
         return class_exists( 'WPCF7_ContactForm' );
     }
 }
 
 if ( ! function_exists( 'wsp_wpforms_is_active' ) ) {
+    /**
+     * Whether WPForms is active.
+     *
+     * @return bool
+     */
     function wsp_wpforms_is_active() {
         return function_exists( 'wpforms' ) || class_exists( 'WPForms' );
     }
 }
 
+/**
+ * Return the master list of abilities, keyed by "wsp/..." enable key.
+ *
+ * @return array Label, description, group, access and default for each ability.
+ */
 function wsp_mcp_ability_registry() {
     $abilities = array(
         // POSTS
@@ -112,14 +151,14 @@ function wsp_mcp_ability_registry() {
         'wsp/delete-menu-item'     => array( 'label' => 'Delete Menu Item',     'description' => 'Remove an item from a navigation menu.',                             'group' => 'Menus', 'access' => 'write', 'default' => false ),
         'wsp/get-menu-locations'   => array( 'label' => 'Read Menu Locations',  'description' => 'List theme menu locations and which menu is assigned to each.',     'group' => 'Menus', 'access' => 'read',  'default' => false ),
         'wsp/assign-menu-location' => array( 'label' => 'Assign Menu Location', 'description' => 'Assign (or unassign) a navigation menu to a theme location.',       'group' => 'Menus', 'access' => 'write', 'default' => false ),
-        // SITE EDITOR (block themes)
+        // SITE EDITOR (block themes).
         'wsp/get-global-styles'    => array( 'label' => 'Read Global Styles',   'description' => 'Read the site\'s Global Styles (theme.json settings and styles), optionally with the theme\'s style variations.', 'group' => 'Site Editor', 'access' => 'read',  'default' => false ),
         'wsp/update-global-styles' => array( 'label' => 'Update Global Styles', 'description' => 'Change site-wide colors, typography, spacing, and block styles, or apply a theme style variation.',      'group' => 'Site Editor', 'access' => 'write', 'default' => false ),
         'wsp/get-templates'        => array( 'label' => 'List Templates',       'description' => 'List block templates or template parts (header, footer, …) of the active theme.',                         'group' => 'Site Editor', 'access' => 'read',  'default' => false ),
         'wsp/get-template'         => array( 'label' => 'Read Template',        'description' => 'Read one block template or template part with its full block markup.',                                   'group' => 'Site Editor', 'access' => 'read',  'default' => false ),
         'wsp/create-template'      => array( 'label' => 'Create Template',      'description' => 'Create a new block template or template part for the active theme.',                                     'group' => 'Site Editor', 'access' => 'write', 'default' => false ),
         'wsp/update-template'      => array( 'label' => 'Update Template',      'description' => 'Edit the title, content, or description of a block template or template part.',                          'group' => 'Site Editor', 'access' => 'write', 'default' => false ),
-        // WIDGETS & SIDEBARS (classic themes)
+        // WIDGETS & SIDEBARS (classic themes).
         'wsp/get-sidebars'     => array( 'label' => 'Read Sidebars',     'description' => 'List widget areas (sidebars, footers) and the widgets in each.',                          'group' => 'Widgets', 'access' => 'read',  'default' => false ),
         'wsp/update-sidebar'   => array( 'label' => 'Update Sidebar',    'description' => 'Set which widgets a widget area contains and in what order, or empty it.',               'group' => 'Widgets', 'access' => 'write', 'default' => false ),
         'wsp/get-widget-types' => array( 'label' => 'Read Widget Types', 'description' => 'List the widget types available on the site.',                                            'group' => 'Widgets', 'access' => 'read',  'default' => false ),
@@ -181,7 +220,7 @@ function wsp_mcp_ability_registry() {
         );
     }
 
-    // v2.9.5: install / install-from-url / delete / update plugin (table: tools/admin-tool-defs.php)
+    // v2.9.5: install / install-from-url / delete / update plugin (table: tools/admin-tool-defs.php).
     $abilities += wsp_mcp_defs_registry_rows( wsp_mcp_plugin_admin_tool_defs(), 'Site' );
 
     if ( class_exists( 'WooCommerce' ) ) {
@@ -203,7 +242,7 @@ function wsp_mcp_ability_registry() {
             'wsp/woo-get-low-stock'       => array( 'label' => 'Get Low Stock Alerts',        'description' => 'Inspect and list products running low on stock.',    'group' => 'WooCommerce', 'access' => 'read',  'default' => false ),
             'wsp/woo-moderate-review'     => array( 'label' => 'Moderate Product Reviews',    'description' => 'Approve, spam, trash, or reply to product reviews.',  'group' => 'WooCommerce', 'access' => 'write', 'default' => false ),
         );
-        // v2.9.5: delete / categories / tags / attributes / settings / tax / shipping / gateways (table: tools/admin-tool-defs.php)
+        // v2.9.5: delete / categories / tags / attributes / settings / tax / shipping / gateways (table: tools/admin-tool-defs.php).
         $abilities += wsp_mcp_defs_registry_rows( wsp_mcp_woo_admin_tool_defs(), 'WooCommerce' );
     }
 
@@ -378,6 +417,11 @@ function wsp_mcp_ability_registry() {
 }
 
 
+/**
+ * Return the on/off state of every ability: saved choices merged with the registry defaults.
+ *
+ * @return array Map of enable key to bool.
+ */
 function wsp_mcp_get_settings() {
     $saved    = get_option( WSP_MCP_OPTION, array() );
     $registry = wsp_mcp_ability_registry();
@@ -388,11 +432,23 @@ function wsp_mcp_get_settings() {
     return $settings;
 }
 
+/**
+ * Whether an ability is switched on.
+ *
+ * @param string $key Enable key, e.g. "wsp/get-posts".
+ * @return bool
+ */
 function wsp_mcp_is_enabled( $key ) {
     $s = wsp_mcp_get_settings();
     return ! empty( $s[ $key ] );
 }
 
+/**
+ * Sanitize the submitted toggles: every known ability becomes a boolean.
+ *
+ * @param array $input Submitted settings.
+ * @return array
+ */
 function wsp_mcp_sanitize_settings( $input ) {
     $clean = array();
     foreach ( wsp_mcp_ability_registry() as $key => $cfg ) {
@@ -401,6 +457,9 @@ function wsp_mcp_sanitize_settings( $input ) {
     return $clean;
 }
 
+/**
+ * Register the abilities option with the Settings API.
+ */
 function wsp_mcp_register_settings() {
     register_setting( 'wsp_mcp_settings_group', WSP_MCP_OPTION, array( 'sanitize_callback' => 'wsp_mcp_sanitize_settings' ) );
 }

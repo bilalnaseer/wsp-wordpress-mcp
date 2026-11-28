@@ -1,8 +1,17 @@
 <?php
+/**
+ * MCP > Settings admin page: a toggle for every ability.
+ *
+ * @package WSP_MCP
+ */
+
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+/**
+ * Register the top-level MCP admin menu.
+ */
 function wsp_mcp_add_menu() {
-    // Menu position set to 110 to comply with core WP menu guidelines
+    // Menu position set to 110 to comply with core WP menu guidelines.
     add_menu_page(
         'WSP MCP Abilities',
         'MCP',
@@ -37,6 +46,8 @@ add_action( 'admin_init', 'wsp_mcp_redirect_legacy_config_page' );
 
 /**
  * Enqueue settings page CSS and JS safely using WP structures.
+ *
+ * @param string $hook Current admin page hook suffix.
  */
 function wsp_mcp_enqueue_settings_assets( $hook ) {
     if ( 'toplevel_page_wsp-mcp-abilities' !== $hook ) {
@@ -232,6 +243,9 @@ function wsp_mcp_enqueue_settings_assets( $hook ) {
 }
 add_action( 'admin_enqueue_scripts', 'wsp_mcp_enqueue_settings_assets' );
 
+/**
+ * Render the MCP > Settings page, with a toggle for every ability.
+ */
 function wsp_mcp_settings_page() {
     if ( ! current_user_can( 'manage_options' ) ) return;
 

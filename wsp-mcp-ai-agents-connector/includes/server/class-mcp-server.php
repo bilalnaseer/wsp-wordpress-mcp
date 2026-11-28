@@ -13,9 +13,16 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+/**
+ * Native MCP server: REST route, JSON-RPC dispatch and the tool registry.
+ */
 class WSP_MCP_Server {
 
-	/** @var array<string,array> name => tool spec. */
+	/**
+	 * Registered tools, keyed by tool name.
+	 *
+	 * @var array<string,array>
+	 */
 	private static $tools = array();
 
 	/** MCP protocol versions this server recognizes. */
@@ -40,7 +47,13 @@ class WSP_MCP_Server {
 		add_filter( 'rest_pre_echo_response', array( __CLASS__, 'flush_output_guard' ) );
 	}
 
-	/** @see wsp_mcp_output_guard_flush() */
+	/**
+	 * Flush the output guard just before the REST response is sent.
+	 *
+	 * @param mixed $result The value being filtered.
+	 * @return mixed The value, unchanged.
+	 * @see wsp_mcp_output_guard_flush()
+	 */
 	public static function flush_output_guard( $result ) {
 		wsp_mcp_output_guard_flush();
 		return $result;
@@ -51,6 +64,8 @@ class WSP_MCP_Server {
 	 *
 	 * @param string $name MCP tool name (a-z0-9_).
 	 * @param array  $spec {
+	 *     Tool definition.
+	 *
 	 *     @type string   $description Human/agent-facing description.
 	 *     @type array    $inputSchema JSON Schema for arguments.
 	 *     @type callable $callback    fn(array $args): array|WP_Error.
@@ -99,7 +114,12 @@ class WSP_MCP_Server {
 		return $enabled;
 	}
 
-	/** Main dispatch by HTTP method. */
+	/**
+	 * Main dispatch by HTTP method.
+	 *
+	 * @param WP_REST_Request $request The incoming REST request.
+	 * @return WP_REST_Response
+	 */
 	public static function handle( WP_REST_Request $request ) {
 		$method = $request->get_method();
 
@@ -127,7 +147,12 @@ class WSP_MCP_Server {
 		return self::handle_post( $request );
 	}
 
-	/** Handle a JSON-RPC POST. */
+	/**
+	 * Handle a JSON-RPC POST.
+	 *
+	 * @param WP_REST_Request $request The incoming REST request.
+	 * @return WP_REST_Response
+	 */
 	private static function handle_post( WP_REST_Request $request ) {
 		$body = $request->get_json_params();
 		if ( ! is_array( $body ) || ! isset( $body['jsonrpc'] ) || '2.0' !== $body['jsonrpc'] ) {
@@ -181,7 +206,14 @@ class WSP_MCP_Server {
 		}
 	}
 
-	/** initialize: negotiate protocol, open a session. */
+	/**
+	 * Handle initialize: negotiate the protocol version and open a session.
+	 *
+	 * @param WP_REST_Request $request The incoming REST request.
+	 * @param array           $params  JSON-RPC params.
+	 * @param int|string|null $id      JSON-RPC request ID, echoed back in the response.
+	 * @return WP_REST_Response
+	 */
 	private static function do_initialize( WP_REST_Request $request, $params, $id ) {
 		$requested = isset( $params['protocolVersion'] ) ? $params['protocolVersion'] : '';
 		$protocol  = in_array( $requested, self::SUPPORTED_PROTOCOLS, true ) ? $requested : self::DEFAULT_PROTOCOL;
@@ -214,7 +246,12 @@ class WSP_MCP_Server {
 		return $response;
 	}
 
-	/** tools/list: advertise enabled tools. */
+	/**
+	 * Handle tools/list: advertise the enabled tools.
+	 *
+	 * @param int|string|null $id JSON-RPC request ID, echoed back in the response.
+	 * @return WP_REST_Response
+	 */
 	private static function do_tools_list( $id ) {
 		$tools = array();
 		foreach ( self::enabled_tools() as $name => $spec ) {
@@ -227,7 +264,13 @@ class WSP_MCP_Server {
 		return self::rpc_result( $id, array( 'tools' => $tools ) );
 	}
 
-	/** tools/call: capability-gate then invoke the wrapped callback. */
+	/**
+	 * Handle tools/call: check the capability, then invoke the wrapped callback.
+	 *
+	 * @param int|string|null $id     JSON-RPC request ID, echoed back in the response.
+	 * @param array           $params JSON-RPC params with the tool "name" and "arguments".
+	 * @return WP_REST_Response
+	 */
 	private static function do_tools_call( $id, $params ) {
 		$name  = isset( $params['name'] ) ? $params['name'] : '';
 		$args  = isset( $params['arguments'] ) && is_array( $params['arguments'] ) ? $params['arguments'] : array();
@@ -277,14 +320,24 @@ class WSP_MCP_Server {
 		return self::tool_text( $id, wp_json_encode( $result, JSON_PRETTY_PRINT ), false );
 	}
 
-	/** True while a tool callback is running (see arm_fatal_guard()). */
+	/**
+	 * True while a tool callback is running (see arm_fatal_guard()).
+	 *
+	 * @var bool
+	 */
 	private static $fatal_armed = false;
 
 	/**
-	 * A tool (e.g. a theme upload that leaves broken PHP behind) can hit a true
-	 * PHP fatal, which try/catch cannot intercept and which would surface as a
-	 * bare 500/502. On shutdown after such a fatal, log it and answer with a
-	 * proper JSON-RPC tool error so the client stays connected.
+	 * Arm a shutdown handler that reports a PHP fatal inside a tool as a tool error.
+	 *
+	 * A tool (e.g. a theme upload that leaves broken PHP behind) can hit a true PHP fatal, which try/catch
+	 * cannot intercept and which would surface as a bare 500/502. On shutdown after such a fatal, log it
+	 * and answer with a proper JSON-RPC tool error so the client stays connected.
+	 *
+	 * @param int|string|null $id       JSON-RPC request ID, echoed back in the response.
+	 * @param string          $name     Tool name.
+	 * @param string          $category Tool group.
+	 * @param float           $start    microtime( true ) when the call started.
 	 */
 	private static function arm_fatal_guard( $id, $name, $category, $start ) {
 		self::$fatal_armed = true;
@@ -316,16 +369,24 @@ class WSP_MCP_Server {
 		} );
 	}
 
-	/** Milliseconds elapsed since $start (a microtime(true) value), rounded to the nearest int. */
+	/**
+	 * Milliseconds elapsed since $start (a microtime(true) value), rounded to the nearest int.
+	 *
+	 * @param float $start A microtime( true ) value.
+	 * @return int
+	 */
 	private static function elapsed_ms( $start ) {
 		return (int) round( ( microtime( true ) - $start ) * 1000 );
 	}
 
 	/**
-	 * Map a registered tool spec to its ability-registry group (e.g. "Elementor",
-	 * "WooCommerce", "Posts") for the Analytics usage breakdown. Falls back to ''
-	 * (displayed as "Uncategorized") when the registry is unavailable or the tool
-	 * has no matching entry.
+	 * Map a registered tool spec to its ability-registry group (e.g.
+	 *
+	 * "Elementor", "WooCommerce", "Posts") for the Analytics usage breakdown. Falls back to '' (displayed
+	 * as "Uncategorized") when the registry is unavailable or the tool has no matching entry.
+	 *
+	 * @param array $spec Registered tool spec.
+	 * @return string
 	 */
 	private static function tool_category( array $spec ) {
 		$enable_key = isset( $spec['enable_key'] ) ? $spec['enable_key'] : '';
@@ -339,7 +400,12 @@ class WSP_MCP_Server {
 		return isset( $registry[ $enable_key ]['group'] ) ? $registry[ $enable_key ]['group'] : '';
 	}
 
-	/** DELETE: terminate a session. */
+	/**
+	 * Handle DELETE: terminate a session.
+	 *
+	 * @param WP_REST_Request $request The incoming REST request.
+	 * @return WP_REST_Response
+	 */
 	private static function handle_delete( WP_REST_Request $request ) {
 		$auth = self::authenticate_and_limit( $request );
 		if ( true !== $auth ) {
@@ -355,7 +421,9 @@ class WSP_MCP_Server {
 	/**
 	 * Validate the Mcp-Session-Id header against the store and its fingerprint.
 	 *
-	 * @return true|WP_REST_Response
+	 * @param WP_REST_Request $request The incoming REST request.
+	 * @param int|string|null $id      JSON-RPC request ID, echoed back in the response.
+	 * @return true|WP_REST_Response True, or an error response.
 	 */
 	private static function validate_session( WP_REST_Request $request, $id ) {
 		$session_id = $request->get_header( 'mcp-session-id' );
@@ -378,10 +446,12 @@ class WSP_MCP_Server {
 	}
 
 	/**
-	 * Authenticate, then apply the per-user rate limit. Failed authentication is
-	 * throttled per IP (brute-force guard) and audit-logged by WSP_MCP_Auth.
+	 * Authenticate, then apply the per-user rate limit.
 	 *
-	 * @return true|WP_REST_Response
+	 * Failed authentication is throttled per IP (brute-force guard) and audit-logged by WSP_MCP_Auth.
+	 *
+	 * @param WP_REST_Request $request The incoming REST request.
+	 * @return true|WP_REST_Response True, or an error response.
 	 */
 	private static function authenticate_and_limit( WP_REST_Request $request ) {
 		$auth = WSP_MCP_Auth::authenticate( $request );
@@ -403,6 +473,13 @@ class WSP_MCP_Server {
 
 	/* ---------- Origin / rate limiting ---------- */
 
+	/**
+	 * Reject browser requests from an Origin that is not allowed. Requests without an Origin header are
+	 * non-browser clients and pass.
+	 *
+	 * @param WP_REST_Request $request The incoming REST request.
+	 * @return true|WP_REST_Response True, or an error response.
+	 */
 	private static function validate_origin( WP_REST_Request $request ) {
 		$origin = $request->get_header( 'origin' );
 		if ( empty( $origin ) ) {
@@ -423,7 +500,13 @@ class WSP_MCP_Server {
 		return true;
 	}
 
-	/** Count one hit against a transient bucket. @return true|false false when over $max. */
+	/**
+	 * Count one hit against a transient bucket.
+	 *
+	 * @param string $key Transient name.
+	 * @param int    $max Maximum hits per window.
+	 * @return bool False when over the limit.
+	 */
 	private static function bump_rate( $key, $max ) {
 		$data = get_transient( $key );
 		if ( false === $data || ! is_array( $data ) ) {
@@ -439,6 +522,11 @@ class WSP_MCP_Server {
 
 	/* ---------- Response helpers ---------- */
 
+	/**
+	 * Answer a CORS preflight (OPTIONS) request with an empty 204 response.
+	 *
+	 * @return WP_REST_Response
+	 */
 	private static function cors_preflight() {
 		$response = new WP_REST_Response( null, 204 );
 		$response->header( 'Access-Control-Allow-Origin', '*' );
@@ -448,6 +536,12 @@ class WSP_MCP_Server {
 		return $response;
 	}
 
+	/**
+	 * Add the no-store and CORS headers that every MCP response carries.
+	 *
+	 * @param WP_REST_Response $response Response to decorate.
+	 * @return WP_REST_Response
+	 */
 	private static function with_headers( WP_REST_Response $response ) {
 		$response->header( 'Cache-Control', 'no-store, no-cache, must-revalidate, private' );
 		$response->header( 'Pragma', 'no-cache' );
@@ -456,6 +550,13 @@ class WSP_MCP_Server {
 		return $response;
 	}
 
+	/**
+	 * Build a JSON-RPC success response.
+	 *
+	 * @param int|string|null $id     JSON-RPC request ID, echoed back in the response.
+	 * @param mixed           $result The result payload.
+	 * @return WP_REST_Response
+	 */
 	private static function rpc_result( $id, $result ) {
 		return self::with_headers( new WP_REST_Response( array(
 			'jsonrpc' => '2.0',
@@ -464,6 +565,15 @@ class WSP_MCP_Server {
 		), 200 ) );
 	}
 
+	/**
+	 * Build a JSON-RPC error response.
+	 *
+	 * @param int|string|null $id      JSON-RPC request ID, echoed back in the response.
+	 * @param int             $code    JSON-RPC error code.
+	 * @param string          $message Error message.
+	 * @param int             $status  HTTP status. Default 200.
+	 * @return WP_REST_Response
+	 */
 	private static function rpc_error( $id, $code, $message, $status = 200 ) {
 		return self::with_headers( new WP_REST_Response( array(
 			'jsonrpc' => '2.0',
@@ -472,7 +582,14 @@ class WSP_MCP_Server {
 		), $status ) );
 	}
 
-	/** Wrap a tool result as an MCP content block. */
+	/**
+	 * Wrap a tool result as an MCP content block.
+	 *
+	 * @param mixed  $id       JSON-RPC request ID.
+	 * @param string $text     Text of the result.
+	 * @param bool   $is_error Whether the call failed.
+	 * @return WP_REST_Response
+	 */
 	private static function tool_text( $id, $text, $is_error ) {
 		$result = array(
 			'content' => array( array( 'type' => 'text', 'text' => (string) $text ) ),

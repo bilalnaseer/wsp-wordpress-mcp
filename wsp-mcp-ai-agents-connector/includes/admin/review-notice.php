@@ -10,6 +10,8 @@
  * Dismissal is per admin user and needs no JavaScript: "Leave a review" and
  * "Don't show again" hide it forever, "Maybe later" hides it for
  * WSP_MCP_REVIEW_SNOOZE_DAYS days.
+ *
+ * @package WSP_MCP
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit;
@@ -69,7 +71,12 @@ function wsp_mcp_review_should_show() {
 	return true;
 }
 
-/** Build a nonce-protected admin-post URL for one of the notice's actions. */
+/**
+ * Build a nonce-protected admin-post URL for one of the notice's actions.
+ *
+ * @param string $choice One of review, snooze or dismiss.
+ * @return string Nonce-protected URL.
+ */
 function wsp_mcp_review_action_url( $choice ) {
 	return wp_nonce_url(
 		add_query_arg(

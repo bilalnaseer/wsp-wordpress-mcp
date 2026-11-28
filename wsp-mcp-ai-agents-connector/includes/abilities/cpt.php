@@ -1,14 +1,22 @@
 <?php
+/**
+ * Custom post type abilities: list public post types and manage their items.
+ *
+ * @package WSP_MCP
+ */
+
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
  * Resolve a caller-supplied post type slug.
  *
- * Only public, non-built-in types (the same set wsp_get_post_types lists) are
- * in scope. Internal types such as user_request (privacy requests, titled with
- * email addresses), orders or form definitions are refused, and the caller
- * must hold the type's own edit capability — the tool's broad `edit_posts`
+ * Only public, non-built-in types (the same set wsp_get_post_types lists) are in scope. Internal types
+ * such as user_request (privacy requests, titled with email addresses), orders or form definitions are
+ * refused, and the caller must hold the type's own edit capability — the tool's broad `edit_posts`
  * says nothing about e.g. WooCommerce's `edit_products`.
+ *
+ * @param string $slug Post type slug supplied by the caller.
+ * @return WP_Post_Type|WP_Error The post type, or an error when it is out of scope.
  */
 function wsp_cpt_resolve_type( $slug ) {
     $slug = sanitize_key( $slug );
@@ -23,6 +31,14 @@ function wsp_cpt_resolve_type( $slug ) {
     return $obj;
 }
 
+/**
+ * List registered custom post types (excludes built-in Posts/Pages).
+ *
+ * MCP tool: `wsp_get_post_types`. Requires the `edit_posts` capability.
+ *
+ * @param array $input Tool arguments (this tool takes none).
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_post_types( $input ) {
     $types  = get_post_types( array( 'public' => true, '_builtin' => false ), 'objects' );
     $result = array();
@@ -37,6 +53,20 @@ function wsp_execute_get_post_types( $input ) {
     return array( 'post_types' => $result );
 }
 
+/**
+ * List items of a given custom post type.
+ *
+ * MCP tool: `wsp_get_cpt_items`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $post_type Required.
+ *     @type int $per_page Optional.
+ *     @type string $status Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_cpt_items( $input ) {
     $type = wsp_cpt_resolve_type( isset( $input['post_type'] ) ? $input['post_type'] : '' );
     if ( is_wp_error( $type ) ) return $type;
@@ -68,6 +98,27 @@ function wsp_execute_get_cpt_items( $input ) {
     return array( 'items' => $items, 'total' => $q->found_posts );
 }
 
+/**
+ * Create a new item of a given custom post type.
+ *
+ * To schedule it, pass status "future" (or "publish") with a future date.
+ *
+ * MCP tool: `wsp_create_cpt_item`. Requires the `publish_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $post_type Required.
+ *     @type string $title Required.
+ *     @type string $content Optional.
+ *     @type string $status Optional.
+ *     @type string $date Optional. Publish date, ISO 8601 (e.g. 2026-12-01T09:00:00). Site timezone
+ *         unless an offset or Z is given. A future date with status "publish" or "future" schedules
+ *         the item; status "future" requires a future date.
+ *     @type string $slug Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_create_cpt_item( $input ) {
     $type = wsp_cpt_resolve_type( isset( $input['post_type'] ) ? $input['post_type'] : '' );
     if ( is_wp_error( $type ) ) return $type;
@@ -96,6 +147,25 @@ function wsp_execute_create_cpt_item( $input ) {
     return array( 'success' => true, 'id' => $id, 'url' => get_permalink( $id ), 'status' => get_post_status( $id ), 'date' => get_post_field( 'post_date', $id ) );
 }
 
+/**
+ * Update an existing custom post type item by ID.
+ *
+ * MCP tool: `wsp_update_cpt_item`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $post_type Required.
+ *     @type int $id Required.
+ *     @type string $title Optional.
+ *     @type string $content Optional.
+ *     @type string $status Optional.
+ *     @type string $date Optional. Publish date, ISO 8601 (e.g. 2026-12-01T09:00:00). Site timezone
+ *         unless an offset or Z is given. A future date with status "publish" or "future" schedules
+ *         the item; status "future" requires a future date.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_update_cpt_item( $input ) {
     $type = wsp_cpt_resolve_type( isset( $input['post_type'] ) ? $input['post_type'] : '' );
     if ( is_wp_error( $type ) ) return $type;
@@ -121,6 +191,19 @@ function wsp_execute_update_cpt_item( $input ) {
     return array( 'success' => true, 'id' => $id, 'url' => get_permalink( $id ), 'status' => get_post_status( $id ), 'date' => get_post_field( 'post_date', $id ) );
 }
 
+/**
+ * Move a custom post type item to trash by ID.
+ *
+ * MCP tool: `wsp_delete_cpt_item`. Requires the `delete_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $post_type Required.
+ *     @type int $id Required.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_delete_cpt_item( $input ) {
     $type = wsp_cpt_resolve_type( isset( $input['post_type'] ) ? $input['post_type'] : '' );
     if ( is_wp_error( $type ) ) return $type;
