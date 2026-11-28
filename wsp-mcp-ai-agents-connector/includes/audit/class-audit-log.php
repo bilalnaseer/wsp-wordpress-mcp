@@ -14,6 +14,9 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+/**
+ * Audit log of every MCP tool call and rejected request, stored in its own table.
+ */
 class WSP_MCP_Audit_Log {
 
 	/** Default retention window in days. Filterable via wsp_mcp_audit_log_retention_days. */
@@ -24,7 +27,11 @@ class WSP_MCP_Audit_Log {
 	const STATUS_DENIED  = 'denied';
 	const STATUS_ERROR   = 'error';
 
-	/** @return string Fully-qualified table name. */
+	/**
+	 * Name of the audit log table.
+	 *
+	 * @return string Fully-qualified table name.
+	 */
 	private static function table() {
 		global $wpdb;
 		return $wpdb->prefix . 'wsp_mcp_audit_log';
@@ -114,7 +121,12 @@ class WSP_MCP_Audit_Log {
 		self::log( 'mcp:' . sanitize_key( $reason ), self::STATUS_DENIED, $detail, 0, 'Protocol' );
 	}
 
-	/** Rejections (tool_name "mcp:*") grouped by reason within the last $hours hours. */
+	/**
+	 * Rejections (tool_name "mcp:*") grouped by reason within the last $hours hours.
+	 *
+	 * @param int $hours Look-back window in hours. Default 24.
+	 * @return array Map of rejection reason to count.
+	 */
 	public static function get_rejection_counts( $hours = 24 ) {
 		global $wpdb;
 		$table = self::table();
@@ -132,7 +144,12 @@ class WSP_MCP_Audit_Log {
 		return $out;
 	}
 
-	/** Most recent rejection rows. */
+	/**
+	 * Most recent rejection rows.
+	 *
+	 * @param int $limit Maximum rows, 1 to 100. Default 20.
+	 * @return array
+	 */
 	public static function get_recent_rejections( $limit = 20 ) {
 		global $wpdb;
 		$table = self::table();
@@ -166,6 +183,8 @@ class WSP_MCP_Audit_Log {
 	 * Fetch a page of log entries, most recent first.
 	 *
 	 * @param array $args {
+	 *     Query arguments.
+	 *
 	 *     @type int    $per_page Rows per page. Default 20.
 	 *     @type int    $paged    1-indexed page number. Default 1.
 	 *     @type string $status   Filter by status ('' = all).

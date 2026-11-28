@@ -41,13 +41,23 @@ function wsp_widgets_require_areas() {
 	return true;
 }
 
-/** True if $sidebar_id is a registered area or the inactive-widgets bin. */
+/**
+ * True if $sidebar_id is a registered area or the inactive-widgets bin.
+ *
+ * @param string $sidebar_id Widget area ID.
+ * @return bool
+ */
 function wsp_widgets_is_valid_sidebar( $sidebar_id ) {
 	global $wp_registered_sidebars;
 	return WSP_WIDGETS_INACTIVE === $sidebar_id || isset( $wp_registered_sidebars[ $sidebar_id ] );
 }
 
-/** WP_Widget object for an id_base, or null for unknown / legacy (non-WP_Widget) types. */
+/**
+ * WP_Widget object for an id_base, or null for unknown / legacy (non-WP_Widget) types.
+ *
+ * @param string $id_base Widget type ID base, e.g. "text".
+ * @return WP_Widget|null
+ */
 function wsp_widgets_object( $id_base ) {
 	global $wp_widget_factory;
 	$obj = $wp_widget_factory->get_widget_object( $id_base );
@@ -55,15 +65,25 @@ function wsp_widgets_object( $id_base ) {
 }
 
 /**
- * Whether a widget type's settings may be read/written over MCP. Mirrors core's
- * REST rule: a type must opt in with `show_instance_in_rest`, because some
- * third-party widgets store secrets (API keys) in their instance.
+ * Whether a widget type's settings may be read/written over MCP.
+ *
+ * Mirrors core's REST rule: a type must opt in with `show_instance_in_rest`, because some third-party
+ * widgets store secrets (API keys) in their instance.
+ *
+ * @param WP_Widget|null $obj Widget type object.
+ * @return bool
  */
 function wsp_widgets_is_editable( $obj ) {
 	return $obj && ! empty( $obj->widget_options['show_instance_in_rest'] );
 }
 
-/** Stored instance array for one widget, or null. */
+/**
+ * Stored instance array for one widget, or null.
+ *
+ * @param WP_Widget $obj    Widget type object.
+ * @param int       $number Instance number.
+ * @return array|null
+ */
 function wsp_widgets_get_instance( $obj, $number ) {
 	if ( ! $obj || ! $number ) return null;
 	$all = $obj->get_settings();
@@ -74,8 +94,8 @@ function wsp_widgets_get_instance( $obj, $number ) {
  * Stored sidebar => widget-id-list map, read straight from the `sidebars_widgets`
  * option (the same storage wp_set_sidebars_widgets() writes).
  *
- * Use this instead of core's wp_get_sidebars_widgets(): that function is marked
- * @access private and Plugin Check rejects it (Generic.PHP.ForbiddenFunctions).
+ * Use this instead of core's wp_get_sidebars_widgets(): that function is marked as
+ * private ("@access private") and Plugin Check rejects it (Generic.PHP.ForbiddenFunctions).
  * Reading the raw option is also the right input for read-modify-write: core's
  * version runs the `sidebars_widgets` filter, and saving filtered (runtime-only)
  * placements back would make them permanent.
@@ -90,7 +110,13 @@ function wsp_widgets_get_sidebars() {
 	return $sidebars;
 }
 
-/** Sidebar id that currently holds $widget_id, or null. */
+/**
+ * Sidebar id that currently holds $widget_id, or null.
+ *
+ * @param string     $widget_id Widget ID, e.g. "text-2".
+ * @param array|null $sidebars  Map of sidebar to widget IDs. Defaults to the stored placement.
+ * @return string|null
+ */
 function wsp_widgets_find_sidebar( $widget_id, $sidebars = null ) {
 	if ( null === $sidebars ) $sidebars = wsp_widgets_get_sidebars();
 	foreach ( $sidebars as $sidebar_id => $ids ) {
@@ -99,7 +125,16 @@ function wsp_widgets_find_sidebar( $widget_id, $sidebars = null ) {
 	return null;
 }
 
-/** Remove $widget_id from every sidebar, then insert it into $sidebar_id at $position (null/past end = last). */
+/**
+ * Remove $widget_id from every sidebar, then insert it into $sidebar_id at $position (null/past end =
+ * last).
+ *
+ * @param array    $sidebars   Map of sidebar to widget IDs.
+ * @param string   $widget_id  Widget ID.
+ * @param string   $sidebar_id Destination widget area.
+ * @param int|null $position   Zero-based position. Null or past the end places it last.
+ * @return array The updated map.
+ */
 function wsp_widgets_place( $sidebars, $widget_id, $sidebar_id, $position = null ) {
 	foreach ( $sidebars as $sid => $ids ) {
 		if ( is_array( $ids ) ) $sidebars[ $sid ] = array_values( array_diff( $ids, array( $widget_id ) ) );
@@ -111,7 +146,12 @@ function wsp_widgets_place( $sidebars, $widget_id, $sidebar_id, $position = null
 	return $sidebars;
 }
 
-/** Recursively run wp_kses_post() over every string in a widget instance. */
+/**
+ * Recursively run wp_kses_post() over every string in a widget instance.
+ *
+ * @param mixed $value Widget instance data.
+ * @return mixed The data with every string filtered by wp_kses_post().
+ */
 function wsp_widgets_sanitize_instance( $value ) {
 	if ( is_array( $value ) ) {
 		$out = array();
@@ -126,7 +166,12 @@ function wsp_widgets_sanitize_instance( $value ) {
 	return is_string( $value ) ? wp_kses_post( $value ) : $value;
 }
 
-/** True if $widget_id names a widget that exists (registered, placed, or with a stored instance). */
+/**
+ * True if $widget_id names a widget that exists (registered, placed, or with a stored instance).
+ *
+ * @param string $widget_id Widget ID.
+ * @return bool
+ */
 function wsp_widgets_exists( $widget_id ) {
 	global $wp_registered_widgets;
 	if ( isset( $wp_registered_widgets[ $widget_id ] ) || null !== wsp_widgets_find_sidebar( $widget_id ) ) return true;
@@ -135,7 +180,15 @@ function wsp_widgets_exists( $widget_id ) {
 	return null !== wsp_widgets_get_instance( $obj, isset( $parsed['number'] ) ? $parsed['number'] : 0 );
 }
 
-/** Normalize one widget to a plain array; $render adds its front-end HTML. */
+/**
+ * Normalize one widget to a plain array; $render adds its front-end HTML.
+ *
+ * @param string   $widget_id  Widget ID.
+ * @param string   $sidebar_id Widget area that holds it.
+ * @param int|null $position   Zero-based position in the area.
+ * @param bool     $render     Include the rendered HTML. Default false.
+ * @return array
+ */
 function wsp_widgets_to_array( $widget_id, $sidebar_id, $position = null, $render = false ) {
 	$parsed   = wp_parse_widget_id( $widget_id );
 	$obj      = wsp_widgets_object( $parsed['id_base'] );
@@ -154,7 +207,14 @@ function wsp_widgets_to_array( $widget_id, $sidebar_id, $position = null, $rende
 	return $data;
 }
 
-/** Append { position, sidebar_widgets } for $widget_id to a response array. */
+/**
+ * Append { position, sidebar_widgets } for $widget_id to a response array.
+ *
+ * @param array  $data       Response array.
+ * @param string $widget_id  Widget ID.
+ * @param string $sidebar_id Widget area that holds it.
+ * @return array
+ */
 function wsp_widgets_with_position( $data, $widget_id, $sidebar_id ) {
 	$sidebars = wsp_widgets_get_sidebars();
 	$list     = isset( $sidebars[ $sidebar_id ] ) ? (array) $sidebars[ $sidebar_id ] : array();
@@ -167,6 +227,18 @@ function wsp_widgets_with_position( $data, $widget_id, $sidebar_id ) {
 // Sidebars
 // ---------------------------------------------------------------------------
 
+/**
+ * Lists the widget areas (sidebars, footers, …) of a classic theme with the ordered widget ids in
+ * each, plus wp_inactive_widgets (widgets removed from every area but kept).
+ *
+ * Returns { sidebars: [{ id, name, description, status, widgets }], total }. A block theme has no
+ * widget areas: returns an empty list and a hint to use wsp_get_templates (template parts) instead.
+ *
+ * MCP tool: `wsp_get_sidebars`. Requires the `edit_theme_options` capability.
+ *
+ * @param array $input Tool arguments (this tool takes none).
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_sidebars( $input ) {
 	global $wp_registered_sidebars;
 	if ( empty( $wp_registered_sidebars ) ) {
@@ -198,9 +270,20 @@ function wsp_execute_get_sidebars( $input ) {
 }
 
 /**
- * Set a widget area's full contents and order. Listed widgets are moved in from
- * wherever they are; widgets previously in the area but not listed go to
- * wp_inactive_widgets (settings kept). An empty list clears the area.
+ * Set a widget area's full contents and order.
+ *
+ * Listed widgets are moved in from wherever they are; widgets previously in the area but not listed go
+ * to wp_inactive_widgets (settings kept). An empty list clears the area.
+ *
+ * MCP tool: `wsp_update_sidebar`. Requires the `edit_theme_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $sidebar Required. Sidebar id from wsp_get_sidebars.
+ *     @type array $widgets Required. Ordered widget ids.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
  */
 function wsp_execute_update_sidebar( $input ) {
 	$ok = wsp_widgets_require_areas();
@@ -247,6 +330,17 @@ function wsp_execute_update_sidebar( $input ) {
 // Widgets
 // ---------------------------------------------------------------------------
 
+/**
+ * Lists registered widget types — the valid id_base values for wsp_create_widget.
+ *
+ * Returns { widget_types: [{ id, name, description, is_multi, settings_editable }], total }. Only
+ * types with settings_editable: true can be created or have their settings changed over MCP.
+ *
+ * MCP tool: `wsp_get_widget_types`. Requires the `edit_theme_options` capability.
+ *
+ * @param array $input Tool arguments (this tool takes none).
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_widget_types( $input ) {
 	$ok = wsp_widgets_require_areas();
 	if ( is_wp_error( $ok ) ) return $ok;
@@ -265,6 +359,23 @@ function wsp_execute_get_widget_types( $input ) {
 	return array( 'widget_types' => $types, 'total' => count( $types ) );
 }
 
+/**
+ * Lists widgets placed in widget areas with their settings, grouped by sidebar in display order.
+ *
+ * Returns { widgets: [{ id, id_base, sidebar, position, settings_editable, settings }], total };
+ * position is the 0-based index in its sidebar. settings is null for widget types that do not expose
+ * them.
+ *
+ * MCP tool: `wsp_get_widgets`. Requires the `edit_theme_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $sidebar Optional. Only this sidebar (id from wsp_get_sidebars, or
+ *         wp_inactive_widgets). Omit for all.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_widgets( $input ) {
 	$ok = wsp_widgets_require_areas();
 	if ( is_wp_error( $ok ) ) return $ok;
@@ -282,6 +393,21 @@ function wsp_execute_get_widgets( $input ) {
 	return array( 'widgets' => $widgets, 'total' => count( $widgets ) );
 }
 
+/**
+ * Gets one widget with its settings and rendered front-end HTML.
+ *
+ * Returns { id, id_base, sidebar, settings_editable, settings, rendered }.
+ *
+ * MCP tool: `wsp_get_widget`. Requires the `edit_theme_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $widget_id Required. Widget id, e.g. "block-3", "text-2" (id_base-number), from
+ *         wsp_get_widgets or wsp_get_sidebars.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_widget( $input ) {
 	$ok = wsp_widgets_require_areas();
 	if ( is_wp_error( $ok ) ) return $ok;
@@ -291,6 +417,27 @@ function wsp_execute_get_widget( $input ) {
 	return wsp_widgets_to_array( $widget_id, wsp_widgets_find_sidebar( $widget_id ), null, true );
 }
 
+/**
+ * Creates a widget in a widget area. id_base must be a settings_editable type from
+ * wsp_get_widget_types ("block" is recommended for free-form content). position is 0-based; omit (or
+ * past the end) to add last.
+ *
+ * MCP tool: `wsp_create_widget`. Requires the `edit_theme_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $sidebar Required. Sidebar id from wsp_get_sidebars.
+ *     @type string $id_base Required. Widget type, e.g. block, custom_html, recent-posts.
+ *     @type array $instance Optional. Widget settings keyed by setting name (each type defines its
+ *         own). block: {"content": "<!-- wp:paragraph --><p>Hi</p><!-- /wp:paragraph -->"};
+ *         custom_html: {title, content}; text: {title, text, filter}; recent-posts: {title, number,
+ *         show_date}; search: {title}; categories / archives: {title, count, dropdown}; nav_menu:
+ *         {title, nav_menu: menu id}. All strings are filtered with wp_kses_post.
+ *     @type int $position Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_create_widget( $input ) {
 	$ok = wsp_widgets_require_areas();
 	if ( is_wp_error( $ok ) ) return $ok;
@@ -326,6 +473,31 @@ function wsp_execute_create_widget( $input ) {
 	return null !== $position ? wsp_widgets_with_position( $data, $widget_id, $sidebar_id ) : $data;
 }
 
+/**
+ * Updates a widget's settings, moves it to another widget area, and/or reorders it. instance is merged
+ * over current settings (omitted keys keep their values) — read it first with wsp_get_widget. sidebar
+ * moves it (added last unless position is given); position is 0-based within its sidebar.
+ *
+ * Widgets whose type does not expose settings can be moved but not edited.
+ *
+ * MCP tool: `wsp_update_widget`. Requires the `edit_theme_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $widget_id Required. Widget id, e.g. "block-3", "text-2" (id_base-number), from
+ *         wsp_get_widgets or wsp_get_sidebars.
+ *     @type array $instance Optional. Widget settings keyed by setting name (each type defines its
+ *         own). block: {"content": "<!-- wp:paragraph --><p>Hi</p><!-- /wp:paragraph -->"};
+ *         custom_html: {title, content}; text: {title, text, filter}; recent-posts: {title, number,
+ *         show_date}; search: {title}; categories / archives: {title, count, dropdown}; nav_menu:
+ *         {title, nav_menu: menu id}. All strings are filtered with wp_kses_post.
+ *     @type string $sidebar Optional. Move to this sidebar. wp_inactive_widgets takes it off the
+ *         site but keeps settings.
+ *     @type int $position Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_update_widget( $input ) {
 	$ok = wsp_widgets_require_areas();
 	if ( is_wp_error( $ok ) ) return $ok;
@@ -372,6 +544,22 @@ function wsp_execute_update_widget( $input ) {
 	return $has_position ? wsp_widgets_with_position( $data, $widget_id, $target ) : $data;
 }
 
+/**
+ * Removes a widget from the site. force=false (default) moves it to wp_inactive_widgets, keeping its
+ * settings (wsp_update_widget with a sidebar restores it). force=true deletes the widget and its
+ * settings permanently — cannot be undone.
+ *
+ * MCP tool: `wsp_delete_widget`. Requires the `edit_theme_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $widget_id Required. Widget id, e.g. "block-3", "text-2" (id_base-number), from
+ *         wsp_get_widgets or wsp_get_sidebars.
+ *     @type bool $force Optional. Permanently delete. Default false.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_delete_widget( $input ) {
 	$ok = wsp_widgets_require_areas();
 	if ( is_wp_error( $ok ) ) return $ok;

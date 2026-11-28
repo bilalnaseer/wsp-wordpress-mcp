@@ -1,14 +1,35 @@
 <?php
+/**
+ * Elementor abilities: read and edit a page's element tree, widgets, kit and page settings.
+ *
+ * Every write goes through guards that refuse code-bearing widgets and settings, so
+ * these tools cannot be used to insert arbitrary HTML, CSS or JavaScript.
+ *
+ * @package WSP_MCP
+ */
+
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 // ─────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────
 
+/**
+ * Whether Elementor is active.
+ *
+ * @return bool
+ */
 function wsp_elementor_is_active() {
     return class_exists( '\Elementor\Plugin' );
 }
 
+/**
+ * Read and decode a page's Elementor element tree.
+ *
+ * @param int $post_id ID of a post built with Elementor.
+ * @return array|WP_Error The element tree, or an error when the caller may not edit the post or it
+ *        was not built with Elementor.
+ */
 function wsp_elementor_get_data( $post_id ) {
     // Object-level check: every element read/write tool loads the page through here.
     $guard = wsp_mcp_guard_edit_post( $post_id );
@@ -21,6 +42,12 @@ function wsp_elementor_get_data( $post_id ) {
     return is_array( $data ) ? $data : array();
 }
 
+/**
+ * Save an element tree to the page, mark it as built with Elementor and clear Elementor's file cache.
+ *
+ * @param int   $post_id Post ID.
+ * @param array $data    Element tree to store.
+ */
 function wsp_elementor_save_data( $post_id, $data ) {
     update_post_meta( $post_id, '_elementor_data', wp_slash( wp_json_encode( $data ) ) );
     update_post_meta( $post_id, '_elementor_edit_mode', 'builder' );
@@ -29,6 +56,11 @@ function wsp_elementor_save_data( $post_id, $data ) {
     }
 }
 
+/**
+ * Generate a new 8-character hexadecimal element ID.
+ *
+ * @return string
+ */
 function wsp_elementor_generate_id() {
     return substr( md5( uniqid( (string) wp_rand(), true ) ), 0, 8 );
 }
@@ -46,24 +78,47 @@ function wsp_elementor_generate_id() {
 //     normal text field.
 // ─────────────────────────────────────────────
 
-// Widget types that can execute or embed raw HTML/JS/CSS/PHP. Never accepted.
+/**
+ * Widget types that can execute or embed raw HTML/JS/CSS/PHP.
+ *
+ * Never accepted.
+ *
+ * @return string[] Widget types that are never accepted.
+ */
 function wsp_elementor_blocked_widget_types() {
     return array( 'html', 'shortcode', 'code', 'code-highlight' );
 }
 
+/**
+ * Whether a widget type may carry raw code and is therefore refused.
+ *
+ * @param string $widget_type Elementor widget type, e.g. "html".
+ * @return bool
+ */
 function wsp_elementor_is_blocked_widget( $widget_type ) {
     return in_array( strtolower( (string) $widget_type ), wsp_elementor_blocked_widget_types(), true );
 }
 
-// Settings keys that carry raw code / arbitrary attributes. Stripped everywhere.
+/**
+ * Settings keys that carry raw code / arbitrary attributes.
+ *
+ * Stripped everywhere.
+ *
+ * @return string[] Settings keys that are stripped from incoming data.
+ */
 function wsp_elementor_blocked_setting_keys() {
     return array( 'custom_css', '_attributes', 'custom_attributes', '__dynamic__' );
 }
 
-// Recursively sanitize an incoming settings array: drop code-bearing keys and
-// run every string through wp_kses_post() so <script>/on* handlers can't be
-// injected via text fields. Non-string scalars (colors, numbers, booleans) pass
-// through unchanged.
+/**
+ * Recursively sanitize an incoming settings array: drop code-bearing keys and run every string through
+ * wp_kses_post() so <script>/on* handlers can't be injected via text fields.
+ *
+ * Non-string scalars (colors, numbers, booleans) pass through unchanged.
+ *
+ * @param array $settings Incoming settings for an element.
+ * @return array The settings without code-bearing keys and with every string filtered.
+ */
 function wsp_elementor_sanitize_settings( $settings ) {
     if ( ! is_array( $settings ) ) {
         return array();
@@ -85,7 +140,13 @@ function wsp_elementor_sanitize_settings( $settings ) {
     return $clean;
 }
 
-// Recursively find an element by ID.
+/**
+ * Recursively find an element by ID.
+ *
+ * @param array  $elements Element tree to search.
+ * @param string $id       Element ID.
+ * @return array|null The element, or null when not found.
+ */
 function wsp_elementor_find_by_id( $elements, $id ) {
     foreach ( $elements as $el ) {
         if ( $el['id'] === $id ) return $el;
@@ -97,7 +158,13 @@ function wsp_elementor_find_by_id( $elements, $id ) {
     return null;
 }
 
-// Recursively remove an element by ID.
+/**
+ * Recursively remove an element by ID.
+ *
+ * @param array  $elements Element tree, passed by reference.
+ * @param string $id       ID of the element to remove.
+ * @return bool True when the element was found and removed.
+ */
 function wsp_elementor_remove_by_id( &$elements, $id ) {
     foreach ( $elements as $i => $el ) {
         if ( $el['id'] === $id ) {
@@ -111,7 +178,14 @@ function wsp_elementor_remove_by_id( &$elements, $id ) {
     return false;
 }
 
-// Recursively merge settings into an element by ID.
+/**
+ * Recursively merge settings into an element by ID.
+ *
+ * @param array  $elements Element tree, passed by reference.
+ * @param string $id       ID of the element to update.
+ * @param array  $settings Settings to merge into the element.
+ * @return bool True when the element was found and updated.
+ */
 function wsp_elementor_update_by_id( &$elements, $id, $settings ) {
     foreach ( $elements as &$el ) {
         if ( $el['id'] === $id ) {
@@ -125,7 +199,15 @@ function wsp_elementor_update_by_id( &$elements, $id, $settings ) {
     return false;
 }
 
-// Insert a new element into a specific parent by ID.
+/**
+ * Insert a new element into a specific parent by ID.
+ *
+ * @param array    $elements    Element tree, passed by reference.
+ * @param string   $parent_id   ID of the element that receives the new child.
+ * @param array    $new_element Element to insert.
+ * @param int|null $position    Zero-based position among the parent's children. Null appends.
+ * @return bool True when the parent was found and the element inserted.
+ */
 function wsp_elementor_insert_into( &$elements, $parent_id, $new_element, $position ) {
     foreach ( $elements as &$el ) {
         if ( $el['id'] === $parent_id ) {
@@ -143,7 +225,12 @@ function wsp_elementor_insert_into( &$elements, $parent_id, $new_element, $posit
     return false;
 }
 
-// Find the ID of the first insertable element (container or column).
+/**
+ * Find the ID of the first insertable element (container or column).
+ *
+ * @param array $elements Element tree to search.
+ * @return string|null ID of the first container or column, or null when there is none.
+ */
 function wsp_elementor_first_insertable( $elements ) {
     foreach ( $elements as $el ) {
         $type = isset( $el['elType'] ) ? $el['elType'] : '';
@@ -156,7 +243,12 @@ function wsp_elementor_first_insertable( $elements ) {
     return null;
 }
 
-// Build a simplified tree for get-page response.
+/**
+ * Build a simplified tree for get-page response.
+ *
+ * @param array $elements Element tree.
+ * @return array Reduced tree of IDs, types and key settings.
+ */
 function wsp_elementor_simplify_tree( $elements ) {
     $result = array();
     foreach ( $elements as $el ) {
@@ -183,7 +275,14 @@ function wsp_elementor_simplify_tree( $elements ) {
     return $result;
 }
 
-// Collect matching elements into $results.
+/**
+ * Collect matching elements into $results.
+ *
+ * @param array  $elements    Element tree to search.
+ * @param string $widget_type Widget type to match. Empty matches any.
+ * @param string $search      Text to look for in element settings. Empty matches any.
+ * @param array  $results     Matching elements, appended by reference.
+ */
 function wsp_elementor_search_tree( $elements, $widget_type, $search, &$results ) {
     foreach ( $elements as $el ) {
         $type_match   = ! $widget_type || ( isset( $el['widgetType'] ) && $el['widgetType'] === $widget_type );
@@ -206,6 +305,20 @@ function wsp_elementor_search_tree( $elements, $widget_type, $search, &$results 
 // EXECUTE CALLBACKS
 // ─────────────────────────────────────────────
 
+/**
+ * Lists pages/posts built with Elementor.
+ *
+ * MCP tool: `wsp_elementor_list_pages`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $post_type Optional.
+ *     @type string $status Optional.
+ *     @type int $per_page Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_elementor_list_pages( $input ) {
     $post_type = isset( $input['post_type'] ) ? sanitize_text_field( wp_unslash( $input['post_type'] ) ) : 'page';
     $status    = isset( $input['status'] )    ? sanitize_text_field( wp_unslash( $input['status'] ) )    : 'publish';
@@ -234,6 +347,18 @@ function wsp_execute_elementor_list_pages( $input ) {
     return array( 'pages' => $pages, 'total' => $q->found_posts );
 }
 
+/**
+ * Get the element tree of an Elementor page by post ID.
+ *
+ * MCP tool: `wsp_elementor_get_page`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $post_id Required.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_elementor_get_page( $input ) {
     $post_id = intval( $input['post_id'] );
     $data    = wsp_elementor_get_data( $post_id );
@@ -241,6 +366,19 @@ function wsp_execute_elementor_get_page( $input ) {
     return array( 'post_id' => $post_id, 'structure' => wsp_elementor_simplify_tree( $data ) );
 }
 
+/**
+ * Get all settings for a specific element by post ID and element ID.
+ *
+ * MCP tool: `wsp_elementor_get_element`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $post_id Required.
+ *     @type string $element_id Required.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_elementor_get_element( $input ) {
     $post_id    = intval( $input['post_id'] );
     $element_id = sanitize_text_field( wp_unslash( $input['element_id'] ) );
@@ -259,6 +397,20 @@ function wsp_execute_elementor_get_element( $input ) {
     );
 }
 
+/**
+ * Find elements on a page by widget type or settings content.
+ *
+ * MCP tool: `wsp_elementor_find_element`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $post_id Required.
+ *     @type string $widget_type Optional.
+ *     @type string $search Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_elementor_find_element( $input ) {
     $post_id     = intval( $input['post_id'] );
     $widget_type = isset( $input['widget_type'] ) ? sanitize_text_field( wp_unslash( $input['widget_type'] ) ) : '';
@@ -272,6 +424,19 @@ function wsp_execute_elementor_find_element( $input ) {
     return array( 'results' => $results, 'total' => count( $results ) );
 }
 
+/**
+ * List Elementor saved templates from the library.
+ *
+ * MCP tool: `wsp_elementor_list_templates`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $type Optional.
+ *     @type int $per_page Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_elementor_list_templates( $input ) {
     $per_page = isset( $input['per_page'] ) ? intval( $input['per_page'] ) : 20;
     $args     = array(
@@ -300,6 +465,20 @@ function wsp_execute_elementor_list_templates( $input ) {
     return array( 'templates' => $templates, 'total' => $q->found_posts );
 }
 
+/**
+ * Update settings for a widget or container by element ID.
+ *
+ * MCP tool: `wsp_elementor_update_element`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $post_id Required.
+ *     @type string $element_id Required.
+ *     @type array $settings Required.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_elementor_update_element( $input ) {
     $post_id    = intval( $input['post_id'] );
     $element_id = sanitize_text_field( wp_unslash( $input['element_id'] ) );
@@ -317,6 +496,22 @@ function wsp_execute_elementor_update_element( $input ) {
     return array( 'success' => true, 'post_id' => $post_id, 'element_id' => $element_id );
 }
 
+/**
+ * Add a widget to a container or column on an Elementor page.
+ *
+ * MCP tool: `wsp_elementor_add_widget`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $post_id Required.
+ *     @type string $widget_type Required.
+ *     @type string $container_id Optional.
+ *     @type array $settings Optional.
+ *     @type int $position Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_elementor_add_widget( $input ) {
     $post_id      = intval( $input['post_id'] );
     $widget_type  = sanitize_text_field( wp_unslash( $input['widget_type'] ) );
@@ -366,6 +561,22 @@ function wsp_execute_elementor_add_widget( $input ) {
     return array( 'success' => true, 'element_id' => $new_widget['id'], 'widget_type' => $widget_type );
 }
 
+/**
+ * Add a layout container or section to an Elementor page.
+ *
+ * MCP tool: `wsp_elementor_add_container`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $post_id Required.
+ *     @type string $type Optional.
+ *     @type string $parent_id Optional.
+ *     @type array $settings Optional.
+ *     @type int $position Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_elementor_add_container( $input ) {
     $post_id   = intval( $input['post_id'] );
     $type      = isset( $input['type'] ) ? sanitize_text_field( wp_unslash( $input['type'] ) ) : 'container';
@@ -406,6 +617,19 @@ function wsp_execute_elementor_add_container( $input ) {
     return array( 'success' => true, 'element_id' => $new_element['id'], 'type' => $type );
 }
 
+/**
+ * Remove a widget or container from an Elementor page by element ID.
+ *
+ * MCP tool: `wsp_elementor_remove_element`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $post_id Required.
+ *     @type string $element_id Required.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_elementor_remove_element( $input ) {
     $post_id    = intval( $input['post_id'] );
     $element_id = sanitize_text_field( wp_unslash( $input['element_id'] ) );
@@ -424,6 +648,14 @@ function wsp_execute_elementor_remove_element( $input ) {
 // ADVANCED DESIGN TOOLS (v2.6.5)
 // ─────────────────────────────────────────────
 
+/**
+ * Retrieve global fonts, color palette, and layout from the active Elementor kit.
+ *
+ * MCP tool: `wsp_elementor_get_active_kit`. Requires the `edit_posts` capability.
+ *
+ * @param array $input Tool arguments (this tool takes none).
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_elementor_get_active_kit( $input ) {
     if ( ! wsp_elementor_is_active() ) {
         return array( 'success' => false, 'error' => 'Elementor is not active.' );
@@ -484,6 +716,20 @@ function wsp_execute_elementor_get_active_kit( $input ) {
     );
 }
 
+/**
+ * Update colors and layout settings in the active Elementor kit.
+ *
+ * MCP tool: `wsp_elementor_update_active_kit`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type array $system_colors Optional. Array of {title, color, _id} color objects.
+ *     @type array $container_width Optional. Container width setting object.
+ *     @type string $space_between_widgets Optional. Space between widgets value.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_elementor_update_active_kit( $input ) {
     if ( ! wsp_elementor_is_active() ) {
         return array( 'success' => false, 'error' => 'Elementor is not active.' );
@@ -541,6 +787,14 @@ function wsp_execute_elementor_update_active_kit( $input ) {
     );
 }
 
+/**
+ * Clear and regenerate all Elementor CSS cache files.
+ *
+ * MCP tool: `wsp_elementor_regenerate_css`. Requires the `manage_options` capability.
+ *
+ * @param array $input Tool arguments (this tool takes none).
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_elementor_regenerate_css( $input ) {
     if ( ! wsp_elementor_is_active() ) {
         return array( 'success' => false, 'error' => 'Elementor is not active.' );
@@ -574,6 +828,19 @@ function wsp_execute_elementor_regenerate_css( $input ) {
     }
 }
 
+/**
+ * Get control schema for a widget type — margins, padding, background, typography, etc.
+ *
+ * MCP tool: `wsp_elementor_get_widget_schema`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $widget_type Required. Elementor widget slug (e.g. heading, button, image,
+ *         text-editor).
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_elementor_get_widget_schema( $input ) {
     if ( ! wsp_elementor_is_active() ) {
         return array( 'success' => false, 'error' => 'Elementor is not active.' );
@@ -661,6 +928,12 @@ function wsp_execute_elementor_get_widget_schema( $input ) {
     return array( 'success' => true, 'schema' => $schema );
 }
 
+/**
+ * Deep-copy an element, giving it and every nested child a new ID.
+ *
+ * @param array $element Element to copy.
+ * @return array The copy.
+ */
 function wsp_elementor_clone_and_reid( $element ) {
     $clone = $element;
     $clone['id'] = wsp_elementor_generate_id();
@@ -673,6 +946,21 @@ function wsp_elementor_clone_and_reid( $element ) {
     return $clone;
 }
 
+/**
+ * Clone a widget or container with new unique IDs recursively.
+ *
+ * MCP tool: `wsp_elementor_duplicate_element`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $post_id Required.
+ *     @type string $element_id Required.
+ *     @type string $parent_id Optional. Optional parent to place the clone into.
+ *     @type int $position Optional. Optional insertion position.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_elementor_duplicate_element( $input ) {
     $post_id    = intval( $input['post_id'] );
     $element_id = sanitize_text_field( wp_unslash( $input['element_id'] ) );
@@ -714,6 +1002,21 @@ function wsp_execute_elementor_duplicate_element( $input ) {
     return array( 'success' => true, 'element_id' => $clone['id'], 'original_id' => $element_id );
 }
 
+/**
+ * Reposition an element to a different parent or index position.
+ *
+ * MCP tool: `wsp_elementor_move_element`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $post_id Required.
+ *     @type string $element_id Required.
+ *     @type string $new_parent_id Optional. Target parent element ID (null = root).
+ *     @type int $position Optional. Target index position.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_elementor_move_element( $input ) {
     $post_id       = intval( $input['post_id'] );
     $element_id    = sanitize_text_field( wp_unslash( $input['element_id'] ) );
@@ -747,6 +1050,19 @@ function wsp_execute_elementor_move_element( $input ) {
     return array( 'success' => true, 'element_id' => $element_id, 'message' => 'Element moved successfully.' );
 }
 
+/**
+ * Parse CSS rules into Elementor-compatible settings structure.
+ *
+ * MCP tool: `wsp_elementor_convert_css`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type array $css Required. CSS key-value map (e.g. {"padding": "20px 10px",
+ *         "background-color": "#ff0000"}).
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_elementor_convert_css( $input ) {
     $css_rules = isset( $input['css'] ) ? $input['css'] : array();
     if ( ! is_array( $css_rules ) ) {
@@ -865,6 +1181,18 @@ function wsp_execute_elementor_convert_css( $input ) {
     );
 }
 
+/**
+ * Read global page config like template, background, and custom CSS.
+ *
+ * MCP tool: `wsp_elementor_get_page_settings`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $post_id Required.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_elementor_get_page_settings( $input ) {
     $post_id = isset( $input['post_id'] ) ? intval( $input['post_id'] ) : 0;
     if ( ! $post_id ) {
@@ -888,6 +1216,23 @@ function wsp_execute_elementor_get_page_settings( $input ) {
     );
 }
 
+/**
+ * Update page template (canvas/full-width) and page-level settings.
+ *
+ * MCP tool: `wsp_elementor_update_page_settings`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $post_id Required.
+ *     @type string $page_template Optional. elementor_canvas | elementor_header_footer | default.
+ *     @type bool $hide_title Optional. Hide page title.
+ *     @type array $content_width Optional. Content width {unit, size}.
+ *     @type string $background_color Optional. Page background color.
+ *     @type array $settings Optional. Additional page settings to merge.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_elementor_update_page_settings( $input ) {
     $post_id = isset( $input['post_id'] ) ? intval( $input['post_id'] ) : 0;
     if ( ! $post_id ) {
@@ -952,6 +1297,22 @@ function wsp_execute_elementor_update_page_settings( $input ) {
     );
 }
 
+/**
+ * Copy style settings from a source element to a destination element.
+ *
+ * MCP tool: `wsp_elementor_copy_styles`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $post_id Required.
+ *     @type string $source_id Required. Element ID to copy styles from.
+ *     @type string $destination_id Required. Element ID to apply styles to.
+ *     @type bool $merge Optional. Merge with existing settings (true) or overwrite (false).
+ *         Default: false.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_elementor_copy_styles( $input ) {
     $post_id       = intval( $input['post_id'] );
     $source_id     = sanitize_text_field( wp_unslash( $input['source_id'] ) );
@@ -990,6 +1351,14 @@ function wsp_execute_elementor_copy_styles( $input ) {
     );
 }
 
+/**
+ * Read responsive breakpoint values from Elementor configuration.
+ *
+ * MCP tool: `wsp_elementor_get_breakpoints`. Requires the `edit_posts` capability.
+ *
+ * @param array $input Tool arguments (this tool takes none).
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_elementor_get_breakpoints( $input ) {
     if ( ! wsp_elementor_is_active() ) {
         return array( 'success' => false, 'error' => 'Elementor is not active.' );

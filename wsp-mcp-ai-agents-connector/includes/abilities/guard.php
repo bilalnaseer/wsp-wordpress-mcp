@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 /**
  * Guard an edit against a specific post object.
  *
- * @param int               $id            Post ID supplied by the caller.
+ * @param int                  $id            Post ID supplied by the caller.
  * @param string|string[]|null $allowed_types Restrict to these post type(s); null allows any.
  * @return WP_Post|WP_Error The post on success, WP_Error if missing / wrong type / forbidden.
  */
@@ -42,7 +42,7 @@ function wsp_mcp_guard_edit_post( $id, $allowed_types = null ) {
 /**
  * Guard a delete/trash against a specific post object.
  *
- * @param int               $id            Post ID supplied by the caller.
+ * @param int                  $id            Post ID supplied by the caller.
  * @param string|string[]|null $allowed_types Restrict to these post type(s); null allows any.
  * @return WP_Post|WP_Error
  */

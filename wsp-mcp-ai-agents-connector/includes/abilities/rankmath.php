@@ -1,10 +1,27 @@
 <?php
+/**
+ * Rank Math SEO abilities: read and update SEO titles, descriptions and focus keywords for posts and terms.
+ *
+ * @package WSP_MCP
+ */
+
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+/**
+ * Whether Rank Math SEO is active.
+ *
+ * @return bool
+ */
 function wsp_rankmath_is_active() {
     return class_exists( 'RankMath' ) || defined( 'RANK_MATH_VERSION' );
 }
 
+/**
+ * Map a short field name to its Rank Math post-meta key.
+ *
+ * @param string $key One of title, description or focus_keyword.
+ * @return string The meta key, or an empty string when unknown.
+ */
 function wsp_rankmath_meta_key( $key ) {
     $map = array(
         'title'         => 'rank_math_title',
@@ -15,6 +32,13 @@ function wsp_rankmath_meta_key( $key ) {
     return isset( $map[ $key ] ) ? $map[ $key ] : '';
 }
 
+/**
+ * Read one Rank Math field from a post.
+ *
+ * @param int    $post_id Post ID.
+ * @param string $key     One of title, description or focus_keyword.
+ * @return string
+ */
 function wsp_rankmath_get_meta( $post_id, $key ) {
     $meta_key = wsp_rankmath_meta_key( $key );
     if ( '' === $meta_key ) {
@@ -25,6 +49,14 @@ function wsp_rankmath_get_meta( $post_id, $key ) {
     return is_string( $value ) ? $value : '';
 }
 
+/**
+ * Save one Rank Math field on a post. An empty value deletes it so Rank Math falls back to its global
+ * template.
+ *
+ * @param int    $post_id Post ID.
+ * @param string $key     One of title, description or focus_keyword.
+ * @param string $value   New value.
+ */
 function wsp_rankmath_set_meta( $post_id, $key, $value ) {
     $meta_key = wsp_rankmath_meta_key( $key );
     if ( '' === $meta_key ) {
@@ -41,6 +73,12 @@ function wsp_rankmath_set_meta( $post_id, $key, $value ) {
     update_post_meta( $post_id, $meta_key, $value );
 }
 
+/**
+ * Check the post exists and the current user may edit it.
+ *
+ * @param int $post_id Post ID.
+ * @return WP_Post|WP_Error
+ */
 function wsp_rankmath_validate_post( $post_id ) {
     $post = get_post( $post_id );
     if ( ! $post ) {
@@ -54,6 +92,13 @@ function wsp_rankmath_validate_post( $post_id ) {
     return $post;
 }
 
+/**
+ * Check the term exists and the current user may edit terms in its taxonomy.
+ *
+ * @param int    $term_id  Term ID.
+ * @param string $taxonomy Taxonomy slug.
+ * @return WP_Term|WP_Error
+ */
 function wsp_rankmath_validate_term( $term_id, $taxonomy ) {
     if ( ! taxonomy_exists( $taxonomy ) ) {
         return new WP_Error( 'invalid_taxonomy', 'Taxonomy "' . $taxonomy . '" does not exist.' );
@@ -73,6 +118,13 @@ function wsp_rankmath_validate_term( $term_id, $taxonomy ) {
     return $term;
 }
 
+/**
+ * Read one Rank Math field from a term.
+ *
+ * @param int    $term_id Term ID.
+ * @param string $key     One of title, description or focus_keyword.
+ * @return string
+ */
 function wsp_rankmath_get_term_meta( $term_id, $key ) {
     $map = array(
         'title'         => 'rank_math_title',
@@ -88,6 +140,13 @@ function wsp_rankmath_get_term_meta( $term_id, $key ) {
     return is_string( $value ) ? $value : '';
 }
 
+/**
+ * Save one Rank Math field on a term. An empty value deletes it.
+ *
+ * @param int    $term_id Term ID.
+ * @param string $key     One of title, description or focus_keyword.
+ * @param string $value   New value.
+ */
 function wsp_rankmath_set_term_meta( $term_id, $key, $value ) {
     $map = array(
         'title'         => 'rank_math_title',
@@ -107,6 +166,12 @@ function wsp_rankmath_set_term_meta( $term_id, $key, $value ) {
     update_term_meta( $term_id, $map[ $key ], $value );
 }
 
+/**
+ * Build the SEO data array returned for a term.
+ *
+ * @param WP_Term $term Term.
+ * @return array
+ */
 function wsp_rankmath_format_term_seo_data( $term ) {
     $term_id = $term->term_id;
     $score   = get_term_meta( $term_id, 'rank_math_seo_score', true );
@@ -123,6 +188,12 @@ function wsp_rankmath_format_term_seo_data( $term ) {
     );
 }
 
+/**
+ * Build the SEO data array returned for a post.
+ *
+ * @param WP_Post $post Post.
+ * @return array
+ */
 function wsp_rankmath_format_seo_data( $post ) {
     $post_id = $post->ID;
     $score   = get_post_meta( $post_id, 'rank_math_seo_score', true );
@@ -143,6 +214,19 @@ function wsp_rankmath_format_seo_data( $post ) {
 // EXECUTE
 // ─────────────────────────────────────────────
 
+/**
+ * Get Rank Math SEO title, meta description, focus keyword, and SEO score for any post type including
+ * WooCommerce products.
+ *
+ * MCP tool: `wsp_rankmath_get_seo`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_rankmath_get_seo( $input ) {
     $post_id = intval( $input['id'] );
     $post    = wsp_rankmath_validate_post( $post_id );
@@ -153,6 +237,25 @@ function wsp_execute_rankmath_get_seo( $input ) {
     return wsp_rankmath_format_seo_data( $post );
 }
 
+/**
+ * Update Rank Math SEO title, meta description, and/or focus keyword for any post type including
+ * WooCommerce products.
+ *
+ * Focus keyword accepts multiple comma-separated keywords (first one is the primary). Pass an empty
+ * string to clear a field back to the global template.
+ *
+ * MCP tool: `wsp_rankmath_update_seo`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required.
+ *     @type string $seo_title Optional.
+ *     @type string $meta_description Optional.
+ *     @type string $focus_keyword Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_rankmath_update_seo( $input ) {
     $post_id = intval( $input['id'] );
     $post    = wsp_rankmath_validate_post( $post_id );
@@ -192,6 +295,21 @@ function wsp_execute_rankmath_update_seo( $input ) {
     );
 }
 
+/**
+ * Get Rank Math SEO title, meta description, focus keyword, and SEO score for a taxonomy term (e.g.
+ *
+ * WooCommerce product_cat, product_tag, product_brand).
+ *
+ * MCP tool: `wsp_rankmath_get_term_seo`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $term_id Required. Term ID.
+ *     @type string $taxonomy Required. Taxonomy slug, e.g. product_cat, product_tag, product_brand.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_rankmath_get_term_seo( $input ) {
     $term_id  = intval( $input['term_id'] );
     $taxonomy = isset( $input['taxonomy'] ) ? sanitize_key( $input['taxonomy'] ) : '';
@@ -208,6 +326,24 @@ function wsp_execute_rankmath_get_term_seo( $input ) {
     return wsp_rankmath_format_term_seo_data( $term );
 }
 
+/**
+ * Update Rank Math SEO title, meta description, and/or focus keyword for a taxonomy term (e.g.
+ *
+ * WooCommerce product_cat, product_tag, product_brand). Pass an empty string to clear a field.
+ *
+ * MCP tool: `wsp_rankmath_update_term_seo`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $term_id Required. Term ID.
+ *     @type string $taxonomy Required. Taxonomy slug, e.g. product_cat, product_tag, product_brand.
+ *     @type string $seo_title Optional.
+ *     @type string $meta_description Optional.
+ *     @type string $focus_keyword Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_rankmath_update_term_seo( $input ) {
     $term_id  = intval( $input['term_id'] );
     $taxonomy = isset( $input['taxonomy'] ) ? sanitize_key( $input['taxonomy'] ) : '';

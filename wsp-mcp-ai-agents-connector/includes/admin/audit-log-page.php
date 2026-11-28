@@ -78,7 +78,11 @@ function wsp_mcp_handle_clear_audit_log() {
 }
 add_action( 'admin_post_wsp_mcp_clear_audit_log', 'wsp_mcp_handle_clear_audit_log' );
 
-/** Render a status pill. */
+/**
+ * Render a status pill.
+ *
+ * @param string $status Audit-log status: success, denied or error.
+ */
 function wsp_mcp_audit_status_badge( $status ) {
 	$labels = array(
 		WSP_MCP_Audit_Log::STATUS_SUCCESS => 'Success',

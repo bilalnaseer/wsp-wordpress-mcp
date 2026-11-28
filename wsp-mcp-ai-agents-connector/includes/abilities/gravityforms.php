@@ -1,7 +1,18 @@
 <?php
+/**
+ * Gravity Forms abilities: forms, entries, notifications, confirmations and form settings.
+ *
+ * @package WSP_MCP
+ */
+
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 if ( ! function_exists( 'wsp_gravity_is_active' ) ) {
+/**
+ * Whether Gravity Forms is active.
+ *
+ * @return bool
+ */
 function wsp_gravity_is_active() {
     return class_exists( 'GFAPI' ) || class_exists( 'GFCommon' );
 }
@@ -11,6 +22,14 @@ function wsp_gravity_is_active() {
 // EXECUTE CALLBACKS
 // ---------------------------------------------
 
+/**
+ * Lists all Gravity Forms (ID, title, date, active status, entry count).
+ *
+ * MCP tool: `wsp_gravity_list_forms`. Requires the `gravityforms_edit_forms` capability.
+ *
+ * @param array $input Tool arguments (this tool takes none).
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_gravity_list_forms( $input ) {
     if ( ! class_exists( 'GFAPI' ) ) {
         return array( 'success' => false, 'error' => 'Gravity Forms is not active.' );
@@ -41,6 +60,18 @@ function wsp_execute_gravity_list_forms( $input ) {
     return array( 'forms' => $result, 'total' => count( $result ) );
 }
 
+/**
+ * Retrieves full JSON structure of a form (fields, labels, types, choices, rules).
+ *
+ * MCP tool: `wsp_gravity_get_form`. Requires the `gravityforms_edit_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Form ID.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_gravity_get_form( $input ) {
     if ( ! class_exists( 'GFAPI' ) ) {
         return array( 'success' => false, 'error' => 'Gravity Forms is not active.' );
@@ -62,6 +93,21 @@ function wsp_execute_gravity_get_form( $input ) {
     return array( 'success' => true, 'form' => $form );
 }
 
+/**
+ * Creates a new Gravity Form structure with title and optional fields.
+ *
+ * MCP tool: `wsp_gravity_create_form`. Requires the `gravityforms_create_form` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $title Required. Form title.
+ *     @type string $description Optional. Form description.
+ *     @type array $fields Optional. Array of field objects per Gravity Forms schema.
+ *     @type string $button_text Optional. Submit button text. Default: Submit.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_gravity_create_form( $input ) {
     if ( ! class_exists( 'GFAPI' ) ) {
         return array( 'success' => false, 'error' => 'Gravity Forms is not active.' );
@@ -96,6 +142,23 @@ function wsp_execute_gravity_create_form( $input ) {
     );
 }
 
+/**
+ * Updates form properties, fields, or active status.
+ *
+ * MCP tool: `wsp_gravity_update_form`. Requires the `gravityforms_edit_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Form ID.
+ *     @type string $title Optional. New form title.
+ *     @type string $description Optional. New form description.
+ *     @type bool $is_active Optional. Whether the form is active.
+ *     @type array $fields Optional. Updated fields array per Gravity Forms schema.
+ *     @type string $button_text Optional. Submit button text.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_gravity_update_form( $input ) {
     if ( ! class_exists( 'GFAPI' ) ) {
         return array( 'success' => false, 'error' => 'Gravity Forms is not active.' );
@@ -152,6 +215,18 @@ function wsp_execute_gravity_update_form( $input ) {
     );
 }
 
+/**
+ * Deletes or trashes a Gravity Form.
+ *
+ * MCP tool: `wsp_gravity_delete_form`. Requires the `gravityforms_delete_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Form ID.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_gravity_delete_form( $input ) {
     if ( ! class_exists( 'GFAPI' ) ) {
         return array( 'success' => false, 'error' => 'Gravity Forms is not active.' );
@@ -179,6 +254,21 @@ function wsp_execute_gravity_delete_form( $input ) {
     );
 }
 
+/**
+ * Lists submissions/leads for a specific form (paginated).
+ *
+ * MCP tool: `wsp_gravity_list_entries`. Requires the `gravityforms_view_entries` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $form_id Required. Form ID.
+ *     @type int $per_page Optional. Number of entries. Default 20.
+ *     @type int $page Optional. Page number. Default 1.
+ *     @type string $status Optional. active | spam | trash | all.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_gravity_list_entries( $input ) {
     if ( ! class_exists( 'GFAPI' ) ) {
         return array( 'success' => false, 'error' => 'Gravity Forms is not active.' );
@@ -230,6 +320,18 @@ function wsp_execute_gravity_list_entries( $input ) {
     );
 }
 
+/**
+ * Retrieves complete submission details by entry ID.
+ *
+ * MCP tool: `wsp_gravity_get_entry`. Requires the `gravityforms_view_entries` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Entry ID.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_gravity_get_entry( $input ) {
     if ( ! class_exists( 'GFAPI' ) ) {
         return array( 'success' => false, 'error' => 'Gravity Forms is not active.' );
@@ -283,6 +385,22 @@ function wsp_execute_gravity_get_entry( $input ) {
     );
 }
 
+/**
+ * Updates field values or status (read/unread/starred) inside an entry.
+ *
+ * MCP tool: `wsp_gravity_update_entry`. Requires the `gravityforms_edit_entries` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Entry ID.
+ *     @type bool $is_read Optional. Mark entry as read (true) or unread (false).
+ *     @type bool $is_starred Optional. Star (true) or unstar (false) the entry.
+ *     @type string $status Optional. active | spam | trash.
+ *     @type array $fields Optional. Key-value map of field IDs to new values.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_gravity_update_entry( $input ) {
     if ( ! class_exists( 'GFAPI' ) ) {
         return array( 'success' => false, 'error' => 'Gravity Forms is not active.' );
@@ -347,6 +465,20 @@ function wsp_execute_gravity_update_entry( $input ) {
     );
 }
 
+/**
+ * Trashes or permanently deletes an entry.
+ *
+ * MCP tool: `wsp_gravity_delete_entry`. Requires the `gravityforms_delete_entries` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Entry ID.
+ *     @type bool $permanent Optional. True for permanent deletion, false to move to trash. Default
+ *         false.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_gravity_delete_entry( $input ) {
     if ( ! class_exists( 'GFAPI' ) ) {
         return array( 'success' => false, 'error' => 'Gravity Forms is not active.' );
@@ -382,6 +514,18 @@ function wsp_execute_gravity_delete_entry( $input ) {
     );
 }
 
+/**
+ * Gets notification settings (emails, feeds) for a form.
+ *
+ * MCP tool: `wsp_gravity_get_notifications`. Requires the `gravityforms_edit_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $form_id Required. Form ID.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_gravity_get_notifications( $input ) {
     if ( ! class_exists( 'GFAPI' ) ) {
         return array( 'success' => false, 'error' => 'Gravity Forms is not active.' );
@@ -419,6 +563,18 @@ function wsp_execute_gravity_get_notifications( $input ) {
     );
 }
 
+/**
+ * Gets confirmation settings (thank-you messages, redirects) for a form.
+ *
+ * MCP tool: `wsp_gravity_get_confirmations`. Requires the `gravityforms_edit_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $form_id Required. Form ID.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_gravity_get_confirmations( $input ) {
     if ( ! class_exists( 'GFAPI' ) ) {
         return array( 'success' => false, 'error' => 'Gravity Forms is not active.' );
@@ -457,6 +613,28 @@ function wsp_execute_gravity_get_confirmations( $input ) {
     );
 }
 
+/**
+ * Creates a new email notification for a form (to, subject, message, from, etc.).
+ *
+ * MCP tool: `wsp_gravity_create_notification`. Requires the `gravityforms_edit_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $form_id Required. Form ID.
+ *     @type string $name Optional. Notification name.
+ *     @type string $to Optional. Send to email. Default: {admin_email}.
+ *     @type string $to_type Optional. email | field | hidden. Default: email.
+ *     @type string $subject Optional. Email subject. Supports merge tags.
+ *     @type string $message Optional. Email body. Default: {all_fields}.
+ *     @type string $from Optional. From email.
+ *     @type string $from_name Optional. From name.
+ *     @type string $reply_to Optional. Reply-to email.
+ *     @type string $bcc Optional. BCC recipients.
+ *     @type string $event Optional. Trigger event. Default: form_submission.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_gravity_create_notification( $input ) {
     if ( ! class_exists( 'GFAPI' ) ) {
         return array( 'success' => false, 'error' => 'Gravity Forms is not active.' );
@@ -523,6 +701,30 @@ function wsp_execute_gravity_create_notification( $input ) {
     );
 }
 
+/**
+ * Updates an existing notification (to, subject, message, active status, etc.).
+ *
+ * MCP tool: `wsp_gravity_update_notification`. Requires the `gravityforms_edit_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $form_id Required. Form ID.
+ *     @type string $notification_id Required. Notification ID to update.
+ *     @type string $name Optional. New name.
+ *     @type string $to Optional. Recipient email.
+ *     @type string $to_type Optional. email | field | hidden.
+ *     @type string $subject Optional. Email subject.
+ *     @type string $message Optional. Email body.
+ *     @type string $from Optional. From email.
+ *     @type string $from_name Optional. From name.
+ *     @type string $reply_to Optional. Reply-to email.
+ *     @type string $bcc Optional. BCC recipients.
+ *     @type string $event Optional. Trigger event.
+ *     @type bool $is_active Optional. Enable/disable notification.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_gravity_update_notification( $input ) {
     if ( ! class_exists( 'GFAPI' ) ) {
         return array( 'success' => false, 'error' => 'Gravity Forms is not active.' );
@@ -570,6 +772,19 @@ function wsp_execute_gravity_update_notification( $input ) {
     );
 }
 
+/**
+ * Deletes a notification from a form.
+ *
+ * MCP tool: `wsp_gravity_delete_notification`. Requires the `gravityforms_edit_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $form_id Required. Form ID.
+ *     @type string $notification_id Required. Notification ID to delete.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_gravity_delete_notification( $input ) {
     if ( ! class_exists( 'GFAPI' ) ) {
         return array( 'success' => false, 'error' => 'Gravity Forms is not active.' );
@@ -604,6 +819,25 @@ function wsp_execute_gravity_delete_notification( $input ) {
     );
 }
 
+/**
+ * Creates a confirmation (thank-you message, redirect, or page) for a form.
+ *
+ * MCP tool: `wsp_gravity_create_confirmation`. Requires the `gravityforms_edit_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $form_id Required. Form ID.
+ *     @type string $name Optional. Confirmation name.
+ *     @type string $type Optional. message | page | redirect. Default: message.
+ *     @type string $message Optional. Thank-you message (for type=message).
+ *     @type string $url Optional. Redirect URL (for type=redirect).
+ *     @type int $page_id Optional. WordPress page ID (for type=page).
+ *     @type string $query_string Optional. URL query string for redirect.
+ *     @type bool $is_default Optional. Set as default confirmation.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_gravity_create_confirmation( $input ) {
     if ( ! class_exists( 'GFAPI' ) ) {
         return array( 'success' => false, 'error' => 'Gravity Forms is not active.' );
@@ -666,6 +900,27 @@ function wsp_execute_gravity_create_confirmation( $input ) {
     );
 }
 
+/**
+ * Updates an existing confirmation (message, redirect URL, default status, etc.).
+ *
+ * MCP tool: `wsp_gravity_update_confirmation`. Requires the `gravityforms_edit_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $form_id Required. Form ID.
+ *     @type string $confirmation_id Required. Confirmation ID to update.
+ *     @type string $name Optional. New name.
+ *     @type string $type Optional. message | page | redirect.
+ *     @type string $message Optional. Thank-you message.
+ *     @type string $url Optional. Redirect URL.
+ *     @type int $page_id Optional. WP page ID.
+ *     @type string $query_string Optional. Query string.
+ *     @type bool $is_default Optional. Set as default.
+ *     @type bool $is_active Optional. Enable/disable confirmation.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_gravity_update_confirmation( $input ) {
     if ( ! class_exists( 'GFAPI' ) ) {
         return array( 'success' => false, 'error' => 'Gravity Forms is not active.' );
@@ -720,6 +975,19 @@ function wsp_execute_gravity_update_confirmation( $input ) {
     );
 }
 
+/**
+ * Deletes a confirmation from a form.
+ *
+ * MCP tool: `wsp_gravity_delete_confirmation`. Requires the `gravityforms_edit_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $form_id Required. Form ID.
+ *     @type string $confirmation_id Required. Confirmation ID to delete.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_gravity_delete_confirmation( $input ) {
     if ( ! class_exists( 'GFAPI' ) ) {
         return array( 'success' => false, 'error' => 'Gravity Forms is not active.' );
@@ -754,6 +1022,36 @@ function wsp_execute_gravity_delete_confirmation( $input ) {
     );
 }
 
+/**
+ * Updates form-level settings (label placement, restrictions, scheduling, honeypot, etc.).
+ *
+ * MCP tool: `wsp_gravity_update_form_settings`. Requires the `gravityforms_edit_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Form ID.
+ *     @type string $label_placement Optional. top_label | left_label | right_label.
+ *     @type string $description_placement Optional. above | below.
+ *     @type string $sub_label_placement Optional. above | below | inline.
+ *     @type string $css_class Optional. CSS class name for the form wrapper.
+ *     @type bool $enable_honeypot Optional. Enable anti-spam honeypot.
+ *     @type bool $enable_animation Optional. Enable form animation.
+ *     @type bool $limit_entries Optional. Enable entry limit.
+ *     @type int $limit_entries_count Optional. Max number of entries.
+ *     @type string $limit_entries_period Optional. day | week | month | year | total.
+ *     @type string $limit_entries_message Optional. Message when limit reached.
+ *     @type bool $schedule_form Optional. Enable form scheduling.
+ *     @type string $schedule_start Optional. Start date/time (e.g. 2026-01-01 00:00).
+ *     @type string $schedule_end Optional. End date/time.
+ *     @type string $schedule_pending_message Optional. Message before schedule starts.
+ *     @type string $schedule_message Optional. Message after schedule ends.
+ *     @type bool $require_login Optional. Require user to be logged in.
+ *     @type string $require_login_message Optional. Message if not logged in.
+ *     @type bool $save_enabled Optional. Enable Save & Continue.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_gravity_update_form_settings( $input ) {
     if ( ! class_exists( 'GFAPI' ) ) {
         return array( 'success' => false, 'error' => 'Gravity Forms is not active.' );

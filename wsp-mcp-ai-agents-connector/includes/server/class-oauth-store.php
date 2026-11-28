@@ -21,6 +21,9 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+/**
+ * Storage for OAuth clients, authorization codes and tokens. Tokens are kept only as SHA-256 hashes.
+ */
 class WSP_MCP_OAuth_Store {
 
 	/** Authorization code lifetime in seconds (short — exchanged immediately). */
@@ -49,19 +52,31 @@ class WSP_MCP_OAuth_Store {
 	 */
 	const UNUSED_CLIENT_TTL = 86400;
 
-	/** @return string Clients table name. */
+	/**
+	 * Name of the clients table.
+	 *
+	 * @return string Clients table name.
+	 */
 	private static function clients_table() {
 		global $wpdb;
 		return $wpdb->prefix . 'wsp_mcp_oauth_clients';
 	}
 
-	/** @return string Authorization codes table name. */
+	/**
+	 * Name of the authorization codes table.
+	 *
+	 * @return string Authorization codes table name.
+	 */
 	private static function codes_table() {
 		global $wpdb;
 		return $wpdb->prefix . 'wsp_mcp_oauth_codes';
 	}
 
-	/** @return string Tokens table name. */
+	/**
+	 * Name of the tokens table.
+	 *
+	 * @return string Tokens table name.
+	 */
 	private static function tokens_table() {
 		global $wpdb;
 		return $wpdb->prefix . 'wsp_mcp_oauth_tokens';

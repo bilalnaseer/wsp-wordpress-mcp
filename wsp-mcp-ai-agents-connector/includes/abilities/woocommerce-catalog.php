@@ -7,22 +7,42 @@
  * returned in that envelope (not as WP_Error) so the caller always gets one shape.
  * Shared helpers (wsp_woo_ok / wsp_woo_fail / wsp_woo_guard / wsp_woo_rest) are also
  * used by woocommerce-store.php.
+ *
+ * @package WSP_MCP
  */
+
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 // ---------------------------------------------
 // SHARED HELPERS
 // ---------------------------------------------
 
+/**
+ * Build a success envelope for the WooCommerce tools.
+ *
+ * @param array $data Result data. Default empty.
+ * @return array Envelope with success, data and error.
+ */
 function wsp_woo_ok( $data = array() ) {
 	return array( 'success' => true, 'data' => $data, 'error' => null );
 }
 
+/**
+ * Build a failure envelope for the WooCommerce tools.
+ *
+ * @param string $message Error message.
+ * @return array Envelope with success, data and error.
+ */
 function wsp_woo_fail( $message ) {
 	return array( 'success' => false, 'data' => null, 'error' => (string) $message );
 }
 
-/** Returns an error envelope when WooCommerce is missing or the caller lacks $cap; null when OK. */
+/**
+ * Returns an error envelope when WooCommerce is missing or the caller lacks $cap; null when OK.
+ *
+ * @param string $cap Capability the caller needs. Default "manage_woocommerce".
+ * @return array|null An error envelope, or null when the caller may proceed.
+ */
 function wsp_woo_guard( $cap = 'manage_woocommerce' ) {
 	if ( ! class_exists( 'WooCommerce' ) ) {
 		return wsp_woo_fail( 'WooCommerce is not active on this site.' );
@@ -34,8 +54,15 @@ function wsp_woo_guard( $cap = 'manage_woocommerce' ) {
 }
 
 /**
- * Call a WooCommerce REST controller internally (wc/v3). Goes through the controller's own
- * permission callback, validation and sanitization — no raw SQL. Returns data or WP_Error.
+ * Call a WooCommerce REST controller internally (wc/v3).
+ *
+ * Goes through the controller's own permission callback, validation and sanitization — no raw SQL.
+ * Returns data or WP_Error.
+ *
+ * @param string $method HTTP method.
+ * @param string $route  Route below wc/v3, e.g. "/products/categories".
+ * @param array  $params Request parameters. Default empty.
+ * @return array|WP_Error Response data without links, or an error.
  */
 function wsp_woo_rest( $method, $route, $params = array() ) {
 	if ( ! function_exists( 'rest_do_request' ) ) {
@@ -54,7 +81,12 @@ function wsp_woo_rest( $method, $route, $params = array() ) {
 	return wsp_woo_strip_links( $response->get_data() );
 }
 
-/** Recursively drop REST `_links` / `_embedded` — useless noise for an AI client. */
+/**
+ * Recursively drop REST `_links` / `_embedded` — useless noise for an AI client.
+ *
+ * @param mixed $data REST response data.
+ * @return mixed The data without "_links" and "_embedded".
+ */
 function wsp_woo_strip_links( $data ) {
 	if ( ! is_array( $data ) ) return $data;
 	unset( $data['_links'], $data['_embedded'] );
@@ -64,7 +96,13 @@ function wsp_woo_strip_links( $data ) {
 	return $data;
 }
 
-/** Keep only $keys from an associative row. */
+/**
+ * Keep only $keys from an associative row.
+ *
+ * @param array    $row  Associative row.
+ * @param string[] $keys Keys to keep.
+ * @return array
+ */
 function wsp_woo_pick( $row, $keys ) {
 	$out = array();
 	foreach ( $keys as $k ) {
@@ -75,13 +113,26 @@ function wsp_woo_pick( $row, $keys ) {
 	return $out;
 }
 
-/** Strict bool for tool inputs (accepts true/"true"/1). */
+/**
+ * Strict bool for tool inputs (accepts true/"true"/1).
+ *
+ * @param array  $input   Tool arguments.
+ * @param string $key     Argument name.
+ * @param bool   $default Value used when the argument is absent. Default false.
+ * @return bool
+ */
 function wsp_woo_flag( $input, $key, $default = false ) {
 	if ( ! isset( $input[ $key ] ) ) return $default;
 	return filter_var( $input[ $key ], FILTER_VALIDATE_BOOLEAN );
 }
 
-/** Resolve an array of ids to those that exist in $taxonomy; returns int[] or error string. */
+/**
+ * Resolve an array of ids to those that exist in $taxonomy; returns int[] or error string.
+ *
+ * @param array  $ids      Term IDs from the caller.
+ * @param string $taxonomy Taxonomy the terms must belong to.
+ * @return int[]|string The valid IDs, or an error message.
+ */
 function wsp_woo_validate_term_ids( $ids, $taxonomy ) {
 	$clean = array();
 	foreach ( (array) $ids as $id ) {
@@ -98,6 +149,16 @@ function wsp_woo_validate_term_ids( $ids, $taxonomy ) {
 // DELETE TOOLS
 // ---------------------------------------------
 
+/**
+ * Build the result of deleting a product, variation or coupon: trashed or permanently deleted.
+ *
+ * @param int    $id           Object ID.
+ * @param string $name         Object name.
+ * @param bool   $force        Whether permanent deletion was requested.
+ * @param bool   $deleted      Whether WooCommerce deleted it.
+ * @param string $status_after Post status after the call.
+ * @return array Result envelope.
+ */
 function wsp_woo_delete_object_result( $id, $name, $force, $deleted, $status_after ) {
 	if ( ! $deleted ) {
 		return wsp_woo_fail( 'WooCommerce could not delete this item.' );
@@ -111,6 +172,19 @@ function wsp_woo_delete_object_result( $id, $name, $force, $deleted, $status_aft
 	) );
 }
 
+/**
+ * Move a product (simple, variable or variation) to the trash, or permanently delete with force=true.
+ *
+ * MCP tool: `wsp_woo_delete_product`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Item ID.
+ *     @type bool $force Optional. true = permanent delete. Default false = trash.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_delete_product( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	$id    = isset( $input['id'] ) ? intval( $input['id'] ) : 0;
@@ -131,6 +205,20 @@ function wsp_execute_woo_delete_product( $input ) {
 	return $res;
 }
 
+/**
+ * Trash or permanently delete (force=true) one variation of a variable product.
+ *
+ * MCP tool: `wsp_woo_delete_variation`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $product_id Required. Parent product ID.
+ *     @type int $variation_id Required. Variation ID.
+ *     @type bool $force Optional. true = permanent delete. Default false = trash.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_delete_variation( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	$pid   = isset( $input['product_id'] ) ? intval( $input['product_id'] ) : 0;
@@ -149,6 +237,19 @@ function wsp_execute_woo_delete_variation( $input ) {
 	return $res;
 }
 
+/**
+ * Trash a coupon, or permanently delete with force=true.
+ *
+ * MCP tool: `wsp_woo_delete_coupon`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Item ID.
+ *     @type bool $force Optional. true = permanent delete. Default false = trash.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_delete_coupon( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	$id    = isset( $input['id'] ) ? intval( $input['id'] ) : 0;
@@ -165,7 +266,14 @@ function wsp_execute_woo_delete_coupon( $input ) {
 	return $res;
 }
 
-/** Terms have no trash in WordPress, so permanent deletion needs an explicit force=true. */
+/**
+ * Delete a taxonomy term. Terms have no trash, so force=true is required.
+ *
+ * @param array  $input    Tool arguments with "id" and "force".
+ * @param string $taxonomy Taxonomy slug.
+ * @param string $label    Singular label used in messages.
+ * @return array Result envelope.
+ */
 function wsp_woo_delete_term_tool( $input, $taxonomy, $label ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	$id = isset( $input['id'] ) ? intval( $input['id'] ) : 0;
@@ -188,13 +296,49 @@ function wsp_woo_delete_term_tool( $input, $taxonomy, $label ) {
 	return wsp_woo_ok( array( 'id' => $id, 'name' => $name, 'trashed' => false, 'permanent' => true, 'result' => 'permanently_deleted' ) );
 }
 
+/**
+ * Permanently delete a product category (force=true required; terms have no trash).
+ *
+ * Products are not deleted.
+ *
+ * MCP tool: `wsp_woo_delete_category`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Item ID.
+ *     @type bool $force Required. Must be true: this item cannot be trashed and is deleted
+ *         permanently.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_delete_category( $input ) { return wsp_woo_delete_term_tool( $input, 'product_cat', 'product category' ); }
+/**
+ * Permanently delete a product tag (force=true required; terms have no trash).
+ *
+ * MCP tool: `wsp_woo_delete_tag`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Item ID.
+ *     @type bool $force Required. Must be true: this item cannot be trashed and is deleted
+ *         permanently.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_delete_tag( $input )      { return wsp_woo_delete_term_tool( $input, 'product_tag', 'product tag' ); }
 
 // ---------------------------------------------
 // PRODUCT CATEGORIES & TAGS
 // ---------------------------------------------
 
+/**
+ * Reduce a REST category or tag to the fields returned to the client.
+ *
+ * @param array $t REST term data.
+ * @return array
+ */
 function wsp_woo_term_row( $t ) {
 	return array(
 		'id'          => (int) $t['id'],
@@ -207,6 +351,13 @@ function wsp_woo_term_row( $t ) {
 	);
 }
 
+/**
+ * List product categories or tags through a WooCommerce REST route.
+ *
+ * @param string $route REST route.
+ * @param array  $input Tool arguments: per_page, page and search.
+ * @return array Result envelope.
+ */
 function wsp_woo_list_terms( $route, $input ) {
 	$params = array(
 		'per_page'   => isset( $input['per_page'] ) ? max( 1, min( 100, intval( $input['per_page'] ) ) ) : 100,
@@ -220,19 +371,60 @@ function wsp_woo_list_terms( $route, $input ) {
 	return wsp_woo_ok( array( 'items' => $out, 'total' => count( $out ) ) );
 }
 
+/**
+ * List product categories (id, name, slug, parent, count, image_id).
+ *
+ * MCP tool: `wsp_woo_get_product_categories`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $search Optional. Search term.
+ *     @type int $per_page Optional. 1-100, default 100.
+ *     @type int $page Optional. Page number.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_get_product_categories( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	return wsp_woo_list_terms( 'products/categories', $input );
 }
 
+/**
+ * List product tags.
+ *
+ * MCP tool: `wsp_woo_get_product_tags`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $search Optional. Search term.
+ *     @type int $per_page Optional. 1-100, default 100.
+ *     @type int $page Optional. Page number.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_get_product_tags( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	return wsp_woo_list_terms( 'products/tags', $input );
 }
 
 /**
- * List product brands (product_brand taxonomy). Read with get_terms() rather than the
- * wc/v3 REST route so it works on every WooCommerce version that registers the taxonomy.
+ * List product brands (product_brand taxonomy).
+ *
+ * Read with get_terms() rather than the wc/v3 REST route so it works on every WooCommerce version that
+ * registers the taxonomy.
+ *
+ * MCP tool: `wsp_woo_get_product_brands`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $search Optional. Search term.
+ *     @type int $per_page Optional. 1-100, default 100.
+ *     @type int $page Optional. Page number.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
  */
 function wsp_execute_woo_get_product_brands( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
@@ -269,7 +461,13 @@ function wsp_execute_woo_get_product_brands( $input ) {
 	) );
 }
 
-/** Build REST params for a category create/update. */
+/**
+ * Build REST params for a category create/update.
+ *
+ * @param array $input    Tool arguments.
+ * @param bool  $creating True when creating, which requires a name.
+ * @return array|string REST parameters, or an error message.
+ */
 function wsp_woo_category_params( $input, $creating ) {
 	$p = array();
 	if ( isset( $input['name'] ) )        $p['name']        = sanitize_text_field( wp_unslash( $input['name'] ) );
@@ -284,6 +482,22 @@ function wsp_woo_category_params( $input, $creating ) {
 	return $p;
 }
 
+/**
+ * Create a product category.
+ *
+ * MCP tool: `wsp_woo_create_product_category`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $name Required. Name.
+ *     @type string $slug Optional. Slug (optional).
+ *     @type string $description Optional. Description (optional).
+ *     @type int $parent Optional. Parent category ID.
+ *     @type int $image_id Optional. Media library attachment ID.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_create_product_category( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	if ( empty( $input['name'] ) ) return wsp_woo_fail( 'name is required.' );
@@ -295,6 +509,23 @@ function wsp_execute_woo_create_product_category( $input ) {
 	return wsp_woo_ok( wsp_woo_term_row( $res ) );
 }
 
+/**
+ * Update a product category (name, slug, parent, description, image).
+ *
+ * MCP tool: `wsp_woo_update_product_category`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Item ID.
+ *     @type string $name Optional. Name.
+ *     @type string $slug Optional. Slug (optional).
+ *     @type string $description Optional. Description (optional).
+ *     @type int $parent Optional. Parent category ID (0 = top level).
+ *     @type int $image_id Optional. Attachment ID (0 removes the image).
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_update_product_category( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	$id = isset( $input['id'] ) ? intval( $input['id'] ) : 0;
@@ -310,6 +541,20 @@ function wsp_execute_woo_update_product_category( $input ) {
 	return wsp_woo_ok( wsp_woo_term_row( $res ) );
 }
 
+/**
+ * Create a product tag.
+ *
+ * MCP tool: `wsp_woo_create_product_tag`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $name Required. Name.
+ *     @type string $slug Optional. Slug (optional).
+ *     @type string $description Optional. Description (optional).
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_create_product_tag( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	if ( empty( $input['name'] ) ) return wsp_woo_fail( 'name is required.' );
@@ -321,6 +566,24 @@ function wsp_execute_woo_create_product_tag( $input ) {
 	return wsp_woo_ok( wsp_woo_term_row( $res ) );
 }
 
+/**
+ * Add, replace or remove tags on many products at once.
+ *
+ * Tags can be given as IDs and/or names (unknown names are created). Max 200 products per call.
+ * Returns per-product results.
+ *
+ * MCP tool: `wsp_woo_assign_product_tags`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type array $product_ids Required. Product IDs (max 200).
+ *     @type array $tag_ids Optional. Existing product tag IDs.
+ *     @type array $tag_names Optional. Tag names; missing ones are created.
+ *     @type string $mode Optional. add (default) | replace | remove.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_assign_product_tags( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	$ids = isset( $input['product_ids'] ) && is_array( $input['product_ids'] ) ? array_values( array_unique( array_filter( array_map( 'intval', $input['product_ids'] ) ) ) ) : array();
@@ -364,6 +627,23 @@ function wsp_execute_woo_assign_product_tags( $input ) {
 	return wsp_woo_ok( array( 'mode' => $mode, 'tag_ids' => $tags, 'results' => $results ) );
 }
 
+/**
+ * Update a product tag (name, slug, description).
+ *
+ * Returns the updated tag.
+ *
+ * MCP tool: `wsp_woo_update_product_tag`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Item ID.
+ *     @type string $name Optional. Name.
+ *     @type string $slug Optional. Slug (optional).
+ *     @type string $description Optional. Description (optional).
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_update_product_tag( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	$id = isset( $input['id'] ) ? intval( $input['id'] ) : 0;
@@ -382,6 +662,12 @@ function wsp_execute_woo_update_product_tag( $input ) {
 // GLOBAL ATTRIBUTES & TERMS
 // ---------------------------------------------
 
+/**
+ * Reduce a REST attribute to the fields returned to the client.
+ *
+ * @param array $a REST attribute data.
+ * @return array
+ */
 function wsp_woo_attribute_row( $a ) {
 	return array(
 		'id'           => (int) $a['id'],
@@ -394,6 +680,12 @@ function wsp_woo_attribute_row( $a ) {
 	);
 }
 
+/**
+ * Validate tool input and map it to REST parameters for an attribute create or update.
+ *
+ * @param array $input Tool arguments.
+ * @return array|string REST parameters, or an error message.
+ */
 function wsp_woo_attribute_params( $input ) {
 	$p = array();
 	if ( isset( $input['name'] ) ) $p['name'] = sanitize_text_field( wp_unslash( $input['name'] ) );
@@ -412,6 +704,16 @@ function wsp_woo_attribute_params( $input ) {
 	return $p;
 }
 
+/**
+ * List global product attributes (e.g.
+ *
+ * Color, Size) with their taxonomy names.
+ *
+ * MCP tool: `wsp_woo_get_attributes`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input Tool arguments (this tool takes none).
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_get_attributes( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	$rows = wsp_woo_rest( 'GET', 'products/attributes' );
@@ -420,6 +722,22 @@ function wsp_execute_woo_get_attributes( $input ) {
 	return wsp_woo_ok( array( 'items' => $out, 'total' => count( $out ) ) );
 }
 
+/**
+ * Create a global product attribute.
+ *
+ * MCP tool: `wsp_woo_create_attribute`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $name Required. Attribute name.
+ *     @type string $slug Optional. Slug (optional).
+ *     @type string $type Optional. select | text. Default select.
+ *     @type string $order_by Optional. menu_order | name | name_num | id.
+ *     @type bool $has_archives Optional. Enable archives.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_create_attribute( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	if ( empty( $input['name'] ) ) return wsp_woo_fail( 'name is required.' );
@@ -430,6 +748,23 @@ function wsp_execute_woo_create_attribute( $input ) {
 	return wsp_woo_ok( wsp_woo_attribute_row( $res ) );
 }
 
+/**
+ * Update a global product attribute.
+ *
+ * MCP tool: `wsp_woo_update_attribute`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Item ID.
+ *     @type string $name Optional. Name.
+ *     @type string $slug Optional. Slug.
+ *     @type string $type Optional. select | text.
+ *     @type string $order_by Optional. menu_order | name | name_num | id.
+ *     @type bool $has_archives Optional. Enable archives.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_update_attribute( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	$id = isset( $input['id'] ) ? intval( $input['id'] ) : 0;
@@ -442,6 +777,20 @@ function wsp_execute_woo_update_attribute( $input ) {
 	return wsp_woo_ok( wsp_woo_attribute_row( $res ) );
 }
 
+/**
+ * Permanently delete a global attribute and all its terms (force=true required).
+ *
+ * MCP tool: `wsp_woo_delete_attribute`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Item ID.
+ *     @type bool $force Required. Must be true: this item cannot be trashed and is deleted
+ *         permanently.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_delete_attribute( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	$id = isset( $input['id'] ) ? intval( $input['id'] ) : 0;
@@ -454,6 +803,21 @@ function wsp_execute_woo_delete_attribute( $input ) {
 	return wsp_woo_ok( array( 'id' => $id, 'name' => $res['name'], 'trashed' => false, 'permanent' => true, 'result' => 'permanently_deleted' ) );
 }
 
+/**
+ * List the terms (e.g.
+ *
+ * Red, Blue) of a global attribute.
+ *
+ * MCP tool: `wsp_woo_get_attribute_terms`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $attribute_id Required. Attribute ID.
+ *     @type string $search Optional. Search term.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_get_attribute_terms( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	$aid = isset( $input['attribute_id'] ) ? intval( $input['attribute_id'] ) : 0;
@@ -466,6 +830,20 @@ function wsp_execute_woo_get_attribute_terms( $input ) {
 	return wsp_woo_ok( array( 'attribute_id' => $aid, 'items' => $out, 'total' => count( $out ) ) );
 }
 
+/**
+ * Add a term to a global attribute.
+ *
+ * MCP tool: `wsp_woo_create_attribute_term`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $attribute_id Required. Attribute ID.
+ *     @type string $name Required. Term name.
+ *     @type string $slug Optional. Slug (optional).
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_create_attribute_term( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	$aid = isset( $input['attribute_id'] ) ? intval( $input['attribute_id'] ) : 0;
@@ -479,6 +857,21 @@ function wsp_execute_woo_create_attribute_term( $input ) {
 	return wsp_woo_ok( $row );
 }
 
+/**
+ * Permanently delete an attribute term (force=true required).
+ *
+ * MCP tool: `wsp_woo_delete_attribute_term`. Requires the `manage_woocommerce` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $attribute_id Required. Attribute ID.
+ *     @type int $id Required. Term ID.
+ *     @type bool $force Required. Must be true: this item cannot be trashed and is deleted
+ *         permanently.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_woo_delete_attribute_term( $input ) {
 	if ( $e = wsp_woo_guard() ) return $e;
 	$aid = isset( $input['attribute_id'] ) ? intval( $input['attribute_id'] ) : 0;
@@ -499,7 +892,12 @@ function wsp_execute_woo_delete_attribute_term( $input ) {
 
 /**
  * Apply `categories` / `tags` (arrays of term IDs) to a product object (not saved here).
+ *
  * Returns null on success or an error string.
+ *
+ * @param WC_Product $product Product object. Not saved here.
+ * @param array      $input   Tool arguments with optional "categories" and "tags".
+ * @return string|null An error message, or null on success.
  */
 function wsp_woo_apply_product_terms( $product, $input ) {
 	if ( isset( $input['categories'] ) ) {
@@ -516,9 +914,14 @@ function wsp_woo_apply_product_terms( $product, $input ) {
 }
 
 /**
- * Resolve `brands` input (term IDs, slugs or names; a single value is also accepted) to
- * product_brand term IDs. Unknown brands are an error, not auto-created, so a typo can't
- * add a duplicate brand. Returns int[] or an error string.
+ * Resolve `brands` input (term IDs, slugs or names; a single value is also accepted) to product_brand
+ * term IDs.
+ *
+ * Unknown brands are an error, not auto-created, so a typo can't add a duplicate brand. Returns int[]
+ * or an error string.
+ *
+ * @param mixed $items Brand term IDs, slugs or names, or a single value.
+ * @return int[]|string The brand term IDs, or an error message.
  */
 function wsp_woo_resolve_brand_ids( $items ) {
 	if ( ! taxonomy_exists( 'product_brand' ) ) {
@@ -549,8 +952,12 @@ function wsp_woo_resolve_brand_ids( $items ) {
 
 /**
  * Validate `gallery_image_ids` (array of media IDs, or a "1,2,3" string) for a product gallery.
- * Every ID must be an image in the media library. Keeps the given order and drops duplicates.
- * Returns int[] or an error string.
+ *
+ * Every ID must be an image in the media library. Keeps the given order and drops duplicates. Returns
+ * int[] or an error string.
+ *
+ * @param array|string $items Media IDs, or a "1,2,3" string.
+ * @return int[]|string The image IDs, or an error message.
  */
 function wsp_woo_validate_gallery_ids( $items ) {
 	if ( is_string( $items ) ) {
@@ -574,7 +981,12 @@ function wsp_woo_validate_gallery_ids( $items ) {
 	return array_values( array_unique( $ids ) );
 }
 
-/** Brands currently assigned to a product, as [ { id, name, slug } ]. */
+/**
+ * Brands currently assigned to a product, as [ { id, name, slug } ].
+ *
+ * @param int $product_id Product ID.
+ * @return array Brands as id, name and slug.
+ */
 function wsp_woo_product_brands( $product_id ) {
 	if ( ! taxonomy_exists( 'product_brand' ) ) return array();
 	$terms = wp_get_object_terms( $product_id, 'product_brand' );
@@ -587,11 +999,16 @@ function wsp_woo_product_brands( $product_id ) {
 }
 
 /**
- * Build WC_Product_Attribute objects. Each item:
- *  - custom attribute: { name, options: [strings], visible?, variation? }
- *  - global attribute: { attribute_id | taxonomy ("pa_color"), options: [term names/slugs], visible?, variation? }
- * `variation` defaults to true for variable products, false otherwise.
- * Returns WC_Product_Attribute[] or error string.
+ * Build WC_Product_Attribute objects.
+ *
+ * Each item: - custom attribute: { name, options: [strings], visible?, variation? } - global
+ * attribute: { attribute_id | taxonomy ("pa_color"), options: [term names/slugs], visible?, variation?
+ * } `variation` defaults to true for variable products, false otherwise. Returns
+ * WC_Product_Attribute[] or error string.
+ *
+ * @param array $items       Attribute definitions from the caller.
+ * @param bool  $is_variable Whether the product is variable.
+ * @return WC_Product_Attribute[]|string Attribute objects, or an error message.
  */
 function wsp_woo_build_attributes( $items, $is_variable ) {
 	if ( ! is_array( $items ) ) return 'attributes must be an array.';

@@ -36,7 +36,12 @@ function wsp_health_require_network_admin() {
 	return true;
 }
 
-/** Redact secret-shaped substrings from a string. */
+/**
+ * Redact secret-shaped substrings from a string.
+ *
+ * @param string $text Text that may contain secrets.
+ * @return string The text with secret-shaped substrings replaced.
+ */
 function wsp_health_redact( $text ) {
 	if ( ! is_string( $text ) || '' === $text ) return $text;
 	$patterns = array(
@@ -56,19 +61,34 @@ function wsp_health_redact( $text ) {
 	return preg_replace( array_keys( $patterns ), array_values( $patterns ), $text );
 }
 
-/** Recursively redact every string in a value. */
+/**
+ * Recursively redact every string in a value.
+ *
+ * @param mixed $value String, array or scalar to redact.
+ * @return mixed The same structure with every string redacted.
+ */
 function wsp_health_redact_deep( $value ) {
 	if ( is_array( $value ) ) return array_map( 'wsp_health_redact_deep', $value );
 	return is_string( $value ) ? wsp_health_redact( $value ) : $value;
 }
 
-/** HTML → single-line plain text. */
+/**
+ * HTML → single-line plain text.
+ *
+ * @param string $html HTML.
+ * @return string Single-line plain text.
+ */
 function wsp_health_plain( $html ) {
 	if ( ! is_string( $html ) ) return '';
 	return trim( preg_replace( '/\s+/', ' ', html_entity_decode( wp_strip_all_tags( $html ), ENT_QUOTES, 'UTF-8' ) ) );
 }
 
-/** UTC ISO 8601 for a Unix timestamp. */
+/**
+ * UTC ISO 8601 for a Unix timestamp.
+ *
+ * @param int $ts Unix timestamp.
+ * @return string ISO 8601 date in UTC.
+ */
 function wsp_health_iso( $ts ) {
 	return gmdate( 'Y-m-d\TH:i:s\Z', (int) $ts );
 }
@@ -84,7 +104,13 @@ function wsp_health_load_admin_includes() {
 	}
 }
 
-/** Normalize one Site Health test result (core shape) to plain text. */
+/**
+ * Normalize one Site Health test result (core shape) to plain text.
+ *
+ * @param string $key    Test key from WP_Site_Health::get_tests().
+ * @param array  $result Raw test result in core's shape.
+ * @return array Plain-text version of the result.
+ */
 function wsp_health_format_test( $key, $result ) {
 	return array(
 		'test'        => isset( $result['test'] ) ? $result['test'] : $key,
@@ -96,7 +122,16 @@ function wsp_health_format_test( $key, $result ) {
 	);
 }
 
-/** Run one test definition from WP_Site_Health::get_tests(). Returns result array, or null when it can't run server-side. */
+/**
+ * Run one test definition from WP_Site_Health::get_tests().
+ *
+ * Returns result array, or null when it can't run server-side.
+ *
+ * @param WP_Site_Health $health Site Health instance.
+ * @param array          $test   Test definition from WP_Site_Health::get_tests().
+ * @param bool           $async  Whether the test is an asynchronous one.
+ * @return array|null The result, or null when the test cannot run server-side.
+ */
 function wsp_health_run_test( $health, $test, $async ) {
 	$callback = null;
 	if ( $async && ! empty( $test['async_direct_test'] ) && is_callable( $test['async_direct_test'] ) ) {
@@ -111,7 +146,12 @@ function wsp_health_run_test( $health, $test, $async ) {
 	return apply_filters( 'site_status_test_result', call_user_func( $callback ) );
 }
 
-/** Flatten a Site Health Info field value to a string. */
+/**
+ * Flatten a Site Health Info field value to a string.
+ *
+ * @param mixed $value Field value from the Site Health Info screen.
+ * @return string The value as a string.
+ */
 function wsp_health_info_value( $value ) {
 	if ( is_bool( $value ) ) return $value ? 'true' : 'false';
 	if ( is_array( $value ) ) {
@@ -125,6 +165,28 @@ function wsp_health_info_value( $value ) {
 	return wsp_health_plain( (string) $value );
 }
 
+/**
+ * Runs WordPress core's Site Health tests and returns the Site Health Info data.
+ *
+ * Returns { counts: { good, recommended, critical }, tests: [{ test, label, status (good | recommended
+ * | critical | error), badge, description, actions }] (critical first), skipped: [{ test, label,
+ * reason }], info: { <section>: { label, fields: { <name>: { label, value } } } }, info_truncated,
+ * info_omitted }. Text is plain. Info leaves out every field core marks private (database credentials,
+ * table prefix, paths) and redacts secret-shaped values. include_async=true also runs the slower tests
+ * (WordPress.org reachability, loopback, background updates, HTTPS, page cache) — can take several
+ * seconds.
+ *
+ * MCP tool: `wsp_get_site_health`. Requires the `view_site_health_checks` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type bool $include_async Optional. Also run the slow network tests. Default false.
+ *     @type bool $include_info Optional. Include Site Health Info (versions, server, database,
+ *         constants, plugins, themes). Default true.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_site_health( $input ) {
 	wsp_health_load_admin_includes();
 	if ( ! class_exists( 'WP_Site_Health' ) ) return new WP_Error( 'unsupported', 'Site Health is not available on this WordPress install.' );
@@ -187,7 +249,7 @@ function wsp_execute_get_site_health( $input ) {
 			}
 			$fields = array();
 			foreach ( isset( $section['fields'] ) ? (array) $section['fields'] : array() as $name => $field ) {
-				if ( ! empty( $field['private'] ) ) continue; // same set core's "Copy site info" leaves out
+				if ( ! empty( $field['private'] ) ) continue; // same set core's "Copy site info" leaves out.
 				if ( count( $fields ) >= $max ) { $truncated = true; break; }
 				$fields[ $name ] = array(
 					'label' => wsp_health_plain( isset( $field['label'] ) ? $field['label'] : $name ),
@@ -230,7 +292,13 @@ function wsp_health_cron_events() {
 	return $events;
 }
 
-/** Public representation of one event. */
+/**
+ * Public representation of one event.
+ *
+ * @param array $e   One event: hook, timestamp, schedule, args and key.
+ * @param int   $now Current Unix time, used for relative times.
+ * @return array Public representation of the event.
+ */
 function wsp_health_cron_to_array( $e, $now ) {
 	$schedule = null;
 	if ( $e['schedule'] ) {
@@ -240,7 +308,7 @@ function wsp_health_cron_to_array( $e, $now ) {
 			'name'             => $e['schedule'],
 			'interval_seconds' => $known ? (int) $schedules[ $e['schedule'] ]['interval'] : $e['interval'],
 			'display'          => $known ? $schedules[ $e['schedule'] ]['display'] : '',
-			'registered'       => $known, // false = the plugin that added this schedule is gone
+			'registered'       => $known, // false = the plugin that added this schedule is gone.
 		);
 	}
 	$until = $e['timestamp'] - $now;
@@ -251,12 +319,17 @@ function wsp_health_cron_to_array( $e, $now ) {
 		'seconds_until_run' => $until,
 		'overdue'           => $until < -HOUR_IN_SECONDS,
 		'schedule'          => $schedule,
-		'has_callback'      => (bool) has_action( $e['hook'] ), // false = nothing runs when it fires (orphaned)
+		'has_callback'      => (bool) has_action( $e['hook'] ), // false = nothing runs when it fires (orphaned).
 		'args'              => wsp_health_redact_deep( $e['args'] ),
 	);
 }
 
-/** Human-readable names of the callbacks attached to a hook. */
+/**
+ * Human-readable names of the callbacks attached to a hook.
+ *
+ * @param string $hook Action or filter hook name.
+ * @return string[] Names of the callbacks attached to the hook.
+ */
 function wsp_health_hook_callbacks( $hook ) {
 	global $wp_filter;
 	$out = array();
@@ -282,8 +355,12 @@ function wsp_health_hook_callbacks( $hook ) {
 }
 
 /**
- * Resolve the single event a run/delete call targets. With no key, the hook must
- * have exactly one instance; otherwise the caller must pick one by key.
+ * Resolve the single event a run/delete call targets.
+ *
+ * With no key, the hook must have exactly one instance; otherwise the caller must pick one by key.
+ *
+ * @param array $input Tool arguments: "hook" and, when it has several instances, "key".
+ * @return array|WP_Error The event, or an error when it is missing or ambiguous.
  */
 function wsp_health_find_cron_event( $input ) {
 	if ( empty( $input['hook'] ) ) return new WP_Error( 'missing_input', 'hook is required.' );
@@ -300,6 +377,25 @@ function wsp_health_find_cron_event( $input ) {
 	return $matches[0];
 }
 
+/**
+ * Lists scheduled WP-Cron events, soonest first.
+ *
+ * Returns { events: [{ hook, key, next_run (ISO 8601 UTC), seconds_until_run (negative when past due),
+ * overdue (>1h past due), schedule: { name, interval_seconds, display, registered } or null for
+ * one-off, has_callback (false = orphaned, nothing runs), args (secrets redacted) }], total, returned,
+ * overdue_count, cron_disabled (DISABLE_WP_CRON), now, schedules: [{ name, interval_seconds, display
+ * }] }.
+ *
+ * MCP tool: `wsp_get_cron_events`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $hook Optional. Case-insensitive substring filter on the hook name.
+ *     @type int $limit Optional. Default 50.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_cron_events( $input ) {
 	$ok = wsp_health_require_network_admin();
 	if ( is_wp_error( $ok ) ) return $ok;
@@ -333,6 +429,22 @@ function wsp_execute_get_cron_events( $input ) {
 	);
 }
 
+/**
+ * Inspects one cron hook: every scheduled instance (or just the one matching key) plus the callbacks
+ * attached to the hook (function / Class->method and priority). protected=true marks WSP MCP's own
+ * maintenance tasks, which cannot be unscheduled.
+ *
+ * MCP tool: `wsp_get_cron_event`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $hook Required. Exact hook name, from wsp_get_cron_events.
+ *     @type string $key Optional. Instance key, from wsp_get_cron_events / wsp_get_cron_event.
+ *         Required only when the hook has several scheduled instances.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_cron_event( $input ) {
 	$ok = wsp_health_require_network_admin();
 	if ( is_wp_error( $ok ) ) return $ok;
@@ -356,9 +468,21 @@ function wsp_execute_get_cron_event( $input ) {
 }
 
 /**
- * Run an existing event now, in this request — the same do_action_ref_array()
- * wp-cron.php performs. A one-off event is unscheduled first (as wp-cron.php
- * does); a recurring event keeps its next scheduled run untouched.
+ * Run an existing event now, in this request — the same do_action_ref_array() wp-cron.php performs.
+ *
+ * A one-off event is unscheduled first (as wp-cron.php does); a recurring event keeps its next
+ * scheduled run untouched.
+ *
+ * MCP tool: `wsp_run_cron_event`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $hook Required. Exact hook name, from wsp_get_cron_events.
+ *     @type string $key Optional. Instance key, from wsp_get_cron_events / wsp_get_cron_event.
+ *         Required only when the hook has several scheduled instances.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
  */
 function wsp_execute_run_cron_event( $input ) {
 	$ok = wsp_health_require_network_admin();
@@ -398,6 +522,26 @@ function wsp_execute_run_cron_event( $input ) {
 	return $result;
 }
 
+/**
+ * Unschedules a cron event: one instance (by hook, plus key when the hook has several) or, with
+ * all=true, every instance of the hook.
+ *
+ * Use it to clear orphaned events (has_callback: false) left by removed plugins. Unscheduling a core
+ * or active-plugin task stops that task until its plugin re-schedules it. WSP MCP's own wsp_mcp_*
+ * tasks are refused.
+ *
+ * MCP tool: `wsp_delete_cron_event`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $hook Required. Exact hook name, from wsp_get_cron_events.
+ *     @type string $key Optional. Instance key, from wsp_get_cron_events / wsp_get_cron_event.
+ *         Required only when the hook has several scheduled instances.
+ *     @type bool $all Optional. Unschedule every instance of the hook. Default false.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_delete_cron_event( $input ) {
 	$ok = wsp_health_require_network_admin();
 	if ( is_wp_error( $ok ) ) return $ok;
@@ -442,6 +586,24 @@ function wsp_health_error_log_path() {
 	return null;
 }
 
+/**
+ * Returns the most recent lines of the PHP error log, newest last.
+ *
+ * Reads ONLY the PHP error_log path (where WP_DEBUG_LOG writes) or, failing that, wp-content/debug.log
+ * — never any other file. Secrets are redacted (tokens, passwords, salts, URL credentials, JWTs).
+ * Returns { path_source, path, size_bytes, modified, lines, returned, truncated, scanned_bytes }, or {
+ * path_source: null, reason } when no readable log exists (with how to enable one).
+ *
+ * MCP tool: `wsp_get_error_log`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $lines Optional. How many recent (matching) lines. Default 100.
+ *     @type string $grep Optional. Only lines containing this text (case-insensitive, plain text).
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_error_log( $input ) {
 	$ok = wsp_health_require_network_admin();
 	if ( is_wp_error( $ok ) ) return $ok;
@@ -456,7 +618,7 @@ function wsp_execute_get_error_log( $input ) {
 
 	$want      = isset( $input['lines'] ) ? max( 1, min( 1000, intval( $input['lines'] ) ) ) : 100;
 	$grep      = isset( $input['grep'] ) ? strtolower( sanitize_text_field( $input['grep'] ) ) : '';
-	$scan_max  = 2 * MB_IN_BYTES; // never read more than the last 2 MB of the file
+	$scan_max  = 2 * MB_IN_BYTES; // never read more than the last 2 MB of the file.
 	$resp_max  = 64 * KB_IN_BYTES;
 	$size      = (int) filesize( $path );
 	$read      = min( $size, $scan_max );
@@ -471,7 +633,7 @@ function wsp_execute_get_error_log( $input ) {
 	fclose( $fh );
 
 	$raw = preg_split( '/\r\n|\r|\n/', (string) $chunk );
-	if ( $read < $size ) array_shift( $raw ); // first line is partial when we started mid-file
+	if ( $read < $size ) array_shift( $raw ); // first line is partial when we started mid-file.
 	$lines = array();
 	foreach ( $raw as $line ) {
 		if ( '' === trim( $line ) ) continue;

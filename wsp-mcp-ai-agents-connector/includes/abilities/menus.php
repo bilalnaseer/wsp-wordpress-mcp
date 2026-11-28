@@ -11,6 +11,14 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+/**
+ * Lists all navigation menus with item counts and assigned theme locations.
+ *
+ * MCP tool: `wsp_get_menus`. Requires the `edit_theme_options` capability.
+ *
+ * @param array $input Tool arguments (this tool takes none).
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_menus( $input ) {
 	$menus = wp_get_nav_menus();
 	$locs  = get_nav_menu_locations();
@@ -28,7 +36,12 @@ function wsp_execute_get_menus( $input ) {
 	return array( 'menus' => $result );
 }
 
-/** Map a WP_Post nav-menu-item (post-processed by wp_setup_nav_menu_item) to a plain array. */
+/**
+ * Map a WP_Post nav-menu-item (post-processed by wp_setup_nav_menu_item) to a plain array.
+ *
+ * @param WP_Post $item Menu item, as processed by wp_setup_nav_menu_item().
+ * @return array
+ */
 function wsp_menu_item_to_array( $item ) {
 	return array(
 		'id'        => (int) $item->ID,
@@ -36,7 +49,7 @@ function wsp_menu_item_to_array( $item ) {
 		'url'       => $item->url,
 		'parent'    => (int) $item->menu_item_parent,
 		'order'     => (int) $item->menu_order,
-		'type'      => $item->type,   // custom | post_type | taxonomy
+		'type'      => $item->type,   // custom | post_type | taxonomy.
 		'object'    => $item->object, // post | page | category | ...
 		'object_id' => (int) $item->object_id,
 		'target'    => $item->target,
@@ -44,9 +57,21 @@ function wsp_menu_item_to_array( $item ) {
 	);
 }
 
+/**
+ * Lists the items inside a specific navigation menu.
+ *
+ * MCP tool: `wsp_get_menu_items`. Requires the `edit_theme_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int|string $menu Required. Menu ID, slug, or name.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_menu_items( $input ) {
 	if ( empty( $input['menu'] ) ) return array( 'success' => false, 'error' => 'menu is required.' );
-	$menu = wp_get_nav_menu_object( $input['menu'] ); // accepts id, slug, or name
+	$menu = wp_get_nav_menu_object( $input['menu'] ); // accepts id, slug, or name.
 	if ( ! $menu ) return array( 'success' => false, 'error' => 'Menu not found.' );
 	$items  = wp_get_nav_menu_items( $menu->term_id );
 	$result = array();
@@ -54,6 +79,18 @@ function wsp_execute_get_menu_items( $input ) {
 	return array( 'menu' => array( 'id' => $menu->term_id, 'name' => $menu->name ), 'items' => $result );
 }
 
+/**
+ * Creates a new navigation menu.
+ *
+ * MCP tool: `wsp_create_menu`. Requires the `edit_theme_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $name Required.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_create_menu( $input ) {
 	if ( empty( $input['name'] ) ) return array( 'success' => false, 'error' => 'name is required.' );
 	$name = sanitize_text_field( wp_unslash( $input['name'] ) );
@@ -62,6 +99,18 @@ function wsp_execute_create_menu( $input ) {
 	return array( 'success' => true, 'id' => $id, 'name' => $name );
 }
 
+/**
+ * Deletes a navigation menu.
+ *
+ * MCP tool: `wsp_delete_menu`. Requires the `edit_theme_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int|string $menu Required. Menu ID, slug, or name.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_delete_menu( $input ) {
 	if ( empty( $input['menu'] ) ) return array( 'success' => false, 'error' => 'menu is required.' );
 	$menu = wp_get_nav_menu_object( $input['menu'] );
@@ -73,6 +122,25 @@ function wsp_execute_delete_menu( $input ) {
 	return array( 'success' => true, 'id' => $menu->term_id );
 }
 
+/**
+ * Adds an item (custom link, post, page, or category) to a navigation menu.
+ *
+ * MCP tool: `wsp_add_menu_item`. Requires the `edit_theme_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int|string $menu Required. Menu ID, slug, or name.
+ *     @type string $type Required. custom | post | page | category.
+ *     @type string $title Optional. Required for custom; optional label override otherwise.
+ *     @type string $url Optional. Required when type is custom.
+ *     @type int $object_id Optional. Post/page/category ID. Required when type is post, page, or
+ *         category.
+ *     @type int $parent Optional. Parent menu item ID, for a sub-item.
+ *     @type int $order Optional. Menu order position.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_add_menu_item( $input ) {
 	if ( empty( $input['menu'] ) ) return array( 'success' => false, 'error' => 'menu is required.' );
 	$menu = wp_get_nav_menu_object( $input['menu'] );
@@ -115,6 +183,22 @@ function wsp_execute_add_menu_item( $input ) {
 	return array( 'success' => true, 'id' => $item_id, 'menu_id' => $menu->term_id );
 }
 
+/**
+ * Updates a menu item's title, URL, parent, or order.
+ *
+ * MCP tool: `wsp_update_menu_item`. Requires the `edit_theme_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $item_id Required.
+ *     @type string $title Optional.
+ *     @type string $url Optional.
+ *     @type int $parent Optional.
+ *     @type int $order Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_update_menu_item( $input ) {
 	if ( empty( $input['item_id'] ) ) return array( 'success' => false, 'error' => 'item_id is required.' );
 	$item_id = intval( $input['item_id'] );
@@ -141,6 +225,18 @@ function wsp_execute_update_menu_item( $input ) {
 	return array( 'success' => true, 'id' => $item_id );
 }
 
+/**
+ * Removes an item from a navigation menu.
+ *
+ * MCP tool: `wsp_delete_menu_item`. Requires the `edit_theme_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $item_id Required.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_delete_menu_item( $input ) {
 	if ( empty( $input['item_id'] ) ) return array( 'success' => false, 'error' => 'item_id is required.' );
 	$item_id = intval( $input['item_id'] );
@@ -150,6 +246,14 @@ function wsp_execute_delete_menu_item( $input ) {
 	return array( 'success' => true, 'id' => $item_id );
 }
 
+/**
+ * Lists theme menu locations and which menu is assigned to each.
+ *
+ * MCP tool: `wsp_get_menu_locations`. Requires the `edit_theme_options` capability.
+ *
+ * @param array $input Tool arguments (this tool takes none).
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_menu_locations( $input ) {
 	$registered = get_registered_nav_menus();
 	$assigned   = get_nav_menu_locations();
@@ -167,6 +271,19 @@ function wsp_execute_get_menu_locations( $input ) {
 	return array( 'locations' => $result );
 }
 
+/**
+ * Assigns (or unassigns, when menu is omitted) a navigation menu to a theme location.
+ *
+ * MCP tool: `wsp_assign_menu_location`. Requires the `edit_theme_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $location Required. Theme location slug, from wsp_get_menu_locations.
+ *     @type int $menu Optional. Menu ID to assign. Omit or 0 to unassign.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_assign_menu_location( $input ) {
 	if ( empty( $input['location'] ) ) return array( 'success' => false, 'error' => 'location is required.' );
 	$location   = sanitize_key( $input['location'] );

@@ -1,13 +1,29 @@
 <?php
+/**
+ * Contact Form 7 abilities: forms, Flamingo entries, validation, integrations and moderation.
+ *
+ * @package WSP_MCP
+ */
+
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 if ( ! function_exists( 'wsp_cf7_is_active' ) ) {
+/**
+ * Whether Contact Form 7 is active.
+ *
+ * @return bool
+ */
 function wsp_cf7_is_active() {
     return class_exists( 'WPCF7_ContactForm' );
 }
 }
 
 if ( ! function_exists( 'wsp_cf7_flamingo_is_active' ) ) {
+/**
+ * Whether the Flamingo add-on, which stores Contact Form 7 submissions, is active.
+ *
+ * @return bool
+ */
 function wsp_cf7_flamingo_is_active() {
     return class_exists( 'Flamingo_Inbound_Message' );
 }
@@ -17,6 +33,14 @@ function wsp_cf7_flamingo_is_active() {
 // EXECUTE CALLBACKS
 // ---------------------------------------------
 
+/**
+ * Lists all Contact Form 7 forms with ID, title, and shortcode.
+ *
+ * MCP tool: `wsp_cf7_list_forms`. Requires the `wpcf7_edit_contact_forms` capability.
+ *
+ * @param array $input Tool arguments (this tool takes none).
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_cf7_list_forms( $input ) {
     if ( ! class_exists( 'WPCF7_ContactForm' ) ) {
         return array( 'success' => false, 'error' => 'Contact Form 7 is not active.' );
@@ -39,6 +63,18 @@ function wsp_execute_cf7_list_forms( $input ) {
     return array( 'forms' => $result, 'total' => count( $result ) );
 }
 
+/**
+ * Retrieves full CF7 form structure (markup, mail config, messages, tags).
+ *
+ * MCP tool: `wsp_cf7_get_form`. Requires the `wpcf7_edit_contact_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Form ID.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_cf7_get_form( $input ) {
     if ( ! class_exists( 'WPCF7_ContactForm' ) ) {
         return array( 'success' => false, 'error' => 'Contact Form 7 is not active.' );
@@ -84,6 +120,22 @@ function wsp_execute_cf7_get_form( $input ) {
     );
 }
 
+/**
+ * Creates a new Contact Form 7 form with title and optional markup/properties.
+ *
+ * MCP tool: `wsp_cf7_create_form`. Requires the `wpcf7_edit_contact_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $title Required. Form title.
+ *     @type string $locale Optional. Locale code (e.g. en_US).
+ *     @type string $form_markup Optional. Custom form markup HTML.
+ *     @type array $mail Optional. Mail settings key-value pairs.
+ *     @type array $messages Optional. Custom messages key-value pairs.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_cf7_create_form( $input ) {
     if ( ! class_exists( 'WPCF7_ContactForm' ) ) {
         return array( 'success' => false, 'error' => 'Contact Form 7 is not active.' );
@@ -141,6 +193,25 @@ function wsp_execute_cf7_create_form( $input ) {
     );
 }
 
+/**
+ * Updates an existing CF7 form markup, mail settings, or messages.
+ *
+ * MCP tool: `wsp_cf7_update_form`. Requires the `wpcf7_edit_contact_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Form ID.
+ *     @type string $title Optional. New form title.
+ *     @type string $locale Optional. Locale code.
+ *     @type string $form_markup Optional. Updated form markup.
+ *     @type array $mail Optional. Updated mail settings.
+ *     @type array $mail_2 Optional. Updated mail (2) settings.
+ *     @type array $messages Optional. Updated messages.
+ *     @type string $additional_settings Optional. Additional settings text.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_cf7_update_form( $input ) {
     if ( ! class_exists( 'WPCF7_ContactForm' ) ) {
         return array( 'success' => false, 'error' => 'Contact Form 7 is not active.' );
@@ -225,6 +296,20 @@ function wsp_execute_cf7_update_form( $input ) {
     );
 }
 
+/**
+ * Trashes or permanently deletes a Contact Form 7 form.
+ *
+ * MCP tool: `wsp_cf7_delete_form`. Requires the `wpcf7_delete_contact_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Form ID.
+ *     @type bool $permanent Optional. True for permanent delete, false to move to trash. Default
+ *         false.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_cf7_delete_form( $input ) {
     if ( ! class_exists( 'WPCF7_ContactForm' ) ) {
         return array( 'success' => false, 'error' => 'Contact Form 7 is not active.' );
@@ -261,6 +346,21 @@ function wsp_execute_cf7_delete_form( $input ) {
     );
 }
 
+/**
+ * Lists Flamingo-stored form submissions (requires Flamingo plugin).
+ *
+ * MCP tool: `wsp_cf7_list_entries`. Requires the `wpcf7_edit_contact_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $form_id Optional. Form ID to filter by.
+ *     @type int $per_page Optional. Number of entries. Default 20.
+ *     @type int $page Optional. Page number. Default 1.
+ *     @type string $status Optional. publish | spam | trash | all.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_cf7_list_entries( $input ) {
     if ( ! class_exists( 'WPCF7_ContactForm' ) ) {
         return array( 'success' => false, 'error' => 'Contact Form 7 is not active.' );
@@ -323,6 +423,18 @@ function wsp_execute_cf7_list_entries( $input ) {
     );
 }
 
+/**
+ * Retrieves full details of a single Flamingo submission by ID.
+ *
+ * MCP tool: `wsp_cf7_get_entry`. Requires the `wpcf7_edit_contact_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Entry ID.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_cf7_get_entry( $input ) {
     if ( ! class_exists( 'WPCF7_ContactForm' ) ) {
         return array( 'success' => false, 'error' => 'Contact Form 7 is not active.' );
@@ -370,6 +482,18 @@ function wsp_execute_cf7_get_entry( $input ) {
     );
 }
 
+/**
+ * Runs the built-in configuration validator to check for email/syntax errors.
+ *
+ * MCP tool: `wsp_cf7_validate_form`. Requires the `wpcf7_edit_contact_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Form ID.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_cf7_validate_form( $input ) {
     if ( ! class_exists( 'WPCF7_ContactForm' ) ) {
         return array( 'success' => false, 'error' => 'Contact Form 7 is not active.' );
@@ -479,6 +603,14 @@ function wsp_execute_cf7_validate_form( $input ) {
     );
 }
 
+/**
+ * Lists active integration modules and reCAPTCHA configuration status.
+ *
+ * MCP tool: `wsp_cf7_get_integrations`. Requires the `manage_options` capability.
+ *
+ * @param array $input Tool arguments (this tool takes none).
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_cf7_get_integrations( $input ) {
     if ( ! class_exists( 'WPCF7_ContactForm' ) ) {
         return array( 'success' => false, 'error' => 'Contact Form 7 is not active.' );
@@ -520,6 +652,19 @@ function wsp_execute_cf7_get_integrations( $input ) {
     );
 }
 
+/**
+ * Mark a Flamingo submission as spam, unspam, trash, or untrash.
+ *
+ * MCP tool: `wsp_cf7_moderate_entry`. Requires the `wpcf7_edit_contact_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Entry ID.
+ *     @type string $action Required. spam | unspam | trash | untrash.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_cf7_moderate_entry( $input ) {
     if ( ! class_exists( 'WPCF7_ContactForm' ) ) {
         return array( 'success' => false, 'error' => 'Contact Form 7 is not active.' );

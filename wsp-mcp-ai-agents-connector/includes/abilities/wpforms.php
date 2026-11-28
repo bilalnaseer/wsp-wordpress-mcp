@@ -1,13 +1,29 @@
 <?php
+/**
+ * WPForms abilities: forms, fields, entries and schema description.
+ *
+ * @package WSP_MCP
+ */
+
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 if ( ! function_exists( 'wsp_wpforms_is_active' ) ) {
+/**
+ * Whether WPForms is active.
+ *
+ * @return bool
+ */
 function wsp_wpforms_is_active() {
     return function_exists( 'wpforms' ) || class_exists( 'WPForms' );
 }
 }
 
 if ( ! function_exists( 'wsp_wpforms_pro_is_active' ) ) {
+/**
+ * Whether WPForms Pro is active, which entry tools require.
+ *
+ * @return bool
+ */
 function wsp_wpforms_pro_is_active() {
     if ( ! function_exists( 'wpforms' ) ) {
         return false;
@@ -20,6 +36,12 @@ function wsp_wpforms_pro_is_active() {
 // HELPERS
 // ---------------------------------------------
 
+/**
+ * Load and decode a form's JSON definition.
+ *
+ * @param int $form_id Form ID.
+ * @return array|false The definition, or false when it is not a WPForms form.
+ */
 function wsp_wpforms_get_form_data( $form_id ) {
     $form = get_post( $form_id );
     if ( ! $form || 'wpforms' !== $form->post_type ) {
@@ -32,6 +54,13 @@ function wsp_wpforms_get_form_data( $form_id ) {
     return $data;
 }
 
+/**
+ * Save a form definition.
+ *
+ * @param int   $form_id Form ID.
+ * @param array $data    Form definition.
+ * @return int|WP_Error Form ID, or an error.
+ */
 function wsp_wpforms_save_form_data( $form_id, $data ) {
     $data['id'] = (string) $form_id;
     $data['field_id'] = wsp_wpforms_get_next_field_id( $data );
@@ -42,6 +71,12 @@ function wsp_wpforms_save_form_data( $form_id, $data ) {
     ), true );
 }
 
+/**
+ * Get the next unused numeric field ID.
+ *
+ * @param array $data Form definition.
+ * @return int
+ */
 function wsp_wpforms_get_next_field_id( $data ) {
     $max_id = -1;
     if ( ! empty( $data['fields'] ) && is_array( $data['fields'] ) ) {
@@ -55,6 +90,11 @@ function wsp_wpforms_get_next_field_id( $data ) {
     return $max_id + 1;
 }
 
+/**
+ * List the field types that the tools can create.
+ *
+ * @return array Map of type to label and whether it accepts choices.
+ */
 function wsp_wpforms_field_types() {
     return array(
         'text'       => array( 'label' => 'Single Line Text', 'can_have_choices' => false ),
@@ -79,6 +119,14 @@ function wsp_wpforms_field_types() {
 // EXECUTE CALLBACKS
 // ---------------------------------------------
 
+/**
+ * Lists all WPForms with ID, title, date, status, and field count.
+ *
+ * MCP tool: `wsp_wpforms_list_forms`. Requires the `wpforms_view_forms` capability.
+ *
+ * @param array $input Tool arguments (this tool takes none).
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_wpforms_list_forms( $input ) {
     if ( ! function_exists( 'wpforms' ) ) {
         return array( 'success' => false, 'error' => 'WPForms is not active.' );
@@ -108,6 +156,18 @@ function wsp_execute_wpforms_list_forms( $input ) {
     return array( 'forms' => $result, 'total' => count( $result ) );
 }
 
+/**
+ * Retrieves full WPForms structure (fields, settings, payments).
+ *
+ * MCP tool: `wsp_wpforms_get_form`. Requires the `wpforms_view_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Form ID.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_wpforms_get_form( $input ) {
     if ( ! function_exists( 'wpforms' ) ) {
         return array( 'success' => false, 'error' => 'WPForms is not active.' );
@@ -142,6 +202,14 @@ function wsp_execute_wpforms_get_form( $input ) {
     );
 }
 
+/**
+ * Returns supported field types and editable attributes to guide AI on create/update field actions.
+ *
+ * MCP tool: `wsp_wpforms_describe_schema`. Requires the `wpforms_view_forms` capability.
+ *
+ * @param array $input Tool arguments (this tool takes none).
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_wpforms_describe_schema( $input ) {
     if ( ! function_exists( 'wpforms' ) ) {
         return array( 'success' => false, 'error' => 'WPForms is not active.' );
@@ -186,6 +254,18 @@ function wsp_execute_wpforms_describe_schema( $input ) {
     );
 }
 
+/**
+ * Fetch entry counts and analytics (Pro entry stats).
+ *
+ * MCP tool: `wsp_wpforms_get_form_stats`. Requires the `wpforms_view_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Optional. Form ID (optional; omit for global stats).
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_wpforms_get_form_stats( $input ) {
     if ( ! function_exists( 'wpforms' ) ) {
         return array( 'success' => false, 'error' => 'WPForms is not active.' );
@@ -258,6 +338,21 @@ function wsp_execute_wpforms_get_form_stats( $input ) {
     );
 }
 
+/**
+ * Creates a new WPForms form with fields, settings, and notification email.
+ *
+ * MCP tool: `wsp_wpforms_create_form`. Requires the `wpforms_edit_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $title Required. Form title.
+ *     @type string $description Optional. Form description.
+ *     @type array $fields Optional. Array of field objects.
+ *     @type string $submit_text Optional. Submit button text. Default: Submit.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_wpforms_create_form( $input ) {
     if ( ! function_exists( 'wpforms' ) ) {
         return array( 'success' => false, 'error' => 'WPForms is not active.' );
@@ -361,6 +456,24 @@ function wsp_execute_wpforms_create_form( $input ) {
     );
 }
 
+/**
+ * Update form settings (title, description, submit text, AJAX, anti-spam).
+ *
+ * MCP tool: `wsp_wpforms_update_form_settings`. Requires the `wpforms_edit_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Form ID.
+ *     @type string $title Optional. Form title.
+ *     @type string $description Optional. Form description.
+ *     @type string $submit_text Optional. Submit button text.
+ *     @type string $submit_text_processing Optional. Text shown while submitting.
+ *     @type bool $antispam Optional. Enable anti-spam honeypot.
+ *     @type bool $ajax_submit Optional. Enable AJAX submission.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_wpforms_update_form_settings( $input ) {
     if ( ! function_exists( 'wpforms' ) ) {
         return array( 'success' => false, 'error' => 'WPForms is not active.' );
@@ -430,6 +543,25 @@ function wsp_execute_wpforms_update_form_settings( $input ) {
     );
 }
 
+/**
+ * Add a new field to an existing form with auto-assigned ID.
+ *
+ * MCP tool: `wsp_wpforms_add_field`. Requires the `wpforms_edit_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Form ID.
+ *     @type string $type Required. Field type (use wpforms-describe-schema to see options).
+ *     @type string $label Required. Field label.
+ *     @type bool $required Optional. Make field required.
+ *     @type string $description Optional. Field description text.
+ *     @type string $placeholder Optional. Placeholder text.
+ *     @type string $css Optional. CSS class.
+ *     @type array $choices Optional. Array of {label, value} for choice fields.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_wpforms_add_field( $input ) {
     if ( ! function_exists( 'wpforms' ) ) {
         return array( 'success' => false, 'error' => 'WPForms is not active.' );
@@ -505,6 +637,25 @@ function wsp_execute_wpforms_add_field( $input ) {
     );
 }
 
+/**
+ * Update a field label, description, required status, or choices.
+ *
+ * MCP tool: `wsp_wpforms_update_field`. Requires the `wpforms_edit_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Form ID.
+ *     @type string $field_id Required. Field ID (e.g. "0", "1").
+ *     @type string $label Optional. Field label.
+ *     @type bool $required Optional. Make field required.
+ *     @type string $description Optional. Field description.
+ *     @type string $placeholder Optional. Placeholder text.
+ *     @type string $css Optional. CSS class.
+ *     @type array $choices Optional. Array of {label, value} for choice fields.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_wpforms_update_field( $input ) {
     if ( ! function_exists( 'wpforms' ) ) {
         return array( 'success' => false, 'error' => 'WPForms is not active.' );
@@ -573,6 +724,19 @@ function wsp_execute_wpforms_update_field( $input ) {
     );
 }
 
+/**
+ * Trashes or permanently deletes a WPForms form.
+ *
+ * MCP tool: `wsp_wpforms_delete_form`. Requires the `wpforms_edit_forms` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Form ID.
+ *     @type bool $permanent Optional. True for permanent deletion. Default false.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_wpforms_delete_form( $input ) {
     if ( ! function_exists( 'wpforms' ) ) {
         return array( 'success' => false, 'error' => 'WPForms is not active.' );
@@ -609,6 +773,21 @@ function wsp_execute_wpforms_delete_form( $input ) {
     );
 }
 
+/**
+ * Lists submission entries for a form (requires WPForms Pro).
+ *
+ * MCP tool: `wsp_wpforms_list_entries`. Requires the `wpforms_view_entries` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Optional. Form ID to filter by.
+ *     @type int $per_page Optional. Number of entries. Default 20.
+ *     @type int $page Optional. Page number. Default 1.
+ *     @type string $status Optional. publish | trash | all.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_wpforms_list_entries( $input ) {
     if ( ! function_exists( 'wpforms' ) ) {
         return array( 'success' => false, 'error' => 'WPForms is not active.' );
@@ -667,6 +846,18 @@ function wsp_execute_wpforms_list_entries( $input ) {
     );
 }
 
+/**
+ * Retrieves full details and field values of a single entry.
+ *
+ * MCP tool: `wsp_wpforms_get_entry`. Requires the `wpforms_view_entries` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Entry ID.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_wpforms_get_entry( $input ) {
     if ( ! function_exists( 'wpforms' ) ) {
         return array( 'success' => false, 'error' => 'WPForms is not active.' );
@@ -732,6 +923,19 @@ function wsp_execute_wpforms_get_entry( $input ) {
     );
 }
 
+/**
+ * Trashes or permanently deletes a submission entry (Pro).
+ *
+ * MCP tool: `wsp_wpforms_delete_entry`. Requires the `wpforms_edit_entries` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required. Entry ID.
+ *     @type bool $permanent Optional. True for permanent deletion. Default false.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_wpforms_delete_entry( $input ) {
     if ( ! function_exists( 'wpforms' ) ) {
         return array( 'success' => false, 'error' => 'WPForms is not active.' );

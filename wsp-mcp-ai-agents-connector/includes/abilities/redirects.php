@@ -11,7 +11,12 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-/** Normalize one redirect row for output. */
+/**
+ * Normalize one redirect row for output.
+ *
+ * @param object $row Row from the redirects table.
+ * @return array
+ */
 function wsp_redirects_format_row( $row ) {
 	$user = ! empty( $row->created_by ) ? get_userdata( (int) $row->created_by ) : false;
 	$host = (string) wp_parse_url( $row->destination, PHP_URL_HOST );
@@ -29,6 +34,24 @@ function wsp_redirects_format_row( $row ) {
 	);
 }
 
+/**
+ * Lists URL redirects, newest first.
+ *
+ * Returns { redirects: [{ id, source, destination, status_code, external, hits, last_hit, note,
+ * created_by, created_at }], total, returned, pages, limit }. "source" is a site-relative path;
+ * "destination" is a /path or full URL.
+ *
+ * MCP tool: `wsp_list_redirects`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $search Optional. Matches source, destination or note.
+ *     @type int $per_page Optional. Default 20.
+ *     @type int $page Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_list_redirects( $input ) {
 	global $wpdb;
 	$t        = WSP_MCP_Redirects::redirects_table();
@@ -61,6 +84,30 @@ function wsp_execute_list_redirects( $input ) {
 	);
 }
 
+/**
+ * Creates a redirect that takes effect immediately for every visitor.
+ *
+ * "source": the old path on this site, e.g. "/old-page" (matched on the path only, case-insensitively,
+ * ignoring trailing slashes; no query strings; not "/", /wp-admin, /wp-login.php, /wp-json).
+ * "destination": a "/new-page" path or a full http(s) URL — a URL on a DIFFERENT domain is refused
+ * unless allow_external=true. status_code 301 (permanent, default; browsers and search engines cache
+ * it) or 302 (temporary). Refuses loops and duplicate sources. A redirect overrides any real page at
+ * the source path (a warning is returned if one exists). Returns { success, redirect, warning?,
+ * notice? }. Tip: use wsp_get_404_logs to find broken URLs worth redirecting.
+ *
+ * MCP tool: `wsp_create_redirect`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $source Required. Old path, e.g. /old-page.
+ *     @type string $destination Required. New /path or full URL.
+ *     @type int $status_code Optional. Default 301. One of: 301, 302.
+ *     @type bool $allow_external Optional. Permit a destination on another domain. Default false.
+ *     @type string $note Optional. Optional reminder of why (max 255).
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_create_redirect( $input ) {
 	global $wpdb;
 	$t = WSP_MCP_Redirects::redirects_table();
@@ -124,6 +171,21 @@ function wsp_execute_create_redirect( $input ) {
 	return $result;
 }
 
+/**
+ * Deletes a redirect by id (from wsp_list_redirects).
+ *
+ * Visitors who cached a 301 in their browser may keep being redirected for a while. Returns { success,
+ * deleted }.
+ *
+ * MCP tool: `wsp_delete_redirect`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Required.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_delete_redirect( $input ) {
 	global $wpdb;
 	$t  = WSP_MCP_Redirects::redirects_table();
@@ -142,6 +204,29 @@ function wsp_execute_delete_redirect( $input ) {
 	return array( 'success' => true, 'deleted' => wsp_redirects_format_row( $row ) );
 }
 
+/**
+ * Lists URLs that visitors requested but were not found (404), aggregated per path.
+ *
+ * Recording is active only while this tool is enabled, so an empty result right after enabling is
+ * normal. Returns { entries: [{ id, path, hits, first_seen, last_seen, referrer, user_agent,
+ * redirect_id (set when a redirect already covers the path) }], returned, total_paths, total_hits,
+ * tracking_since }. Paths only — query strings are stripped and no IP addresses are stored. Entries
+ * expire after 30 days.
+ *
+ * MCP tool: `wsp_get_404_logs`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $limit Optional. Default 50.
+ *     @type string $orderby Optional. recent (default) or hits. One of: recent, hits.
+ *     @type string $search Optional. Substring of the path.
+ *     @type int $min_hits Optional.
+ *     @type int $days Optional. Only paths seen in the last N days.
+ *     @type bool $unresolved_only Optional. Hide paths that already have a redirect.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_404_logs( $input ) {
 	global $wpdb;
 	$l = WSP_MCP_Redirects::log_table();
@@ -197,6 +282,21 @@ function wsp_execute_get_404_logs( $input ) {
 	);
 }
 
+/**
+ * Deletes recorded 404 entries: one by id, or everything with all=true.
+ *
+ * Returns { success, deleted }.
+ *
+ * MCP tool: `wsp_clear_404_logs`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $id Optional. Entry id from wsp_get_404_logs.
+ *     @type bool $all Optional. Clear the whole log.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_clear_404_logs( $input ) {
 	global $wpdb;
 	$l  = WSP_MCP_Redirects::log_table();

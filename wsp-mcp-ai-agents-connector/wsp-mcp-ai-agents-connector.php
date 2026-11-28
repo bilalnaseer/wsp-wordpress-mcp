@@ -10,6 +10,8 @@
  * License: GPL-2.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: wsp-mcp-ai-agents-connector
+ *
+ * @package WSP_MCP
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit;
@@ -58,9 +60,9 @@ require_once WSP_MCP_DIR . 'includes/abilities/search.php';
 require_once WSP_MCP_DIR . 'includes/abilities/site.php';
 require_once WSP_MCP_DIR . 'includes/abilities/menus.php';
 require_once WSP_MCP_DIR . 'includes/abilities/themes.php';
-require_once WSP_MCP_DIR . 'includes/abilities/theme-upload.php'; // wsp_upload_theme handler
-require_once WSP_MCP_DIR . 'includes/abilities/theme-files.php'; // single-file theme tools + chunked upload
-require_once WSP_MCP_DIR . 'includes/abilities/diagnostics.php'; // wsp_get_mcp_diagnostics
+require_once WSP_MCP_DIR . 'includes/abilities/theme-upload.php'; // wsp_upload_theme handler.
+require_once WSP_MCP_DIR . 'includes/abilities/theme-files.php'; // single-file theme tools + chunked upload.
+require_once WSP_MCP_DIR . 'includes/abilities/diagnostics.php'; // wsp_get_mcp_diagnostics.
 require_once WSP_MCP_DIR . 'includes/abilities/cpt.php';
 require_once WSP_MCP_DIR . 'includes/abilities/site-editor.php';
 require_once WSP_MCP_DIR . 'includes/abilities/widgets.php';
@@ -73,15 +75,15 @@ require_once WSP_MCP_DIR . 'includes/abilities/redirects.php';
 require_once WSP_MCP_DIR . 'includes/abilities/yoast.php';
 require_once WSP_MCP_DIR . 'includes/abilities/rankmath.php';
 require_once WSP_MCP_DIR . 'includes/abilities/elementor.php';
-require_once WSP_MCP_DIR . 'includes/abilities/woocommerce-catalog.php'; // shared Woo helpers + catalog tools (before woocommerce.php)
+require_once WSP_MCP_DIR . 'includes/abilities/woocommerce-catalog.php'; // shared Woo helpers + catalog tools (before woocommerce.php).
 require_once WSP_MCP_DIR . 'includes/abilities/woocommerce-store.php';
 require_once WSP_MCP_DIR . 'includes/abilities/plugins.php';
 require_once WSP_MCP_DIR . 'includes/abilities/woocommerce.php';
-require_once WSP_MCP_DIR . 'includes/abilities/acf.php'; // Included ACF Pro Abilities
-require_once WSP_MCP_DIR . 'includes/abilities/uae.php'; // Included UAE Abilities
-require_once WSP_MCP_DIR . 'includes/abilities/gravityforms.php'; // Included Gravity Forms Abilities
-require_once WSP_MCP_DIR . 'includes/abilities/cf7.php'; // Included Contact Form 7 Abilities
-require_once WSP_MCP_DIR . 'includes/abilities/wpforms.php'; // Included WPForms Abilities
+require_once WSP_MCP_DIR . 'includes/abilities/acf.php'; // Included ACF Pro Abilities.
+require_once WSP_MCP_DIR . 'includes/abilities/uae.php'; // Included UAE Abilities.
+require_once WSP_MCP_DIR . 'includes/abilities/gravityforms.php'; // Included Gravity Forms Abilities.
+require_once WSP_MCP_DIR . 'includes/abilities/cf7.php'; // Included Contact Form 7 Abilities.
+require_once WSP_MCP_DIR . 'includes/abilities/wpforms.php'; // Included WPForms Abilities.
 
 add_action( 'admin_menu',                       'wsp_mcp_add_menu' );
 add_action( 'admin_init',                       'wsp_mcp_register_settings' );

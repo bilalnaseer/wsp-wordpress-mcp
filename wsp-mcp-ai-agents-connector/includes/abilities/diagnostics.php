@@ -8,6 +8,20 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+/**
+ * MCP transport diagnostics: number of live sessions, session TTL, and counts/recent entries of
+ * rejected requests (auth_failed, origin_blocked, session_expired, session_mismatch, rate_limited) so
+ * you can see why a client is being blocked.
+ *
+ * MCP tool: `wsp_get_mcp_diagnostics`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type int $hours Optional. Look-back window for rejection counts. Default 24.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_mcp_diagnostics( $input ) {
 	$hours = isset( $input['hours'] ) ? max( 1, min( 720, (int) $input['hours'] ) ) : 24;
 	return array(

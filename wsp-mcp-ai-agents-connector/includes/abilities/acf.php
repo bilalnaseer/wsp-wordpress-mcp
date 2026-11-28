@@ -1,10 +1,21 @@
 <?php
+/**
+ * Advanced Custom Fields abilities: field groups, fields, values, post types, taxonomies and options pages.
+ *
+ * @package WSP_MCP
+ */
+
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
  * Check if Advanced Custom Fields (ACF) is active.
  */
 if ( ! function_exists( 'wsp_acf_is_active' ) ) {
+    /**
+     * Whether Advanced Custom Fields is active.
+     *
+     * @return bool True when ACF is loaded.
+     */
     function wsp_acf_is_active() {
         return class_exists( 'ACF' ) || function_exists( 'get_field' );
     }
@@ -12,6 +23,9 @@ if ( ! function_exists( 'wsp_acf_is_active' ) ) {
 
 /**
  * Capability checker helper.
+ *
+ * @param string $cap Capability to require. Default "edit_posts".
+ * @return true|WP_Error True when the current user has the capability.
  */
 function wsp_acf_check_cap( $cap = 'edit_posts' ) {
     if ( ! current_user_can( $cap ) ) {
@@ -22,13 +36,21 @@ function wsp_acf_check_cap( $cap = 'edit_posts' ) {
 
 /**
  * Validate and resolve ACF target selectors contextually (Issues 3 & 4 Resolved).
+ *
+ * @param int|string $target_id   Post, page, user or term ID, a "user_5" / "term_5" style string,
+ *                                or "options".
+ * @param string     $target_type One of post, page, user, term or option(s). Default "post".
+ * @param bool       $is_write    Whether the caller intends to modify the target, which needs a
+ *                                stricter capability. Default false.
+ * @return int|string|WP_Error The target in the form ACF expects, or a WP_Error when the user may
+ *        not access it.
  */
 function wsp_acf_validate_target( $target_id, $target_type = 'post', $is_write = false ) {
     if ( ! wsp_acf_is_active() ) {
         return new WP_Error( 'acf_inactive', 'ACF is not active.' );
     }
 
-    // Standardize options page target (Require manage_options for any read/write on Options)
+    // Standardize options page target (Require manage_options for any read/write on Options).
     if ( $target_id === 'option' || $target_id === 'options' || $target_type === 'option' ) {
         $opt_cap_check = wsp_acf_check_cap( 'manage_options' );
         if ( is_wp_error( $opt_cap_check ) ) {
@@ -37,7 +59,7 @@ function wsp_acf_validate_target( $target_id, $target_type = 'post', $is_write =
         return 'options';
     }
 
-    // Normalize string identifiers (e.g., 'user_5' -> ID: 5, Type: user)
+    // Normalize string identifiers (e.g., 'user_5' -> ID: 5, Type: user).
     $clean_id = $target_id;
     if ( is_string( $target_id ) ) {
         if ( strpos( $target_id, 'user_' ) === 0 ) {
@@ -57,7 +79,7 @@ function wsp_acf_validate_target( $target_id, $target_type = 'post', $is_write =
                 return new WP_Error( 'post_not_found', 'Target post/page not found.' );
             }
             
-            // Check specific edit_post permission for the target post (Issue 4)
+            // Check specific edit_post permission for the target post (Issue 4).
             if ( ! current_user_can( 'edit_post', $id ) ) {
                 return new WP_Error( 'forbidden', 'You do not have permission to view or edit this content.' );
             }
@@ -69,12 +91,12 @@ function wsp_acf_validate_target( $target_id, $target_type = 'post', $is_write =
             }
             
             if ( $is_write ) {
-                // Editing user meta requires edit_user capability for that specific user ID (Issue 4)
+                // Editing user meta requires edit_user capability for that specific user ID (Issue 4).
                 if ( ! current_user_can( 'edit_user', $id ) ) {
                     return new WP_Error( 'forbidden', 'You do not have permission to edit this user metadata.' );
                 }
             } else {
-                // Reading user meta requires list_users capability (or if reading self) (Issue 3)
+                // Reading user meta requires list_users capability (or if reading self) (Issue 3).
                 if ( ! current_user_can( 'list_users' ) && get_current_user_id() !== $id ) {
                     return new WP_Error( 'forbidden', 'You do not have permission to view this user metadata.' );
                 }
@@ -86,7 +108,7 @@ function wsp_acf_validate_target( $target_id, $target_type = 'post', $is_write =
                 return new WP_Error( 'term_not_found', 'Target term not found.' );
             }
             
-            // Editing or reading custom taxonomy term meta is restricted to users who manage taxonomies (Issue 3 & 4)
+            // Editing or reading custom taxonomy term meta is restricted to users who manage taxonomies (Issue 3 & 4).
             if ( ! current_user_can( 'manage_categories' ) ) {
                 return new WP_Error( 'forbidden', 'You do not have permission to manage terms.' );
             }
@@ -99,6 +121,10 @@ function wsp_acf_validate_target( $target_id, $target_type = 'post', $is_write =
 
 /**
  * Dot-notation deep getter helper.
+ *
+ * @param mixed  $data Array or object to walk.
+ * @param string $path Dot-separated path, e.g. "repeater.0.text_field".
+ * @return mixed The value at the path, or null when the path does not exist.
  */
 function wsp_acf_get_nested_value( $data, $path ) {
     $keys = explode( '.', $path );
@@ -117,12 +143,14 @@ function wsp_acf_get_nested_value( $data, $path ) {
 /**
  * Recursively sanitize a value destined for ACF storage.
  *
- * ACF field values may be scalars or nested arrays (repeaters, groups, flexible
- * content). To stop the MCP write tools from being used to store executable
- * payloads, every string is passed through wp_kses_post(), which removes
- * <script>/<style> tags and on* event-handler attributes while preserving the
- * post-safe HTML that legitimate WYSIWYG fields rely on. Non-string scalars
- * (int, float, bool, null) carry no executable payload and are returned as-is.
+ * ACF field values may be scalars or nested arrays (repeaters, groups, flexible content). To stop the
+ * MCP write tools from being used to store executable payloads, every string is passed through
+ * wp_kses_post(), which removes <script>/<style> tags and on* event-handler attributes while
+ * preserving the post-safe HTML that legitimate WYSIWYG fields rely on. Non-string scalars (int,
+ * float, bool, null) carry no executable payload and are returned as-is.
+ *
+ * @param mixed $value Field value: a scalar or a nested array.
+ * @return mixed The sanitized value.
  */
 function wsp_acf_sanitize_value( $value ) {
     if ( is_array( $value ) ) {
@@ -143,6 +171,10 @@ function wsp_acf_sanitize_value( $value ) {
 
 /**
  * Dot-notation deep setter helper.
+ *
+ * @param array  $data  Array to modify, passed by reference.
+ * @param string $path  Dot-separated path, e.g. "repeater.0.text_field".
+ * @param mixed  $value Value to store at the path.
  */
 function wsp_acf_set_nested_value( &$data, $path, $value ) {
     $keys = explode( '.', $path );
@@ -163,6 +195,14 @@ function wsp_acf_set_nested_value( &$data, $path, $value ) {
 // 1. FIELD GROUPS (CRUD)
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * List all registered custom field groups.
+ *
+ * MCP tool: `wsp_acf_list_field_groups`. Requires the `edit_posts` capability.
+ *
+ * @param array $input Tool arguments (this tool takes none).
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_acf_list_field_groups( $input ) {
     $cap_check = wsp_acf_check_cap( 'edit_posts' );
     if ( is_wp_error( $cap_check ) ) return $cap_check;
@@ -171,6 +211,18 @@ function wsp_execute_acf_list_field_groups( $input ) {
     return array( 'success' => true, 'groups' => $groups ? $groups : array() );
 }
 
+/**
+ * Retrieve configuration parameters of a specific field group by key.
+ *
+ * MCP tool: `wsp_acf_get_field_group`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $key Required. Field group key (e.g. group_60a5b2).
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_acf_get_field_group( $input ) {
     $cap_check = wsp_acf_check_cap( 'edit_posts' );
     if ( is_wp_error( $cap_check ) ) return $cap_check;
@@ -183,6 +235,22 @@ function wsp_execute_acf_get_field_group( $input ) {
     return array( 'success' => true, 'group' => $group );
 }
 
+/**
+ * Create a brand new custom field group configuration.
+ *
+ * MCP tool: `wsp_acf_create_field_group`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $title Required.
+ *     @type string $key Optional. Optional group key structure.
+ *     @type array $fields Optional.
+ *     @type array $location Optional.
+ *     @type bool $active Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_acf_create_field_group( $input ) {
     $cap_check = wsp_acf_check_cap( 'manage_options' );
     if ( is_wp_error( $cap_check ) ) return $cap_check;
@@ -199,6 +267,21 @@ function wsp_execute_acf_create_field_group( $input ) {
     return array( 'success' => true, 'group' => $saved );
 }
 
+/**
+ * Update location rules or active parameters of a field group.
+ *
+ * MCP tool: `wsp_acf_update_field_group`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $key Required.
+ *     @type string $title Optional.
+ *     @type array $location Optional.
+ *     @type bool $active Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_acf_update_field_group( $input ) {
     $cap_check = wsp_acf_check_cap( 'manage_options' );
     if ( is_wp_error( $cap_check ) ) return $cap_check;
@@ -217,6 +300,18 @@ function wsp_execute_acf_update_field_group( $input ) {
     return array( 'success' => true, 'group' => $saved );
 }
 
+/**
+ * Permanently delete or trash a field group by its key.
+ *
+ * MCP tool: `wsp_acf_delete_field_group`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $key Required.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_acf_delete_field_group( $input ) {
     $cap_check = wsp_acf_check_cap( 'manage_options' );
     if ( is_wp_error( $cap_check ) ) return $cap_check;
@@ -228,6 +323,18 @@ function wsp_execute_acf_delete_field_group( $input ) {
     return new WP_Error( 'delete_failed', 'Failed to delete field group.' );
 }
 
+/**
+ * Import field groups config structure programmatically from JSON parameters.
+ *
+ * MCP tool: `wsp_acf_import_field_groups`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $json_data Required. JSON payload of group configurations.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_acf_import_field_groups( $input ) {
     $cap_check = wsp_acf_check_cap( 'manage_options' );
     if ( is_wp_error( $cap_check ) ) return $cap_check;
@@ -254,6 +361,18 @@ function wsp_execute_acf_import_field_groups( $input ) {
 // 2. FIELDS MANAGEMENT (CRUD)
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * List all custom fields declared inside a specific field group.
+ *
+ * MCP tool: `wsp_acf_list_fields`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $group_key Required.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_acf_list_fields( $input ) {
     $cap_check = wsp_acf_check_cap( 'edit_posts' );
     if ( is_wp_error( $cap_check ) ) return $cap_check;
@@ -263,6 +382,18 @@ function wsp_execute_acf_list_fields( $input ) {
     return array( 'success' => true, 'fields' => $fields ? $fields : array() );
 }
 
+/**
+ * Get full configurations and rules of a single field key.
+ *
+ * MCP tool: `wsp_acf_get_field`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $field_key Required.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_acf_get_field( $input ) {
     $cap_check = wsp_acf_check_cap( 'edit_posts' );
     if ( is_wp_error( $cap_check ) ) return $cap_check;
@@ -275,6 +406,19 @@ function wsp_execute_acf_get_field( $input ) {
     return array( 'success' => true, 'field' => $field );
 }
 
+/**
+ * Inject a new custom field config inside an existing group configuration.
+ *
+ * MCP tool: `wsp_acf_create_field`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type array $field_config Required. Field parameter details (name, type, parent, instructions
+ *         etc.).
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_acf_create_field( $input ) {
     $cap_check = wsp_acf_check_cap( 'manage_options' );
     if ( is_wp_error( $cap_check ) ) return $cap_check;
@@ -290,6 +434,16 @@ function wsp_execute_acf_create_field( $input ) {
 
 /**
  * Update configuration for a single field.
+ *
+ * MCP tool: `wsp_acf_update_field_config`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $field_key Required.
+ *     @type array $config Required.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
  */
 function wsp_execute_acf_update_field_config( $input ) {
     $cap_check = wsp_acf_check_cap( 'manage_options' );
@@ -308,6 +462,18 @@ function wsp_execute_acf_update_field_config( $input ) {
     return array( 'success' => true, 'field' => $saved );
 }
 
+/**
+ * Delete config mapping of a field configuration.
+ *
+ * MCP tool: `wsp_acf_delete_field`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $field_key Required.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_acf_delete_field( $input ) {
     $cap_check = wsp_acf_check_cap( 'manage_options' );
     if ( is_wp_error( $cap_check ) ) return $cap_check;
@@ -319,6 +485,19 @@ function wsp_execute_acf_delete_field( $input ) {
     return new WP_Error( 'delete_failed', 'Failed to delete field.' );
 }
 
+/**
+ * Duplicate an existing field config mapping.
+ *
+ * MCP tool: `wsp_acf_duplicate_field`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $field_key Required.
+ *     @type string $parent_id Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_acf_duplicate_field( $input ) {
     $cap_check = wsp_acf_check_cap( 'manage_options' );
     if ( is_wp_error( $cap_check ) ) return $cap_check;
@@ -335,6 +514,14 @@ function wsp_execute_acf_duplicate_field( $input ) {
     return array( 'success' => true, 'duplicated_field' => $duplicate );
 }
 
+/**
+ * Sync database structures with local filesystem JSON config records.
+ *
+ * MCP tool: `wsp_acf_sync_fields`. Requires the `manage_options` capability.
+ *
+ * @param array $input Tool arguments (this tool takes none).
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_acf_sync_fields( $input ) {
     $cap_check = wsp_acf_check_cap( 'manage_options' );
     if ( is_wp_error( $cap_check ) ) return $cap_check;
@@ -351,9 +538,26 @@ function wsp_execute_acf_sync_fields( $input ) {
 // 3. VALUES & METADATA (WITH CONTEXTUAL CAPABILITY CHECKS)
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Deep read custom field values with dot-notation pathing support (e.g. key.0.subkey).
+ *
+ * MCP tool: `wsp_acf_get_value_deep`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $target_id Required. Target selector or ID (e.g. 101, "options", "user_1",
+ *         "term_5").
+ *     @type string $field_name Required.
+ *     @type string $target_type Optional. post | page | user | term | option.
+ *     @type string $path Optional. Dot-notation nested index selector (e.g.
+ *         "repeater.0.text_field").
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_acf_get_value_deep( $input ) {
     $target_type = isset( $input['target_type'] ) ? sanitize_text_field( $input['target_type'] ) : 'post';
-    $selector    = wsp_acf_validate_target( $input['target_id'], $target_type, false ); // Contextual Read Check
+    $selector    = wsp_acf_validate_target( $input['target_id'], $target_type, false ); // Contextual Read Check.
     if ( is_wp_error( $selector ) ) return $selector;
 
     $field_name = sanitize_text_field( $input['field_name'] );
@@ -368,9 +572,25 @@ function wsp_execute_acf_get_value_deep( $input ) {
     return array( 'success' => true, 'value' => $deep_val, 'path' => $path );
 }
 
+/**
+ * Deep write custom field values supporting array indices with dot-notation (e.g. repeater.0.key).
+ *
+ * MCP tool: `wsp_acf_update_value_deep`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $target_id Required.
+ *     @type string $field_name Required.
+ *     @type string $value Required.
+ *     @type string $target_type Optional.
+ *     @type string $path Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_acf_update_value_deep( $input ) {
     $target_type = isset( $input['target_type'] ) ? sanitize_text_field( $input['target_type'] ) : 'post';
-    $selector    = wsp_acf_validate_target( $input['target_id'], $target_type, true ); // Contextual Write Check
+    $selector    = wsp_acf_validate_target( $input['target_id'], $target_type, true ); // Contextual Write Check.
     if ( is_wp_error( $selector ) ) return $selector;
 
     $field_name = sanitize_text_field( $input['field_name'] );
@@ -393,9 +613,23 @@ function wsp_execute_acf_update_value_deep( $input ) {
     );
 }
 
+/**
+ * Delete specific key field metadata value.
+ *
+ * MCP tool: `wsp_acf_delete_value`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $target_id Required.
+ *     @type string $field_name Required.
+ *     @type string $target_type Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_acf_delete_value( $input ) {
     $target_type = isset( $input['target_type'] ) ? sanitize_text_field( $input['target_type'] ) : 'post';
-    $selector    = wsp_acf_validate_target( $input['target_id'], $target_type, true ); // Contextual Write Check
+    $selector    = wsp_acf_validate_target( $input['target_id'], $target_type, true ); // Contextual Write Check.
     if ( is_wp_error( $selector ) ) return $selector;
 
     $field_name = sanitize_text_field( $input['field_name'] );
@@ -404,18 +638,45 @@ function wsp_execute_acf_delete_value( $input ) {
     return array( 'success' => true, 'message' => sprintf( 'Field value "%s" deleted.', $field_name ) );
 }
 
+/**
+ * Get all raw field values mapped on any object.
+ *
+ * MCP tool: `wsp_acf_get_all_values`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $target_id Required.
+ *     @type string $target_type Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_acf_get_all_values( $input ) {
     $target_type = isset( $input['target_type'] ) ? sanitize_text_field( $input['target_type'] ) : 'post';
-    $selector    = wsp_acf_validate_target( $input['target_id'], $target_type, false ); // Contextual Read Check
+    $selector    = wsp_acf_validate_target( $input['target_id'], $target_type, false ); // Contextual Read Check.
     if ( is_wp_error( $selector ) ) return $selector;
 
     $fields = get_fields( $selector );
     return array( 'success' => true, 'fields' => $fields ? $fields : array() );
 }
 
+/**
+ * Bulk update array values instantly.
+ *
+ * MCP tool: `wsp_acf_bulk_update_values`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $target_id Required.
+ *     @type array $fields Required. Key-value maps of fields structure.
+ *     @type string $target_type Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_acf_bulk_update_values( $input ) {
     $target_type = isset( $input['target_type'] ) ? sanitize_text_field( $input['target_type'] ) : 'post';
-    $selector    = wsp_acf_validate_target( $input['target_id'], $target_type, true ); // Contextual Write Check
+    $selector    = wsp_acf_validate_target( $input['target_id'], $target_type, true ); // Contextual Write Check.
     if ( is_wp_error( $selector ) ) return $selector;
 
     $fields = $input['fields'];
@@ -433,9 +694,23 @@ function wsp_execute_acf_bulk_update_values( $input ) {
     return array( 'success' => true, 'updated' => $updated );
 }
 
+/**
+ * Return both config parameter object and loaded values.
+ *
+ * MCP tool: `wsp_acf_get_field_object`. Requires the `edit_posts` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $target_id Required.
+ *     @type string $field_selector Required.
+ *     @type string $target_type Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_acf_get_field_object( $input ) {
     $target_type = isset( $input['target_type'] ) ? sanitize_text_field( $input['target_type'] ) : 'post';
-    $selector    = wsp_acf_validate_target( $input['target_id'], $target_type, false ); // Contextual Read Check
+    $selector    = wsp_acf_validate_target( $input['target_id'], $target_type, false ); // Contextual Read Check.
     if ( is_wp_error( $selector ) ) return $selector;
 
     $field_selector = sanitize_text_field( $input['field_selector'] );
@@ -452,6 +727,14 @@ function wsp_execute_acf_get_field_object( $input ) {
 // 4. CUSTOM POST TYPES & TAXONOMIES
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * List registered post types.
+ *
+ * MCP tool: `wsp_acf_list_post_types`. Requires the `edit_posts` capability.
+ *
+ * @param array $input Tool arguments (this tool takes none).
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_acf_list_post_types( $input ) {
     $cap_check = wsp_acf_check_cap( 'edit_posts' );
     if ( is_wp_error( $cap_check ) ) return $cap_check;
@@ -469,6 +752,20 @@ function wsp_execute_acf_list_post_types( $input ) {
     return array( 'success' => true, 'post_types' => $data );
 }
 
+/**
+ * Programmatically register brand new WordPress Post Type.
+ *
+ * MCP tool: `wsp_acf_create_post_type`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $post_type_slug Required.
+ *     @type string $singular_name Required.
+ *     @type string $plural_name Required.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_acf_create_post_type( $input ) {
     $cap_check = wsp_acf_check_cap( 'manage_options' );
     if ( is_wp_error( $cap_check ) ) return $cap_check;
@@ -494,6 +791,14 @@ function wsp_execute_acf_create_post_type( $input ) {
     return new WP_Error( 'unsupported', 'Programmatic ACF post type creation requires ACF 6.1+.' );
 }
 
+/**
+ * List taxonomies structure.
+ *
+ * MCP tool: `wsp_acf_list_taxonomies`. Requires the `edit_posts` capability.
+ *
+ * @param array $input Tool arguments (this tool takes none).
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_acf_list_taxonomies( $input ) {
     $cap_check = wsp_acf_check_cap( 'edit_posts' );
     if ( is_wp_error( $cap_check ) ) return $cap_check;
@@ -511,6 +816,21 @@ function wsp_execute_acf_list_taxonomies( $input ) {
     return array( 'success' => true, 'taxonomies' => $data );
 }
 
+/**
+ * Programmatically register brand new WordPress taxonomy.
+ *
+ * MCP tool: `wsp_acf_create_taxonomy`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $taxonomy_slug Required.
+ *     @type string $singular_name Required.
+ *     @type string $plural_name Required.
+ *     @type array $post_types Required.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_acf_create_taxonomy( $input ) {
     $cap_check = wsp_acf_check_cap( 'manage_options' );
     if ( is_wp_error( $cap_check ) ) return $cap_check;
@@ -542,6 +862,14 @@ function wsp_execute_acf_create_taxonomy( $input ) {
 // 5. OPTIONS PAGES
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * List registered global options views.
+ *
+ * MCP tool: `wsp_acf_list_options_pages`. Requires the `edit_posts` capability.
+ *
+ * @param array $input Tool arguments (this tool takes none).
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_acf_list_options_pages( $input ) {
     $cap_check = wsp_acf_check_cap( 'edit_posts' );
     if ( is_wp_error( $cap_check ) ) return $cap_check;
@@ -554,6 +882,20 @@ function wsp_execute_acf_list_options_pages( $input ) {
     return array( 'success' => true, 'options_pages' => $pages ? $pages : array() );
 }
 
+/**
+ * Programmatically register global ACF Options Page.
+ *
+ * MCP tool: `wsp_acf_create_options_page`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $page_title Required.
+ *     @type string $menu_title Optional.
+ *     @type string $menu_slug Optional.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_acf_create_options_page( $input ) {
     $cap_check = wsp_acf_check_cap( 'manage_options' );
     if ( is_wp_error( $cap_check ) ) return $cap_check;
@@ -574,6 +916,18 @@ function wsp_execute_acf_create_options_page( $input ) {
     return array( 'success' => true, 'options_page' => $page );
 }
 
+/**
+ * Read global option value metadata.
+ *
+ * MCP tool: `wsp_acf_get_option_value`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $field_name Required.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_acf_get_option_value( $input ) {
     // Global option values are admin-level configuration — require manage_options.
     $cap_check = wsp_acf_check_cap( 'manage_options' );
@@ -584,6 +938,19 @@ function wsp_execute_acf_get_option_value( $input ) {
     return array( 'success' => true, 'field_name' => $field_name, 'value' => $val );
 }
 
+/**
+ * Write option values globally.
+ *
+ * MCP tool: `wsp_acf_update_option_value`. Requires the `manage_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $field_name Required.
+ *     @type string $value Required.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_acf_update_option_value( $input ) {
     $cap_check = wsp_acf_check_cap( 'manage_options' );
     if ( is_wp_error( $cap_check ) ) return $cap_check;

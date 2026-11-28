@@ -48,9 +48,14 @@ function wsp_site_editor_require_templates() {
 }
 
 /**
- * Deep-merge $patch into $base. Associative arrays merge key-by-key; lists
- * (e.g. a colour palette) and scalars replace wholesale; a null value removes
- * the key, so a caller can drop a customization and fall back to the theme.
+ * Deep-merge $patch into $base.
+ *
+ * Associative arrays merge key-by-key; lists (e.g. a colour palette) and scalars replace wholesale; a
+ * null value removes the key, so a caller can drop a customization and fall back to the theme.
+ *
+ * @param array $base  Existing values.
+ * @param array $patch Values to merge in.
+ * @return array The merged array.
  */
 function wsp_site_editor_merge( $base, $patch ) {
 	if ( ! is_array( $base ) ) $base = array();
@@ -67,7 +72,12 @@ function wsp_site_editor_merge( $base, $patch ) {
 	return $base;
 }
 
-/** Recursively drop every `css` key (custom CSS) from a styles tree. */
+/**
+ * Recursively drop every `css` key (custom CSS) from a styles tree.
+ *
+ * @param array $tree Styles tree.
+ * @return array The tree without any "css" key.
+ */
 function wsp_site_editor_strip_custom_css( $tree ) {
 	if ( ! is_array( $tree ) ) return $tree;
 	unset( $tree['css'] );
@@ -86,7 +96,12 @@ function wsp_site_editor_global_styles_post_id() {
 	return isset( $post['ID'] ) ? (int) $post['ID'] : 0;
 }
 
-/** Decode the user-level global styles config stored in the wp_global_styles post. */
+/**
+ * Decode the user-level global styles config stored in the wp_global_styles post.
+ *
+ * @param int $post_id ID of the wp_global_styles post.
+ * @return array Decoded user-level configuration.
+ */
 function wsp_site_editor_read_user_config( $post_id ) {
 	$post   = $post_id ? get_post( $post_id ) : null;
 	$config = $post ? json_decode( $post->post_content, true ) : null;
@@ -98,7 +113,13 @@ function wsp_site_editor_read_user_config( $post_id ) {
 	);
 }
 
-/** Classify a style variation as full, color-only or typography-only (mirrors the Site Editor's grouping). */
+/**
+ * Classify a style variation as full, color-only or typography-only (mirrors the Site Editor's
+ * grouping).
+ *
+ * @param array $variation Style variation data.
+ * @return string One of full, color or typography.
+ */
 function wsp_site_editor_variation_scope( $variation ) {
 	$sections = array();
 	foreach ( array( 'settings', 'styles' ) as $root ) {
@@ -147,7 +168,12 @@ function wsp_site_editor_style_variations() {
 	return $out;
 }
 
-/** Map the MCP-facing type to the WP post type. */
+/**
+ * Map the MCP-facing type to the WP post type.
+ *
+ * @param array $input Tool arguments with an optional "type".
+ * @return string wp_template or wp_template_part.
+ */
 function wsp_site_editor_template_post_type( $input ) {
 	$type = isset( $input['type'] ) ? sanitize_key( $input['type'] ) : 'template';
 	if ( 'template' === $type || 'wp_template' === $type )           return 'wp_template';
@@ -161,7 +187,13 @@ function wsp_site_editor_template_part_areas() {
 	return wp_list_pluck( get_allowed_block_template_part_areas(), 'area' );
 }
 
-/** Normalize a WP_Block_Template to a plain array. */
+/**
+ * Normalize a WP_Block_Template to a plain array.
+ *
+ * @param WP_Block_Template $tpl          Template or template part.
+ * @param bool              $with_content Include the block markup. Default false.
+ * @return array
+ */
 function wsp_site_editor_template_to_array( $tpl, $with_content = false ) {
 	$is_part = 'wp_template_part' === $tpl->type;
 	$data = array(
@@ -172,7 +204,7 @@ function wsp_site_editor_template_to_array( $tpl, $with_content = false ) {
 		'type'           => $is_part ? 'template_part' : 'template',
 		'area'           => $is_part && isset( $tpl->area ) ? (string) $tpl->area : '',
 		'status'         => $tpl->status,
-		'source'         => $tpl->source, // theme | plugin | custom
+		'source'         => $tpl->source, // theme | plugin | custom.
 		'has_theme_file' => (bool) $tpl->has_theme_file,
 		'is_customized'  => ! empty( $tpl->wp_id ),
 	);
@@ -180,7 +212,13 @@ function wsp_site_editor_template_to_array( $tpl, $with_content = false ) {
 	return $data;
 }
 
-/** Validate an area for a template part; empty input falls back to $default. */
+/**
+ * Validate an area for a template part; empty input falls back to $default.
+ *
+ * @param array  $input   Tool arguments with an optional "area".
+ * @param string $default Area used when none is supplied.
+ * @return string|WP_Error The area, or an error when it is not allowed.
+ */
 function wsp_site_editor_resolve_area( $input, $default ) {
 	if ( ! isset( $input['area'] ) || '' === $input['area'] ) return $default;
 	$area = sanitize_key( $input['area'] );
@@ -191,9 +229,19 @@ function wsp_site_editor_resolve_area( $input, $default ) {
 }
 
 /**
- * Insert a wp_template / wp_template_part post for $theme. Terms are set with
- * wp_set_object_terms() rather than tax_input, because wp_insert_post() silently
+ * Insert a wp_template / wp_template_part post for $theme.
+ *
+ * Terms are set with wp_set_object_terms() rather than tax_input, because wp_insert_post() silently
  * skips tax_input unless the user holds the taxonomy's assign_terms capability.
+ *
+ * @param string $post_type   wp_template or wp_template_part.
+ * @param string $theme       Stylesheet slug of the theme the template belongs to.
+ * @param string $slug        Template slug.
+ * @param string $title       Title.
+ * @param string $content     Block markup.
+ * @param string $description Description.
+ * @param string $area        Template-part area. Ignored for templates.
+ * @return int|WP_Error ID of the new post, or an error.
  */
 function wsp_site_editor_insert_template_post( $post_type, $theme, $slug, $title, $content, $description, $area ) {
 	$post_id = wp_insert_post( wp_slash( array(
@@ -214,6 +262,24 @@ function wsp_site_editor_insert_template_post( $post_type, $theme, $slug, $title
 // Global Styles
 // ---------------------------------------------------------------------------
 
+/**
+ * Gets the Global Styles (theme.json) settings and styles of the active block theme. origin=user
+ * (default) returns only the site's Site Editor customizations; origin=merged returns the effective
+ * values (core + theme + user). include_variations=true also lists the theme's style variations as
+ * available_variations: [{ slug, title, scope }] where scope is full | color | typography; pass a slug
+ * to wsp_update_global_styles variation_slug to apply it.
+ *
+ * MCP tool: `wsp_get_global_styles`. Requires the `edit_theme_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $origin Optional. user (default) or merged. One of: user, merged.
+ *     @type bool $include_variations Optional. Also list the theme's style variations. Default
+ *         false.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_global_styles( $input ) {
 	$ok = wsp_site_editor_require_block_theme();
 	if ( is_wp_error( $ok ) ) return $ok;
@@ -250,6 +316,31 @@ function wsp_execute_get_global_styles( $input ) {
 	return $result;
 }
 
+/**
+ * Updates the site's Global Styles (theme.json user layer) for the active block theme. settings/styles
+ * use theme.json structure (e.g. styles.color.background, styles.elements.link.color.text,
+ * styles.blocks["core/button"].border.radius, settings.color.palette).
+ *
+ * By default values deep-merge into existing customizations — objects merge key-by-key, arrays (like a
+ * palette) replace wholesale, and null removes a key so it falls back to the theme. merge=false
+ * replaces settings/styles entirely. variation_slug applies a theme style variation first (full
+ * variations replace, color/typography partials merge). Custom CSS (`css` keys) cannot be set through
+ * this tool.
+ *
+ * MCP tool: `wsp_update_global_styles`. Requires the `edit_theme_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type array $settings Optional. theme.json "settings" fragment.
+ *     @type array $styles Optional. theme.json "styles" fragment.
+ *     @type string $variation_slug Optional. Style variation slug from wsp_get_global_styles
+ *         include_variations=true.
+ *     @type bool $merge Optional. Deep-merge into existing customizations (default true). false
+ *         replaces.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_update_global_styles( $input ) {
 	$ok = wsp_site_editor_require_block_theme();
 	if ( is_wp_error( $ok ) ) return $ok;
@@ -344,6 +435,28 @@ function wsp_execute_update_global_styles( $input ) {
 // Templates & template parts
 // ---------------------------------------------------------------------------
 
+/**
+ * Lists block templates or template parts of the active theme.
+ *
+ * Returns { templates: [{ id, slug, title, description, type, area, status, source, has_theme_file,
+ * is_customized }], total, total_pages, page, per_page }. IDs are `theme-slug//slug` and are accepted
+ * by wsp_get_template / wsp_update_template with the same type.
+ *
+ * MCP tool: `wsp_get_templates`. Requires the `edit_theme_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $type Optional. `template` (default — index, single, archive, …) or
+ *         `template_part` (header, footer, and other reusable areas). One of: template,
+ *         template_part.
+ *     @type string $area Optional. Template parts only: header | footer | uncategorized.
+ *     @type string $search Optional. Case-insensitive match on title, slug, or description.
+ *     @type int $per_page Optional. Default 10.
+ *     @type int $page Optional. Default 1.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_templates( $input ) {
 	$ok = wsp_site_editor_require_templates();
 	if ( is_wp_error( $ok ) ) return $ok;
@@ -376,6 +489,22 @@ function wsp_execute_get_templates( $input ) {
 	);
 }
 
+/**
+ * Gets one block template or template part by ID (theme-slug//slug) including its full block markup
+ * content.
+ *
+ * MCP tool: `wsp_get_template`. Requires the `edit_theme_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $template_id Required. e.g. twentytwentyfive//single.
+ *     @type string $type Optional. `template` (default — index, single, archive, …) or
+ *         `template_part` (header, footer, and other reusable areas). One of: template,
+ *         template_part.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_get_template( $input ) {
 	$ok = wsp_site_editor_require_templates();
 	if ( is_wp_error( $ok ) ) return $ok;
@@ -388,6 +517,30 @@ function wsp_execute_get_template( $input ) {
 	return wsp_site_editor_template_to_array( $tpl, true );
 }
 
+/**
+ * Creates a new block template or template part for the active theme.
+ *
+ * Fails if the slug already exists (use wsp_update_template for that, including to customize a
+ * theme-provided template).
+ *
+ * MCP tool: `wsp_create_template`. Requires the `edit_theme_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $slug Required. e.g. single-product, page-landing, or a template-part name like
+ *         header-minimal.
+ *     @type string $title Optional.
+ *     @type string $content Optional. Block markup, e.g. <!-- wp:template-part {"slug":"header"}
+ *         /-->.
+ *     @type string $description Optional.
+ *     @type string $type Optional. `template` (default — index, single, archive, …) or
+ *         `template_part` (header, footer, and other reusable areas). One of: template,
+ *         template_part.
+ *     @type string $area Optional. Template parts only: header | footer | uncategorized (default).
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_create_template( $input ) {
 	$ok = wsp_site_editor_require_templates();
 	if ( is_wp_error( $ok ) ) return $ok;
@@ -421,6 +574,29 @@ function wsp_execute_create_template( $input ) {
 	return array( 'success' => true, 'template' => $tpl ? wsp_site_editor_template_to_array( $tpl, true ) : array( 'id' => $id ) );
 }
 
+/**
+ * Updates a block template or template part (title, content, description, and area for template
+ * parts).
+ *
+ * Updating a theme-file template that has not been customized yet creates the same database override
+ * the Site Editor creates on first save.
+ *
+ * MCP tool: `wsp_update_template`. Requires the `edit_theme_options` capability.
+ *
+ * @param array $input {
+ *     Tool arguments.
+ *
+ *     @type string $template_id Required. theme-slug//slug.
+ *     @type string $type Optional. `template` (default — index, single, archive, …) or
+ *         `template_part` (header, footer, and other reusable areas). One of: template,
+ *         template_part.
+ *     @type string $title Optional.
+ *     @type string $content Optional. Full replacement block markup.
+ *     @type string $description Optional.
+ *     @type string $area Optional. Template parts only: header | footer | uncategorized.
+ * }
+ * @return array|WP_Error Tool result, or a WP_Error describing the failure.
+ */
 function wsp_execute_update_template( $input ) {
 	$ok = wsp_site_editor_require_templates();
 	if ( is_wp_error( $ok ) ) return $ok;

@@ -1,4 +1,10 @@
 <?php
+/**
+ * Uninstall handler: removes the plugin's options, database tables and scheduled events.
+ *
+ * @package WSP_MCP
+ */
+
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) exit;
 
 global $wpdb;
