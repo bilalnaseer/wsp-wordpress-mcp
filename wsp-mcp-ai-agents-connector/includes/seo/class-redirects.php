@@ -104,8 +104,8 @@ class WSP_MCP_Redirects {
 	public static function refresh_count() {
 		global $wpdb;
 		$t = self::redirects_table();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$n = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$t}" );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$n = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $t ) );
 		update_option( self::COUNT_OPTION, $n, true );
 		return $n;
 	}
@@ -267,8 +267,8 @@ class WSP_MCP_Redirects {
 			if ( $hash === $start ) {
 				return true;
 			}
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$next = $wpdb->get_var( $wpdb->prepare( "SELECT destination FROM {$t} WHERE source_hash = %s", $hash ) );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$next = $wpdb->get_var( $wpdb->prepare( 'SELECT destination FROM %i WHERE source_hash = %s', $t,  $hash ) );
 			if ( ! $next ) {
 				return false;
 			}
@@ -294,8 +294,8 @@ class WSP_MCP_Redirects {
 		}
 		global $wpdb;
 		$t = self::redirects_table();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$row = $wpdb->get_row( $wpdb->prepare( "SELECT id, destination, status_code FROM {$t} WHERE source_hash = %s", self::hash( $path ) ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$row = $wpdb->get_row( $wpdb->prepare( 'SELECT id, destination, status_code FROM %i WHERE source_hash = %s', $t,  self::hash( $path ) ) );
 		if ( ! $row ) {
 			return;
 		}
@@ -308,8 +308,8 @@ class WSP_MCP_Redirects {
 			return;
 		}
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$wpdb->query( $wpdb->prepare( "UPDATE {$t} SET hits = hits + 1, last_hit = %s WHERE id = %d", current_time( 'mysql', true ), $row->id ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$wpdb->query( $wpdb->prepare( 'UPDATE %i SET hits = hits + 1, last_hit = %s WHERE id = %d', $t,  current_time( 'mysql', true ), $row->id ) );
 
 		$code = ( 302 === (int) $row->status_code ) ? 302 : 301;
 		// Destinations were validated on write (internal, or external with explicit consent), so wp_redirect() is intended.
@@ -345,11 +345,12 @@ class WSP_MCP_Redirects {
 		global $wpdb;
 		$t   = self::log_table();
 		$now = current_time( 'mysql', true );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$wpdb->query( $wpdb->prepare(
-			"INSERT INTO {$t} (path, path_hash, hits, referrer, user_agent, first_seen, last_seen)
+			"INSERT INTO %i (path, path_hash, hits, referrer, user_agent, first_seen, last_seen)
 			 VALUES (%s, %s, 1, %s, %s, %s, %s)
 			 ON DUPLICATE KEY UPDATE hits = hits + 1, last_seen = VALUES(last_seen), referrer = IF(VALUES(referrer) <> '', VALUES(referrer), referrer), user_agent = VALUES(user_agent)",
+			$t,
 			$path, self::hash( $path ), $referrer, $agent, $now, $now
 		) );
 
@@ -363,12 +364,12 @@ class WSP_MCP_Redirects {
 	public static function enforce_cap() {
 		global $wpdb;
 		$t = self::log_table();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$t}" );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$count = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $t ) );
 		if ( $count > self::MAX_404_ROWS ) {
 			$excess = $count - self::MAX_404_ROWS + (int) ( self::MAX_404_ROWS / 10 );
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$wpdb->query( $wpdb->prepare( "DELETE FROM {$t} ORDER BY last_seen ASC LIMIT %d", $excess ) );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$wpdb->query( $wpdb->prepare( 'DELETE FROM %i ORDER BY last_seen ASC LIMIT %d', $t,  $excess ) );
 		}
 	}
 
@@ -380,8 +381,8 @@ class WSP_MCP_Redirects {
 			return;
 		}
 		$t = self::log_table();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$wpdb->query( $wpdb->prepare( "DELETE FROM {$t} WHERE last_seen < %s", gmdate( 'Y-m-d H:i:s', time() - $days * DAY_IN_SECONDS ) ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE last_seen < %s', $t,  gmdate( 'Y-m-d H:i:s', time() - $days * DAY_IN_SECONDS ) ) );
 		self::enforce_cap();
 	}
 }

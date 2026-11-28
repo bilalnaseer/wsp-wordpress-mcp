@@ -104,7 +104,7 @@ function wsp_execute_uae_widgets_get_usage($input) {
     foreach ($q->posts as $p) {
         $data = get_post_meta($p->ID, '_elementor_data', true);
         if ( empty($data) ) continue;
-        $json = is_string($data) ? @json_decode($data, true) : $data;
+        $json = is_string($data) ? json_decode($data, true) : $data;
         if ( ! is_array($json) ) continue;
         foreach ($slugs as $slug) {
             $pattern = '"widgetType":"' . $slug . '"';

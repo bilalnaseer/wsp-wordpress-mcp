@@ -35,22 +35,39 @@ function wsp_execute_list_redirects( $input ) {
 	$per_page = isset( $input['per_page'] ) ? max( 1, min( 100, intval( $input['per_page'] ) ) ) : 20;
 	$page     = isset( $input['page'] ) ? max( 1, intval( $input['page'] ) ) : 1;
 
-	$where = '1=1';
-	$args  = array();
+	$search = '';
+	$like   = '';
 	if ( ! empty( $input['search'] ) ) {
-		$like   = '%' . $wpdb->esc_like( sanitize_text_field( wp_unslash( $input['search'] ) ) ) . '%';
-		$where .= ' AND (source LIKE %s OR destination LIKE %s OR note LIKE %s)';
-		$args   = array( $like, $like, $like );
+		$search = sanitize_text_field( wp_unslash( $input['search'] ) );
+		$like   = '%' . $wpdb->esc_like( $search ) . '%';
 	}
-	// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
-	$total = (int) ( $args
-		? $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$t} WHERE {$where}", $args ) )
-		: $wpdb->get_var( "SELECT COUNT(*) FROM {$t}" ) );
-	$rows  = $wpdb->get_results( $wpdb->prepare(
-		"SELECT * FROM {$t} WHERE {$where} ORDER BY id DESC LIMIT %d OFFSET %d",
-		array_merge( $args, array( $per_page, ( $page - 1 ) * $per_page ) )
-	) );
-	// phpcs:enable
+	$offset = ( $page - 1 ) * $per_page;
+
+	// Constant SQL: the search filter is optional ("'' = skip"), so no WHERE fragment is concatenated.
+	// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	$total = (int) $wpdb->get_var(
+		$wpdb->prepare(
+			"SELECT COUNT(*) FROM %i WHERE ( %s = '' OR source LIKE %s OR destination LIKE %s OR note LIKE %s )",
+			$t,
+			$search,
+			$like,
+			$like,
+			$like
+		)
+	);
+	$rows  = $wpdb->get_results(
+		$wpdb->prepare(
+			"SELECT * FROM %i WHERE ( %s = '' OR source LIKE %s OR destination LIKE %s OR note LIKE %s ) ORDER BY id DESC LIMIT %d OFFSET %d",
+			$t,
+			$search,
+			$like,
+			$like,
+			$like,
+			$per_page,
+			$offset
+		)
+	);
+	// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 	return array(
 		'redirects' => array_map( 'wsp_redirects_format_row', (array) $rows ),
@@ -82,12 +99,12 @@ function wsp_execute_create_redirect( $input ) {
 	}
 
 	$hash = WSP_MCP_Redirects::hash( $source );
-	// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-	$existing = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$t} WHERE source_hash = %s", $hash ) );
+	// phpcs:disable WordPress.DB.DirectDatabaseQuery
+	$existing = $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE source_hash = %s', $t, $hash ) );
 	if ( $existing ) {
 		return new WP_Error( 'redirect_exists', 'A redirect from ' . esc_html( $source ) . ' already exists (id ' . (int) $existing . '). Delete it first to replace it.' );
 	}
-	if ( (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$t}" ) >= WSP_MCP_Redirects::MAX_REDIRECTS ) {
+	if ( (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $t ) ) >= WSP_MCP_Redirects::MAX_REDIRECTS ) {
 		return new WP_Error( 'limit_reached', 'The redirect limit (' . WSP_MCP_Redirects::MAX_REDIRECTS . ') is reached. Delete unused redirects first.' );
 	}
 	$ok = $wpdb->insert(
@@ -112,7 +129,7 @@ function wsp_execute_create_redirect( $input ) {
 
 	$result = array(
 		'success'  => true,
-		'redirect' => wsp_redirects_format_row( $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$t} WHERE id = %d", $id ) ) ), // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		'redirect' => wsp_redirects_format_row( $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $t, $id ) ) ), // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 	);
 	// A redirect takes priority over real content — say so when the source currently resolves to a page.
 	if ( url_to_postid( home_url( $source ) ) ) {
@@ -131,8 +148,8 @@ function wsp_execute_delete_redirect( $input ) {
 	if ( $id < 1 ) {
 		return new WP_Error( 'missing_param', 'id is required (from wsp_list_redirects).' );
 	}
-	// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-	$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$t} WHERE id = %d", $id ) );
+	// phpcs:disable WordPress.DB.DirectDatabaseQuery
+	$row = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $t, $id ) );
 	if ( ! $row ) {
 		return new WP_Error( 'not_found', 'Redirect ' . esc_html( $id ) . ' was not found.' );
 	}
@@ -147,32 +164,62 @@ function wsp_execute_get_404_logs( $input ) {
 	$l = WSP_MCP_Redirects::log_table();
 	$r = WSP_MCP_Redirects::redirects_table();
 
-	$limit   = isset( $input['limit'] ) ? max( 1, min( 200, intval( $input['limit'] ) ) ) : 50;
-	$orderby = ( isset( $input['orderby'] ) && 'hits' === $input['orderby'] ) ? 'l.hits DESC, l.last_seen DESC' : 'l.last_seen DESC';
-
-	$where = '1=1';
-	$args  = array();
+	$limit    = isset( $input['limit'] ) ? max( 1, min( 200, intval( $input['limit'] ) ) ) : 50;
+	$by_hits  = isset( $input['orderby'] ) && 'hits' === $input['orderby'];
+	$search   = '';
+	$like     = '';
+	$min_hits = 0;
+	$since    = '1970-01-01 00:00:00';
 	if ( ! empty( $input['search'] ) ) {
-		$where .= ' AND l.path LIKE %s';
-		$args[] = '%' . $wpdb->esc_like( sanitize_text_field( wp_unslash( $input['search'] ) ) ) . '%';
+		$search = sanitize_text_field( wp_unslash( $input['search'] ) );
+		$like   = '%' . $wpdb->esc_like( $search ) . '%';
 	}
 	if ( ! empty( $input['min_hits'] ) ) {
-		$where .= ' AND l.hits >= %d';
-		$args[] = max( 1, intval( $input['min_hits'] ) );
+		$min_hits = max( 1, intval( $input['min_hits'] ) );
 	}
 	if ( ! empty( $input['days'] ) ) {
-		$where .= ' AND l.last_seen >= %s';
-		$args[] = gmdate( 'Y-m-d H:i:s', time() - max( 1, intval( $input['days'] ) ) * DAY_IN_SECONDS );
+		$since = gmdate( 'Y-m-d H:i:s', time() - max( 1, intval( $input['days'] ) ) * DAY_IN_SECONDS );
 	}
-	if ( ! empty( $input['unresolved_only'] ) ) {
-		$where .= ' AND r.id IS NULL';
-	}
+	$unresolved = empty( $input['unresolved_only'] ) ? 0 : 1;
 
-	// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
-	$sql  = "SELECT l.*, r.id AS redirect_id FROM {$l} l LEFT JOIN {$r} r ON r.source_hash = l.path_hash WHERE {$where} ORDER BY {$orderby} LIMIT %d";
-	$rows = $wpdb->get_results( $wpdb->prepare( $sql, array_merge( $args, array( $limit ) ) ) );
-	$sum  = $wpdb->get_row( "SELECT COUNT(*) AS paths, COALESCE(SUM(hits), 0) AS hits, MIN(first_seen) AS since FROM {$l}" );
-	// phpcs:enable
+	// Constant SQL: every filter is optional ("'' / 0 = skip"), so no WHERE fragment is concatenated.
+	// The two ORDER BY forms are separate literal statements so the query is never assembled from variables.
+	// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	if ( $by_hits ) {
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				'SELECT l.*, r.id AS redirect_id FROM %i l LEFT JOIN %i r ON r.source_hash = l.path_hash
+				 WHERE ( %s = \'\' OR l.path LIKE %s ) AND l.hits >= %d AND l.last_seen >= %s AND ( %d = 0 OR r.id IS NULL )
+				 ORDER BY l.hits DESC, l.last_seen DESC LIMIT %d',
+				$l,
+				$r,
+				$search,
+				$like,
+				$min_hits,
+				$since,
+				$unresolved,
+				$limit
+			)
+		);
+	} else {
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				'SELECT l.*, r.id AS redirect_id FROM %i l LEFT JOIN %i r ON r.source_hash = l.path_hash
+				 WHERE ( %s = \'\' OR l.path LIKE %s ) AND l.hits >= %d AND l.last_seen >= %s AND ( %d = 0 OR r.id IS NULL )
+				 ORDER BY l.last_seen DESC LIMIT %d',
+				$l,
+				$r,
+				$search,
+				$like,
+				$min_hits,
+				$since,
+				$unresolved,
+				$limit
+			)
+		);
+	}
+	$sum = $wpdb->get_row( $wpdb->prepare( 'SELECT COUNT(*) AS paths, COALESCE(SUM(hits), 0) AS hits, MIN(first_seen) AS since FROM %i', $l ) );
+	// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 	$out = array();
 	foreach ( (array) $rows as $row ) {
@@ -202,7 +249,7 @@ function wsp_execute_clear_404_logs( $input ) {
 	$l  = WSP_MCP_Redirects::log_table();
 	$id = isset( $input['id'] ) ? intval( $input['id'] ) : 0;
 
-	// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	// phpcs:disable WordPress.DB.DirectDatabaseQuery
 	if ( $id > 0 ) {
 		$n = (int) $wpdb->delete( $l, array( 'id' => $id ), array( '%d' ) );
 		if ( ! $n ) {
@@ -211,7 +258,7 @@ function wsp_execute_clear_404_logs( $input ) {
 		return array( 'success' => true, 'deleted' => 1 );
 	}
 	if ( ! empty( $input['all'] ) ) {
-		$n = (int) $wpdb->query( "DELETE FROM {$l}" );
+		$n = (int) $wpdb->query( $wpdb->prepare( 'DELETE FROM %i', $l ) );
 		return array( 'success' => true, 'deleted' => $n );
 	}
 	// phpcs:enable

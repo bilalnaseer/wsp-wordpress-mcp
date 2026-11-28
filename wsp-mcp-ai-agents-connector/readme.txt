@@ -318,10 +318,10 @@ Adds a ChatGPT connection guide and fixes OAuth sign-in on hosts that block /.we
 Security update: hardened authorization checks. Update recommended.
 
 = 2.9.5 =
-Adds Site Context (MCP > Context, off by default): give your AI an AGENTS.md and CHANGELOG.md to read first. Also adds 34 WooCommerce store-management tools (delete, categories, tags, attributes, settings, tax, shipping, payment gateways) and 4 plugin-management tools (install, install from URL, delete, update). All new tools are OFF by default — enable them from MCP > Settings if you want them.
+Adds Site Context (MCP > Context, off by default), 34 WooCommerce store-management tools and 4 plugin-management tools. All new tools are OFF by default; enable them from MCP > Settings.
 
 = 2.9.4 =
-Adds a Site Editor tool group (Global Styles + block templates, 6 tools) for block themes , a Widgets & Sidebars tool group (8 tools) for classic themes, a Site Health, Cron & Error Log tool group (6 tools), and an Upload / Install Theme tool for AI-generated themes. All new tools are OFF by default — enable them from MCP > Settings if you want them.
+Adds Site Editor, Widgets & Sidebars, Site Health & Cron and theme-upload tools. All new tools are OFF by default; enable them from MCP > Settings.
 
 = 2.9.3 =
 Adds 5 Custom Post Type tools (off by default — enable them in MCP > Settings) and an About Us page. No action needed.

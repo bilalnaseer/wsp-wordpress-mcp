@@ -432,11 +432,11 @@ function wsp_execute_delete_cron_event( $input ) {
 /** The only two files this tool will ever read. Returns [ path, source ] or null. */
 function wsp_health_error_log_path() {
 	$ini = ini_get( 'error_log' );
-	if ( $ini && 'syslog' !== $ini && @is_file( $ini ) && @is_readable( $ini ) ) {
+	if ( $ini && 'syslog' !== $ini && is_file( $ini ) && is_readable( $ini ) ) {
 		return array( $ini, 'error_log ini' );
 	}
 	$debug = WP_CONTENT_DIR . '/debug.log';
-	if ( @is_file( $debug ) && @is_readable( $debug ) ) {
+	if ( is_file( $debug ) && is_readable( $debug ) ) {
 		return array( $debug, 'wp-content/debug.log' );
 	}
 	return null;
@@ -462,7 +462,7 @@ function wsp_execute_get_error_log( $input ) {
 	$read      = min( $size, $scan_max );
 
 	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- read-only tail of a fixed log path; WP_Filesystem cannot seek.
-	$fh = @fopen( $path, 'rb' );
+	$fh = fopen( $path, 'rb' );
 	if ( ! $fh ) return array( 'path_source' => null, 'reason' => 'The error log exists but could not be opened.' );
 	fseek( $fh, -$read, SEEK_END );
 	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
