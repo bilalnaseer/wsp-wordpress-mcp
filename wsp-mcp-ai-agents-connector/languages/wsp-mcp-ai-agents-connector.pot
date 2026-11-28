@@ -1,0 +1,1185 @@
+# Copyright (C) 2026 WebSensePro
+# This file is distributed under the GPL-2.0-or-later.
+msgid ""
+msgstr ""
+"Project-Id-Version: WSP MCP - Free MCP Plugin for WordPress 3.0.2\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wsp-mcp-ai-agents-connector\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-11-28T09:20:31+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: wsp-mcp-ai-agents-connector\n"
+
+#. Plugin Name of the plugin
+#: wsp-mcp-ai-agents-connector.php
+msgid "WSP MCP - Free MCP Plugin for WordPress: Connect Claude, ChatGPT & AI Agents"
+msgstr ""
+
+#. Description of the plugin
+#: wsp-mcp-ai-agents-connector.php
+msgid "Connect Claude, ChatGPT, Cursor & any AI agent to WordPress. Manage posts, pages, media, SEO, WooCommerce, Elementor & more by chat — 200+ tools, you choose which are on. Free."
+msgstr ""
+
+#. Author of the plugin
+#: wsp-mcp-ai-agents-connector.php
+msgid "WebSensePro"
+msgstr ""
+
+#. Author URI of the plugin
+#: wsp-mcp-ai-agents-connector.php
+msgid "https://websensepro.com"
+msgstr ""
+
+#: includes/admin/about-page.php:19
+#: includes/admin/about-page.php:20
+#: includes/admin/about-page.php:98
+#: includes/admin/plugin-links.php:28
+msgid "About Us"
+msgstr ""
+
+#: includes/admin/about-page.php:67
+msgid "You do not have permission to view this page."
+msgstr ""
+
+#: includes/admin/about-page.php:73
+msgid "Projects delivered"
+msgstr ""
+
+#: includes/admin/about-page.php:74
+msgid "Websites launched"
+msgstr ""
+
+#: includes/admin/about-page.php:75
+msgid "Happy clients worldwide"
+msgstr ""
+
+#: includes/admin/about-page.php:76
+msgid "AI automations deployed"
+msgstr ""
+
+#: includes/admin/about-page.php:77
+msgid "Years in digital services"
+msgstr ""
+
+#: includes/admin/about-page.php:78
+msgid "Client satisfaction rate"
+msgstr ""
+
+#: includes/admin/about-page.php:82
+msgid "WordPress Development"
+msgstr ""
+
+#: includes/admin/about-page.php:83
+msgid "Shopify & Ecommerce Development"
+msgstr ""
+
+#: includes/admin/about-page.php:84
+msgid "Search Engine Optimization (SEO)"
+msgstr ""
+
+#: includes/admin/about-page.php:85
+msgid "Pay Per Click / Google Ads Management"
+msgstr ""
+
+#: includes/admin/about-page.php:86
+msgid "Social Media Marketing"
+msgstr ""
+
+#: includes/admin/about-page.php:87
+msgid "AI Automation"
+msgstr ""
+
+#: includes/admin/about-page.php:88
+msgid "Logo & Brand Design"
+msgstr ""
+
+#: includes/admin/about-page.php:92
+msgid "Fast Response"
+msgstr ""
+
+#: includes/admin/about-page.php:92
+msgid "Swift, effective communication so you get the support you need promptly."
+msgstr ""
+
+#: includes/admin/about-page.php:93
+msgid "World Class Designers"
+msgstr ""
+
+#: includes/admin/about-page.php:93
+msgid "Creativity and precision in every project, crafting visuals that elevate your brand."
+msgstr ""
+
+#: includes/admin/about-page.php:94
+msgid "Best Quality"
+msgstr ""
+
+#: includes/admin/about-page.php:94
+msgid "Committed to excellence, ensuring every website, store, and campaign meets the highest standards."
+msgstr ""
+
+#: includes/admin/about-page.php:99
+msgid "Our Services"
+msgstr ""
+
+#: includes/admin/about-page.php:100
+msgid "Portfolio"
+msgstr ""
+
+#: includes/admin/about-page.php:101
+msgid "Contact Us"
+msgstr ""
+
+#: includes/admin/about-page.php:115
+msgid "About WebSensePro"
+msgstr ""
+
+#: includes/admin/about-page.php:118
+msgid "WSP MCP is built by WebSensePro, an AI-powered digital media agency delivering Web Development, WordPress, Shopify, SEO and AI Automation for growing businesses. We combine human expertise with AI-driven tools to deliver responsive websites, optimized costs, and clear communication for small and medium-sized businesses."
+msgstr ""
+
+#: includes/admin/about-page.php:132
+msgid "What we do"
+msgstr ""
+
+#: includes/admin/about-page.php:143
+msgid "Why clients choose us"
+msgstr ""
+
+#: includes/admin/about-page.php:156
+msgid "Get in touch"
+msgstr ""
+
+#: includes/admin/about-page.php:159
+msgid "Email:"
+msgstr ""
+
+#: includes/admin/about-page.php:160
+msgid "Phone:"
+msgstr ""
+
+#: includes/admin/about-page.php:161
+msgid "Offices:"
+msgstr ""
+
+#: includes/admin/about-page.php:161
+msgid "Denver, CO · Queens Village, NY · Karachi, Pakistan"
+msgstr ""
+
+#: includes/admin/about-page.php:167
+msgid "Learn more"
+msgstr ""
+
+#: includes/admin/analytics-page.php:21
+#: includes/admin/analytics-page.php:22
+msgid "Analytics"
+msgstr ""
+
+#: includes/admin/analytics-page.php:123
+msgid "You do not have permission to view MCP analytics."
+msgstr ""
+
+#: includes/admin/analytics-page.php:138
+msgid "all time"
+msgstr ""
+
+#: includes/admin/analytics-page.php:139
+msgid "last 7 days"
+msgstr ""
+
+#: includes/admin/analytics-page.php:140
+msgid "last 30 days"
+msgstr ""
+
+#: includes/admin/analytics-page.php:141
+msgid "last 90 days"
+msgstr ""
+
+#: includes/admin/analytics-page.php:150
+msgid "Last 7 days"
+msgstr ""
+
+#: includes/admin/analytics-page.php:151
+msgid "Last 30 days"
+msgstr ""
+
+#: includes/admin/analytics-page.php:152
+msgid "Last 90 days"
+msgstr ""
+
+#: includes/admin/analytics-page.php:153
+msgid "All time"
+msgstr ""
+
+#: includes/admin/analytics-page.php:155
+msgid "Apply"
+msgstr ""
+
+#. translators: %s: human-readable time range, e.g. "last 30 days".
+#: includes/admin/analytics-page.php:162
+#, php-format
+msgid "Tool usage, response times, and error rates for MCP requests over the %s. Computed entirely from your own Audit Log database — no external analytics service is involved."
+msgstr ""
+
+#: includes/admin/analytics-page.php:170
+msgid "Total Requests"
+msgstr ""
+
+#: includes/admin/analytics-page.php:174
+msgid "Most Used Tool"
+msgstr ""
+
+#. translators: %s: call count.
+#: includes/admin/analytics-page.php:181
+#, php-format
+msgid "%s calls"
+msgstr ""
+
+#: includes/admin/analytics-page.php:191
+msgid "Avg Response Time"
+msgstr ""
+
+#: includes/admin/analytics-page.php:195
+msgid "Error Rate"
+msgstr ""
+
+#. translators: %s: error count.
+#: includes/admin/analytics-page.php:201
+#, php-format
+msgid "%s errors"
+msgstr ""
+
+#: includes/admin/analytics-page.php:212
+msgid "Tool Usage Breakdown"
+msgstr ""
+
+#: includes/admin/analytics-page.php:213
+msgid "by category"
+msgstr ""
+
+#: includes/admin/analytics-page.php:217
+msgid "No MCP tool calls recorded in this range yet."
+msgstr ""
+
+#. translators: 1: call count, 2: percent of total, 3: average duration in ms.
+#: includes/admin/analytics-page.php:227
+#, php-format
+msgid "%1$s calls · %2$s%% · avg %3$sms"
+msgstr ""
+
+#: includes/admin/analytics-page.php:246
+msgid "Status Mix"
+msgstr ""
+
+#: includes/admin/analytics-page.php:254
+#: includes/admin/audit-log-page.php:142
+#: includes/admin/audit-log-page.php:151
+msgid "Success"
+msgstr ""
+
+#: includes/admin/analytics-page.php:255
+#: includes/admin/audit-log-page.php:144
+#: includes/admin/audit-log-page.php:153
+msgid "Error"
+msgstr ""
+
+#: includes/admin/analytics-page.php:276
+msgid "Recent Requests"
+msgstr ""
+
+#: includes/admin/analytics-page.php:277
+msgid "most recent first"
+msgstr ""
+
+#: includes/admin/analytics-page.php:280
+#: includes/admin/audit-log-page.php:169
+msgid "No MCP tool calls have been logged yet."
+msgstr ""
+
+#: includes/admin/analytics-page.php:286
+#: includes/admin/audit-log-page.php:174
+msgid "Time (UTC)"
+msgstr ""
+
+#: includes/admin/analytics-page.php:287
+#: includes/admin/audit-log-page.php:175
+msgid "Tool"
+msgstr ""
+
+#: includes/admin/analytics-page.php:288
+msgid "Category"
+msgstr ""
+
+#: includes/admin/analytics-page.php:289
+#: includes/admin/audit-log-page.php:176
+msgid "Status"
+msgstr ""
+
+#: includes/admin/analytics-page.php:290
+msgid "Duration"
+msgstr ""
+
+#: includes/admin/analytics-page.php:291
+#: includes/admin/audit-log-page.php:177
+msgid "User"
+msgstr ""
+
+#: includes/admin/analytics-page.php:306
+#: includes/admin/audit-log-page.php:192
+msgid "unauthenticated"
+msgstr ""
+
+#: includes/admin/audit-log-page.php:19
+#: includes/admin/audit-log-page.php:20
+msgid "Audit Log"
+msgstr ""
+
+#: includes/admin/audit-log-page.php:69
+#: includes/admin/connection-page.php:193
+#: includes/admin/connection-page.php:216
+#: includes/admin/context-page.php:70
+#: includes/admin/review-notice.php:124
+msgid "Insufficient permissions."
+msgstr ""
+
+#: includes/admin/audit-log-page.php:100
+msgid "You do not have permission to view the MCP audit log."
+msgstr ""
+
+#: includes/admin/audit-log-page.php:125
+msgid "Permanently delete all audit log entries? This cannot be undone."
+msgstr ""
+
+#: includes/admin/audit-log-page.php:126
+msgid "Clear Log"
+msgstr ""
+
+#: includes/admin/audit-log-page.php:131
+msgid "Every incoming MCP tool call is recorded here — tool name, time, acting user, request IP, and outcome. Stored entirely in your own database, self-hosted, with no external service involved."
+msgstr ""
+
+#: includes/admin/audit-log-page.php:136
+msgid "Audit log cleared."
+msgstr ""
+
+#: includes/admin/audit-log-page.php:141
+msgid "Total Calls"
+msgstr ""
+
+#: includes/admin/audit-log-page.php:143
+#: includes/admin/audit-log-page.php:152
+msgid "Denied"
+msgstr ""
+
+#: includes/admin/audit-log-page.php:150
+msgid "All statuses"
+msgstr ""
+
+#: includes/admin/audit-log-page.php:156
+msgid "All tools"
+msgstr ""
+
+#: includes/admin/audit-log-page.php:161
+msgid "Filter"
+msgstr ""
+
+#: includes/admin/audit-log-page.php:163
+msgid "Reset"
+msgstr ""
+
+#: includes/admin/audit-log-page.php:178
+msgid "IP Address"
+msgstr ""
+
+#: includes/admin/audit-log-page.php:179
+msgid "Detail"
+msgstr ""
+
+#: includes/admin/connection-page.php:19
+#: includes/admin/connection-page.php:20
+#: includes/admin/plugin-links.php:26
+msgid "Connection"
+msgstr ""
+
+#: includes/admin/connection-page.php:182
+msgid "Copied!"
+msgstr ""
+
+#: includes/admin/connection-page.php:183
+msgid "Failed to copy. Please select and copy manually."
+msgstr ""
+
+#: includes/admin/connection-page.php:352
+msgid "MCP Connection"
+msgstr ""
+
+#: includes/admin/connection-page.php:355
+msgid "Connect any MCP-capable AI client directly to this site. No companion plugin or WordPress MCP Adapter is required — this plugin serves MCP natively. The API key below is already embedded in each snippet."
+msgstr ""
+
+#: includes/admin/connection-page.php:360
+msgid "API key regenerated. Re-copy the snippet into each connected client."
+msgstr ""
+
+#: includes/admin/connection-page.php:369
+msgid "One-click Claude Connector sign-in is now enabled. Anyone with an account on this site that can edit posts may connect their own AI client."
+msgstr ""
+
+#: includes/admin/connection-page.php:371
+msgid "One-click Claude Connector sign-in is now disabled, and every connector that used it has been disconnected."
+msgstr ""
+
+#: includes/admin/connection-page.php:380
+msgid "Endpoint URL"
+msgstr ""
+
+#: includes/admin/connection-page.php:384
+msgid "API Key"
+msgstr ""
+
+#: includes/admin/connection-page.php:391
+msgid "Regenerate the API key? All connected clients will need the new snippet."
+msgstr ""
+
+#: includes/admin/connection-page.php:392
+msgid "Regenerate"
+msgstr ""
+
+#: includes/admin/connection-page.php:401
+msgid "Claude Connectors"
+msgstr ""
+
+#: includes/admin/connection-page.php:401
+msgid "No config file"
+msgstr ""
+
+#: includes/admin/connection-page.php:402
+msgid "OAuth"
+msgstr ""
+
+#: includes/admin/connection-page.php:417
+msgid "⚡ Paste a URL — nothing else to copy"
+msgstr ""
+
+#: includes/admin/connection-page.php:418
+msgid "This site can run its own OAuth login. Paste the URL below into Claude's Connectors screen, click Connect, and log in when Claude asks — no header, no API key, nothing to copy but the URL."
+msgstr ""
+
+#: includes/admin/connection-page.php:427
+#: includes/admin/connection-page.php:500
+msgid "Disable OAuth sign-in? Every connector that logged in this way will be disconnected immediately and will have to reconnect."
+msgstr ""
+
+#: includes/admin/connection-page.php:431
+#: includes/admin/connection-page.php:504
+msgid "Disable OAuth sign-in"
+msgstr ""
+
+#: includes/admin/connection-page.php:432
+#: includes/admin/connection-page.php:505
+msgid "Enable OAuth sign-in"
+msgstr ""
+
+#: includes/admin/connection-page.php:440
+msgid "⚠ OAuth sign-in is currently off, and the steps below will not work until you enable it. It is off by default because it publishes public login endpoints on this site: once enabled, any AI client can ask this site for access, and anyone holding a WordPress account here that can edit posts may approve it for their own account. The other tabs (API key / Application Password) do not require it."
+msgstr ""
+
+#: includes/admin/connection-page.php:446
+#: includes/admin/connection-page.php:519
+msgid "OAuth login"
+msgstr ""
+
+#: includes/admin/connection-page.php:446
+msgid "Works in Claude.ai, Claude Desktop, and Claude mobile — they all share the same Connectors settings."
+msgstr ""
+
+#: includes/admin/connection-page.php:447
+msgid "In Claude, open"
+msgstr ""
+
+#: includes/admin/connection-page.php:447
+msgid "Customize"
+msgstr ""
+
+#: includes/admin/connection-page.php:447
+msgid "Connectors"
+msgstr ""
+
+#: includes/admin/connection-page.php:447
+msgid "(Team/Enterprise: Organization settings > Connectors) and click"
+msgstr ""
+
+#: includes/admin/connection-page.php:447
+msgid "Add custom connector"
+msgstr ""
+
+#: includes/admin/connection-page.php:448
+msgid "Paste the URL below into"
+msgstr ""
+
+#: includes/admin/connection-page.php:448
+#: includes/admin/connection-page.php:453
+msgid "Remote MCP server URL"
+msgstr ""
+
+#: includes/admin/connection-page.php:448
+msgid "and click Add — leave Authentication on its default (Claude detects this server supports OAuth automatically)."
+msgstr ""
+
+#: includes/admin/connection-page.php:449
+msgid "Click"
+msgstr ""
+
+#: includes/admin/connection-page.php:449
+msgid "Connect"
+msgstr ""
+
+#: includes/admin/connection-page.php:449
+msgid "next to the new connector. Claude opens this site's own login page — sign in (or you'll already be signed in), then click"
+msgstr ""
+
+#: includes/admin/connection-page.php:449
+#: includes/server/class-oauth-server.php:585
+msgid "Allow"
+msgstr ""
+
+#: includes/admin/connection-page.php:450
+msgid "Done — you're taken back to Claude, already connected. Nothing to copy or paste beyond the URL."
+msgstr ""
+
+#: includes/admin/connection-page.php:456
+#: includes/admin/connection-page.php:554
+#: includes/admin/connection-page.php:612
+#: includes/admin/connection-page.php:645
+#: includes/admin/connection-page.php:669
+#: includes/admin/connection-page.php:693
+#: includes/admin/connection-page.php:717
+#: includes/admin/connection-page.php:741
+msgid "Copy"
+msgstr ""
+
+#: includes/admin/connection-page.php:462
+#: includes/admin/connection-page.php:561
+msgid "Walkthrough"
+msgstr ""
+
+#: includes/admin/connection-page.php:464
+msgid "Animated walkthrough: open Customize > Connectors in Claude, add a custom connector with the MCP server URL, click Connect, approve access on this site, and choose which tools Claude may use."
+msgstr ""
+
+#: includes/admin/connection-page.php:468
+msgid "⚠ This site must be reachable on the public internet with a real domain and HTTPS — Claude's servers connect from their own cloud, not your computer, so they cannot reach localhost or a private network."
+msgstr ""
+
+#: includes/admin/connection-page.php:471
+msgid "Whoever clicks Allow connects as themselves — Claude can then only do what that WordPress account is permitted to do, same as anywhere else on this site. Accounts that cannot edit posts (subscribers, customers) are refused at the consent screen, so opening registration on this site does not open MCP access with it."
+msgstr ""
+
+#: includes/admin/connection-page.php:472
+msgid "Prefer the API key or Application Password instead? Use the Claude Desktop (config file) tab or the Configuration Generator above."
+msgstr ""
+
+#: includes/admin/connection-page.php:489
+msgid "Connect ChatGPT with OAuth"
+msgstr ""
+
+#: includes/admin/connection-page.php:490
+msgid "ChatGPT signs in to this site through the site's own login page. Turn OAuth sign-in on, copy the server URL, and paste it into ChatGPT. No API key is needed."
+msgstr ""
+
+#: includes/admin/connection-page.php:513
+msgid "⚠ OAuth sign-in is currently off, and the steps below will not work until you enable it. It is off by default because it publishes public login endpoints on this site: once enabled, any AI client can ask this site for access, and anyone holding a WordPress account here that can edit posts may approve it for their own account."
+msgstr ""
+
+#: includes/admin/connection-page.php:519
+msgid "Follow these steps in order. The walkthrough GIF below shows the same flow with placeholder values."
+msgstr ""
+
+#: includes/admin/connection-page.php:522
+msgid "<strong>Turn on OAuth sign-in.</strong> Click <strong>Enable OAuth sign-in</strong> above. If the button already says <strong>Disable OAuth sign-in</strong>, it is on and you can leave it."
+msgstr ""
+
+#: includes/admin/connection-page.php:525
+msgid "<strong>Copy the MCP server URL</strong> with the <strong>Copy</strong> button below. Only the URL is needed. ChatGPT does not use the API key."
+msgstr ""
+
+#: includes/admin/connection-page.php:528
+msgid "<strong>Open ChatGPT's custom MCP form.</strong> In ChatGPT open <strong>Plugins</strong> and choose <strong>Add custom MCP server</strong>. Menu names can change, and availability depends on your ChatGPT plan and workspace settings."
+msgstr ""
+
+#: includes/admin/connection-page.php:531
+msgid "<strong>Fill in the basics.</strong> <strong>Name:</strong> any name you like. <strong>Connection:</strong> keep <strong>Server URL</strong> selected and paste the URL. <strong>Authentication:</strong> <strong>OAuth</strong>."
+msgstr ""
+
+#: includes/admin/connection-page.php:534
+msgid "<strong>Open Advanced OAuth settings.</strong> Set <strong>Registration method</strong> to <strong>Dynamic Client Registration (DCR)</strong>. The endpoints (Auth URL, Token URL, Registration URL, Resource) fill in automatically, so only check them. Tick <strong>Server supports PKCE (S256)</strong> and leave <strong>OIDC</strong> off. If ChatGPT says it could not discover the settings, use the manual values further down."
+msgstr ""
+
+#: includes/admin/connection-page.php:537
+msgid "<strong>Create the connector.</strong> Tick <strong>I understand and want to continue</strong>, then click <strong>Create as a plugin</strong>."
+msgstr ""
+
+#: includes/admin/connection-page.php:540
+msgid "<strong>Approve access on this site.</strong> ChatGPT opens this site's login page. Sign in as an administrator or editor and click <strong>Allow</strong>. Only approve it if you started the connection yourself."
+msgstr ""
+
+#: includes/admin/connection-page.php:543
+msgid "<strong>Test it.</strong> Start a new chat, enable the connector, and ask for something simple, for example \"list the pages on my site\"."
+msgstr ""
+
+#: includes/admin/connection-page.php:546
+msgid "<strong>Clean up.</strong> When you no longer need OAuth sign-in, click <strong>Disable OAuth sign-in</strong>. This disconnects every connector that used it."
+msgstr ""
+
+#: includes/admin/connection-page.php:551
+msgid "MCP server URL"
+msgstr ""
+
+#: includes/admin/connection-page.php:563
+msgid "Animated walkthrough: enable OAuth sign-in, copy the MCP server URL, fill in the ChatGPT custom MCP server form, approve access, and test the connection."
+msgstr ""
+
+#: includes/admin/connection-page.php:567
+msgid "Manual OAuth settings"
+msgstr ""
+
+#: includes/admin/connection-page.php:567
+msgid "only needed if ChatGPT says it could not discover OAuth settings (common on hosts that block /.well-known/ paths, such as SiteGround). Enter these values by hand:"
+msgstr ""
+
+#: includes/admin/connection-page.php:569
+msgid "Registration method:"
+msgstr ""
+
+#: includes/admin/connection-page.php:570
+msgid "MCP server URL:"
+msgstr ""
+
+#: includes/admin/connection-page.php:571
+msgid "Authorization URL:"
+msgstr ""
+
+#: includes/admin/connection-page.php:572
+msgid "Token URL:"
+msgstr ""
+
+#: includes/admin/connection-page.php:573
+msgid "Registration URL:"
+msgstr ""
+
+#: includes/admin/connection-page.php:574
+msgid "Authorization server base:"
+msgstr ""
+
+#: includes/admin/connection-page.php:575
+msgid "Resource:"
+msgstr ""
+
+#: includes/admin/connection-page.php:576
+msgid "Default scopes:"
+msgstr ""
+
+#: includes/admin/connection-page.php:576
+msgid "PKCE:"
+msgstr ""
+
+#: includes/admin/connection-page.php:576
+msgid "OIDC:"
+msgstr ""
+
+#: includes/admin/connection-page.php:576
+msgid "off"
+msgstr ""
+
+#: includes/admin/connection-page.php:581
+msgid "Troubleshooting"
+msgstr ""
+
+#: includes/admin/connection-page.php:583
+msgid "<strong>\"Couldn't discover OAuth settings\".</strong> The host or a firewall may be blocking <code>/.well-known/</code> paths, or ChatGPT may be looking for them at the domain root, which a WordPress install in a subdirectory does not receive. Use the manual values above."
+msgstr ""
+
+#: includes/admin/connection-page.php:584
+msgid "<strong>\"Some app settings were rejected\".</strong> Check that no firewall, CDN or security plugin (for example Cloudflare or Wordfence) is blocking or challenging requests to <code>/wp-json/wsp-mcp/</code> and <code>/wsp-mcp-oauth/</code>, then try again."
+msgstr ""
+
+#: includes/admin/connection-page.php:585
+msgid "The site must be reachable from the public internet over HTTPS. ChatGPT connects from its own servers, so localhost and private networks do not work."
+msgstr ""
+
+#: includes/admin/connection-page.php:586
+msgid "The Allow screen is only available to accounts that can edit posts. Subscribers and customers are refused."
+msgstr ""
+
+#: includes/admin/connection-page.php:587
+msgid "After you enable more tools in MCP > Settings, refresh or reconnect the connector in ChatGPT so it picks up the new tool list."
+msgstr ""
+
+#: includes/admin/connection-page.php:592
+msgid "Whoever clicks Allow connects as themselves: ChatGPT can then only do what that WordPress account is permitted to do. Prefer the API key or Application Password instead? Use one of the other tabs."
+msgstr ""
+
+#: includes/admin/connection-page.php:600
+#: includes/admin/connection-page.php:705
+msgid "Requires Node.js"
+msgstr ""
+
+#: includes/admin/connection-page.php:600
+msgid "Claude Desktop config files only support local (stdio) servers, so this uses the mcp-remote bridge to reach the HTTP endpoint."
+msgstr ""
+
+#: includes/admin/connection-page.php:601
+#: includes/admin/connection-page.php:634
+#: includes/admin/connection-page.php:636
+#: includes/admin/connection-page.php:658
+#: includes/admin/connection-page.php:682
+#: includes/admin/connection-page.php:706
+msgid "Open"
+msgstr ""
+
+#: includes/admin/connection-page.php:601
+msgid "or edit"
+msgstr ""
+
+#: includes/admin/connection-page.php:601
+msgid "directly."
+msgstr ""
+
+#: includes/admin/connection-page.php:602
+#: includes/admin/connection-page.php:635
+#: includes/admin/connection-page.php:683
+msgid "Paste the snippet below (merge into an existing"
+msgstr ""
+
+#: includes/admin/connection-page.php:602
+#: includes/admin/connection-page.php:731
+msgid "block if you already have one)."
+msgstr ""
+
+#: includes/admin/connection-page.php:603
+msgid "Fully quit and reopen Claude Desktop so it re-reads the tool list."
+msgstr ""
+
+#: includes/admin/connection-page.php:608
+#: includes/admin/connection-page.php:641
+#: includes/admin/connection-page.php:665
+#: includes/admin/connection-page.php:689
+#: includes/admin/connection-page.php:713
+#: includes/admin/connection-page.php:737
+msgid "Download this file directly — nothing to copy or paste"
+msgstr ""
+
+#: includes/admin/connection-page.php:609
+#: includes/admin/connection-page.php:642
+#: includes/admin/connection-page.php:666
+#: includes/admin/connection-page.php:690
+#: includes/admin/connection-page.php:714
+#: includes/admin/connection-page.php:738
+msgid "Download"
+msgstr ""
+
+#: includes/admin/connection-page.php:624
+msgid "⚡ One-click connect"
+msgstr ""
+
+#: includes/admin/connection-page.php:625
+msgid "Skip the config file entirely — this opens Cursor directly and adds the server for you."
+msgstr ""
+
+#: includes/admin/connection-page.php:628
+msgid "Connect Cursor Automatically"
+msgstr ""
+
+#: includes/admin/connection-page.php:633
+#: includes/admin/connection-page.php:657
+#: includes/admin/connection-page.php:681
+#: includes/admin/connection-page.php:729
+msgid "Direct HTTP"
+msgstr ""
+
+#: includes/admin/connection-page.php:633
+msgid "Cursor connects to the endpoint natively — no Node.js needed. Prefer not to click a protocol link? Download or copy the file below instead."
+msgstr ""
+
+#: includes/admin/connection-page.php:634
+msgid "global"
+msgstr ""
+
+#: includes/admin/connection-page.php:634
+msgid "or"
+msgstr ""
+
+#: includes/admin/connection-page.php:634
+msgid "in your project root."
+msgstr ""
+
+#: includes/admin/connection-page.php:635
+#: includes/admin/connection-page.php:683
+msgid "block if present)."
+msgstr ""
+
+#: includes/admin/connection-page.php:636
+msgid "and confirm the server shows green."
+msgstr ""
+
+#: includes/admin/connection-page.php:657
+msgid "Codex reaches the streamable-HTTP endpoint natively via url + http_headers."
+msgstr ""
+
+#: includes/admin/connection-page.php:659
+msgid "Append the block below."
+msgstr ""
+
+#: includes/admin/connection-page.php:660
+msgid "Restart Codex, then run"
+msgstr ""
+
+#: includes/admin/connection-page.php:660
+msgid "to verify the server is listed."
+msgstr ""
+
+#: includes/admin/connection-page.php:681
+msgid "Antigravity uses serverUrl (not url) for remote HTTP servers."
+msgstr ""
+
+#: includes/admin/connection-page.php:682
+msgid "or use"
+msgstr ""
+
+#: includes/admin/connection-page.php:684
+msgid "Refresh the MCP server list in Antigravity."
+msgstr ""
+
+#: includes/admin/connection-page.php:705
+msgid "OpenClaw uses the nested mcp.servers schema and reaches the endpoint via the mcp-remote bridge."
+msgstr ""
+
+#: includes/admin/connection-page.php:706
+msgid "and paste the block below on the line right after the top-level opening"
+msgstr ""
+
+#: includes/admin/connection-page.php:707
+msgid "Save the file, then restart the gateway:"
+msgstr ""
+
+#: includes/admin/connection-page.php:708
+msgid "Verify:"
+msgstr ""
+
+#: includes/admin/connection-page.php:729
+msgid "OpenCode connects to the endpoint natively as a remote MCP server — no Node.js needed."
+msgstr ""
+
+#: includes/admin/connection-page.php:730
+msgid "Create the global config file"
+msgstr ""
+
+#: includes/admin/connection-page.php:730
+msgid "if it does not exist yet."
+msgstr ""
+
+#: includes/admin/connection-page.php:731
+msgid "Paste the config below into that file (merge into an existing"
+msgstr ""
+
+#: includes/admin/connection-page.php:732
+msgid "Restart OpenCode so it reads the new config and connects the MCP server."
+msgstr ""
+
+#: includes/admin/connection-page.php:750
+msgid "Advanced: any client can also connect by sending an"
+msgstr ""
+
+#: includes/admin/connection-page.php:752
+msgid "header to the endpoint URL, or a WordPress Application Password via HTTP Basic auth."
+msgstr ""
+
+#: includes/admin/context-page.php:19
+#: includes/admin/context-page.php:20
+#: includes/admin/plugin-links.php:27
+msgid "Context"
+msgstr ""
+
+#: includes/admin/context-page.php:121
+msgid "Site Context for AI Agents"
+msgstr ""
+
+#: includes/admin/context-page.php:122
+msgid "Write AGENTS.md and CHANGELOG.md once. When Site Context is on, every connected agent receives them first, so it does not have to read your whole site to learn how it is built. That saves tokens and time."
+msgstr ""
+
+#: includes/admin/context-page.php:125
+msgid "Context saved. Connected agents pick up changes the next time they connect — restart or reconnect the MCP client."
+msgstr ""
+
+#: includes/admin/context-page.php:137
+msgid "Enable Site Context"
+msgstr ""
+
+#: includes/admin/context-page.php:138
+msgid "Off by default. When on, the documents below are the first thing a connected agent reads."
+msgstr ""
+
+#: includes/admin/context-page.php:141
+msgid "Live"
+msgstr ""
+
+#: includes/admin/context-page.php:143
+msgid "On — add content"
+msgstr ""
+
+#: includes/admin/context-page.php:145
+msgid "Off"
+msgstr ""
+
+#: includes/admin/context-page.php:160
+msgid "AGENTS.md — how this site works"
+msgstr ""
+
+#: includes/admin/context-page.php:168
+msgid "CHANGELOG.md — what changed and why (newest first)"
+msgstr ""
+
+#: includes/admin/context-page.php:179
+msgid "Load from file:"
+msgstr ""
+
+#: includes/admin/context-page.php:186
+msgid "characters"
+msgstr ""
+
+#: includes/admin/context-page.php:186
+msgid "tokens"
+msgstr ""
+
+#: includes/admin/context-page.php:187
+msgid "Plain Markdown. Never put passwords or API keys here."
+msgstr ""
+
+#: includes/admin/context-page.php:194
+msgid "Save Context"
+msgstr ""
+
+#: includes/admin/context-page.php:195
+msgid "Agents already connected keep the old text until they reconnect."
+msgstr ""
+
+#: includes/admin/context-page.php:200
+msgid "What the agent receives"
+msgstr ""
+
+#. translators: 1: AGENTS.md character limit, 2: changelog character limit
+#: includes/admin/context-page.php:206
+#, php-format
+msgid "On connect, the MCP server sends the start of AGENTS.md (first %1$s characters) and the newest CHANGELOG.md entries (first %2$s characters) as server instructions. Most clients put this straight into the model's context."
+msgstr ""
+
+#: includes/admin/context-page.php:211
+msgid "The full, uncapped text is available from the always-on tool wsp_get_site_context."
+msgstr ""
+
+#: includes/admin/context-page.php:212
+msgid "Both files are also exposed as MCP resources for clients that support them."
+msgstr ""
+
+#: includes/admin/context-page.php:214
+msgid "Let your AI keep these files up to date: enable \"Update Site Context\" in MCP > Settings (Site group). The tool wsp_update_site_context replaces, appends to or prepends to either file, and accepts large files in chunks. Administrators only."
+msgstr ""
+
+#: includes/admin/context-page.php:215
+msgid "Keep the top of each file the most important: put the newest changelog entries first."
+msgstr ""
+
+#: includes/admin/context-page.php:243
+msgid "This file is longer than the limit and was cut off at the end. Shorten it, or split it and upload it through the wsp_update_site_context tool."
+msgstr ""
+
+#: includes/admin/plugin-links.php:25
+#: includes/admin/settings-page.php:18
+#: includes/admin/settings-page.php:19
+msgid "Settings"
+msgstr ""
+
+#: includes/admin/promo-cards.php:72
+msgid "Video Tutorials"
+msgstr ""
+
+#: includes/admin/promo-cards.php:73
+msgid "Check out our video tutorials for connecting your WordPress site with popular AI agents."
+msgstr ""
+
+#: includes/admin/promo-cards.php:77
+msgid "Watch Tutorials"
+msgstr ""
+
+#: includes/admin/promo-cards.php:82
+msgid "200+ Tools Available"
+msgstr ""
+
+#: includes/admin/promo-cards.php:83
+msgid "This plugin ships over 200 MCP tools across WordPress core and popular plugins. Browse the full list in our abilities directory."
+msgstr ""
+
+#: includes/admin/promo-cards.php:87
+msgid "Browse All Tools"
+msgstr ""
+
+#: includes/admin/review-notice.php:109
+msgid "Is WSP MCP working for you?"
+msgstr ""
+
+#: includes/admin/review-notice.php:110
+msgid "A review helps other people find it."
+msgstr ""
+
+#: includes/admin/review-notice.php:112
+msgid "Leave a review"
+msgstr ""
+
+#: includes/admin/review-notice.php:113
+msgid "Maybe later"
+msgstr ""
+
+#: includes/admin/review-notice.php:114
+msgid "Don't show again"
+msgstr ""
+
+#: includes/admin/settings-page.php:7
+#: includes/admin/settings-page.php:301
+msgid "WSP MCP Abilities"
+msgstr ""
+
+#: includes/admin/settings-page.php:8
+msgid "MCP"
+msgstr ""
+
+#. translators: %d: number of enabled abilities in a group.
+#: includes/admin/settings-page.php:235
+#: includes/admin/settings-page.php:347
+#, php-format
+msgid "%d Enabled"
+msgstr ""
+
+#. translators: %d: number of disabled abilities in a group.
+#: includes/admin/settings-page.php:237
+#: includes/admin/settings-page.php:348
+#, php-format
+msgid "%d Disabled"
+msgstr ""
+
+#: includes/admin/settings-page.php:238
+msgid ""
+"⚠️ This ability can MODIFY live site content.\n"
+"\n"
+"Are you sure you want to enable it?"
+msgstr ""
+
+#: includes/admin/settings-page.php:239
+#: includes/admin/settings-page.php:315
+msgid "Enable All Abilities"
+msgstr ""
+
+#: includes/admin/settings-page.php:240
+msgid "Disable All Abilities"
+msgstr ""
+
+#: includes/admin/settings-page.php:241
+msgid "Enable All Abilities?"
+msgstr ""
+
+#: includes/admin/settings-page.php:242
+msgid "This will enable all abilities including write abilities that can modify your live site. Make sure you trust the connected AI agent."
+msgstr ""
+
+#: includes/admin/settings-page.php:305
+msgid "Control exactly what <strong>your AI agents</strong> can <strong>read</strong> and <strong>write</strong> on your WordPress site via MCP."
+msgstr ""
+
+#: includes/admin/settings-page.php:306
+msgid "⚠ Write abilities modify your live site — enable with care."
+msgstr ""
+
+#: includes/admin/settings-page.php:310
+msgid "Total Abilities"
+msgstr ""
+
+#: includes/admin/settings-page.php:311
+msgid "Enabled"
+msgstr ""
+
+#: includes/admin/settings-page.php:312
+msgid "Write Access Active"
+msgstr ""
+
+#: includes/admin/settings-page.php:323
+msgid "Cancel"
+msgstr ""
+
+#: includes/admin/settings-page.php:324
+msgid "Yes, Enable All"
+msgstr ""
+
+#: includes/admin/settings-page.php:350
+msgid "Toggle All"
+msgstr ""
+
+#: includes/admin/settings-page.php:359
+msgid "write"
+msgstr ""
+
+#: includes/admin/settings-page.php:359
+msgid "read"
+msgstr ""
+
+#: includes/admin/settings-page.php:379
+msgid "💾 Save Settings"
+msgstr ""
+
+#: includes/admin/settings-page.php:380
+msgid "Changes take effect immediately for all active MCP sessions."
+msgstr ""
+
+#: includes/server/class-oauth-server.php:461
+msgid "Your WordPress account is not permitted to connect an AI client to this site. Ask an administrator to grant your account the required permission, or to connect using their own account."
+msgstr ""
+
+#: includes/server/class-oauth-server.php:540
+msgid "Authorize access"
+msgstr ""
+
+#. translators: %s: connecting client name
+#: includes/server/class-oauth-server.php:560
+#, php-format
+msgid "%s wants to connect"
+msgstr ""
+
+#. translators: %s: WordPress username
+#: includes/server/class-oauth-server.php:561
+#, php-format
+msgid "Signed in as %s"
+msgstr ""
+
+#. translators: %s: site name
+#: includes/server/class-oauth-server.php:562
+#, php-format
+msgid "This will let it read and act on %s through the MCP tools your account is allowed to use."
+msgstr ""
+
+#: includes/server/class-oauth-server.php:565
+msgid "Access will be sent to"
+msgstr ""
+
+#: includes/server/class-oauth-server.php:571
+msgid "Only click Allow if you started this yourself and you recognize the address above. The application's name is supplied by the application itself and is not verified by this site — anyone can choose one."
+msgstr ""
+
+#: includes/server/class-oauth-server.php:584
+msgid "Deny"
+msgstr ""
+
+#: includes/server/class-oauth-server.php:663
+msgid "Authorization error"
+msgstr ""

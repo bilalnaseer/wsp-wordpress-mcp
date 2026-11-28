@@ -18,8 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 function wsp_mcp_add_analytics_menu() {
 	$page_hook = add_submenu_page(
 		'wsp-mcp-abilities',
-		'Analytics',
-		'Analytics',
+		__( 'Analytics', 'wsp-mcp-ai-agents-connector' ),
+		__( 'Analytics', 'wsp-mcp-ai-agents-connector' ),
 		'manage_options',
 		'wsp-mcp-analytics',
 		'wsp_mcp_analytics_page'

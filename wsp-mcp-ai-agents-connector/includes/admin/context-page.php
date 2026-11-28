@@ -16,8 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 function wsp_mcp_add_context_menu() {
 	$page_hook = add_submenu_page(
 		'wsp-mcp-abilities',
-		'Context',
-		'Context',
+		__( 'Context', 'wsp-mcp-ai-agents-connector' ),
+		__( 'Context', 'wsp-mcp-ai-agents-connector' ),
 		'manage_options',
 		'wsp-mcp-context',
 		'wsp_mcp_context_page'

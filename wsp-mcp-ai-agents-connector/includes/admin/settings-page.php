@@ -4,8 +4,8 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 function wsp_mcp_add_menu() {
     // Menu position set to 110 to comply with core WP menu guidelines
     add_menu_page(
-        'WSP MCP Abilities',
-        'MCP',
+        __( 'WSP MCP Abilities', 'wsp-mcp-ai-agents-connector' ),
+        __( 'MCP', 'wsp-mcp-ai-agents-connector' ),
         'manage_options',
         'wsp-mcp-abilities',
         'wsp_mcp_settings_page',
@@ -15,8 +15,8 @@ function wsp_mcp_add_menu() {
 
     add_submenu_page(
         'wsp-mcp-abilities',
-        'Settings',
-        'Settings',
+        __( 'Settings', 'wsp-mcp-ai-agents-connector' ),
+        __( 'Settings', 'wsp-mcp-ai-agents-connector' ),
         'manage_options',
         'wsp-mcp-abilities'
     );
@@ -94,6 +94,7 @@ function wsp_mcp_enqueue_settings_assets( $hook ) {
 
     $custom_js = '
         document.addEventListener("DOMContentLoaded", function(){
+            var I18N = window.wspMcpI18n || {};
             var STORE = "wsp_acc_open";
 
             function readOpen(){
@@ -140,8 +141,8 @@ function wsp_mcp_enqueue_settings_assets( $hook ) {
 
                 var onBadge  = wrap.querySelector(\'[data-role="on"]\');
                 var offBadge = wrap.querySelector(\'[data-role="off"]\');
-                onBadge.textContent  = on + " Enabled";
-                offBadge.textContent = off + " Disabled";
+                onBadge.textContent  = I18N.nEnabled.replace("%d", on);
+                offBadge.textContent = I18N.nDisabled.replace("%d", off);
                 onBadge.classList.toggle("wsp-gcount--zero", on === 0);
                 offBadge.classList.toggle("wsp-gcount--zero", off === 0);
             }
@@ -150,7 +151,7 @@ function wsp_mcp_enqueue_settings_assets( $hook ) {
             document.querySelectorAll("input[type=\'checkbox\'][data-group]").forEach(function(cb){
                 cb.addEventListener("change", function(){
                     if (this.dataset.access === "write" && this.checked &&
-                        !confirm("⚠️ This ability can MODIFY live site content.\n\nAre you sure you want to enable it?")) {
+                        !confirm(I18N.confirmWrite)) {
                         this.checked = false;
                     }
                     refreshCount(this.dataset.group);
@@ -199,11 +200,11 @@ function wsp_mcp_enqueue_settings_assets( $hook ) {
 
             function updateGlobalBtn(state) {
                 if (state === "enable") {
-                    globalBtn.textContent = "Enable All Abilities";
+                    globalBtn.textContent = I18N.enableAll;
                     globalBtn.style.background = "#0073aa";
                     globalBtn.dataset.state = "enable";
                 } else {
-                    globalBtn.textContent = "Disable All Abilities";
+                    globalBtn.textContent = I18N.disableAll;
                     globalBtn.style.background = "#d63638";
                     globalBtn.dataset.state = "disable";
                 }
@@ -212,8 +213,8 @@ function wsp_mcp_enqueue_settings_assets( $hook ) {
             globalBtn.addEventListener("click", function(){
                 if (globalBtn.dataset.state === "enable") {
                     openModal(
-                        "Enable All Abilities?",
-                        "This will enable all abilities including write abilities that can modify your live site. Make sure you trust the connected AI agent.",
+                        I18N.enableTitle,
+                        I18N.enableMsg,
                         function(){
                             document.querySelectorAll("input[type=\'checkbox\'][data-group]").forEach(function(b){ b.checked = true; });
                             allGroups.forEach(function(g){ refreshCount(g); });
@@ -228,6 +229,19 @@ function wsp_mcp_enqueue_settings_assets( $hook ) {
             });
         });
     ';
+    // Strings used by the inline script below, translated server-side.
+    $i18n = array(
+        /* translators: %d: number of enabled abilities in a group. */
+        'nEnabled'     => __( '%d Enabled', 'wsp-mcp-ai-agents-connector' ),
+        /* translators: %d: number of disabled abilities in a group. */
+        'nDisabled'    => __( '%d Disabled', 'wsp-mcp-ai-agents-connector' ),
+        'confirmWrite' => __( "⚠️ This ability can MODIFY live site content.\n\nAre you sure you want to enable it?", 'wsp-mcp-ai-agents-connector' ),
+        'enableAll'    => __( 'Enable All Abilities', 'wsp-mcp-ai-agents-connector' ),
+        'disableAll'   => __( 'Disable All Abilities', 'wsp-mcp-ai-agents-connector' ),
+        'enableTitle'  => __( 'Enable All Abilities?', 'wsp-mcp-ai-agents-connector' ),
+        'enableMsg'    => __( 'This will enable all abilities including write abilities that can modify your live site. Make sure you trust the connected AI agent.', 'wsp-mcp-ai-agents-connector' ),
+    );
+    wp_add_inline_script( 'common', 'window.wspMcpI18n = ' . wp_json_encode( $i18n ) . ';' );
     wp_add_inline_script( 'common', $custom_js );
 }
 add_action( 'admin_enqueue_scripts', 'wsp_mcp_enqueue_settings_assets' );
@@ -284,21 +298,21 @@ function wsp_mcp_settings_page() {
       <div class="wsp-layout">
         <div class="wsp-main">
         <div class="wsp-header">
-            <h1>⚙️ WSP MCP Abilities</h1>
+            <h1>⚙️ <?php esc_html_e( 'WSP MCP Abilities', 'wsp-mcp-ai-agents-connector' ); ?></h1>
             <span class="wsp-badge-ver">v<?php echo esc_html( WSP_MCP_VERSION ); ?></span>
         </div>
         <p class="wsp-desc">
-            Control exactly what <strong>your AI agents</strong> can <strong>read</strong> and <strong>write</strong> on your WordPress site via MCP.
-            <span style="color:#d63638;font-weight:600;"> ⚠ Write abilities modify your live site — enable with care.</span>
+            <?php echo wp_kses( __( 'Control exactly what <strong>your AI agents</strong> can <strong>read</strong> and <strong>write</strong> on your WordPress site via MCP.', 'wsp-mcp-ai-agents-connector' ), array( 'strong' => array() ) ); ?>
+            <span style="color:#d63638;font-weight:600;"> <?php esc_html_e( '⚠ Write abilities modify your live site — enable with care.', 'wsp-mcp-ai-agents-connector' ); ?></span>
         </p>
 
         <div class="wsp-stats">
-            <div class="wsp-stat"><div class="wsp-stat-n"><?php echo esc_html( $total ); ?></div><div class="wsp-stat-l">Total Abilities</div></div>
-            <div class="wsp-stat wsp-stat--on"><div class="wsp-stat-n"><?php echo esc_html( $enabled ); ?></div><div class="wsp-stat-l">Enabled</div></div>
-            <div class="wsp-stat wsp-stat--wr"><div class="wsp-stat-n"><?php echo esc_html( $writes ); ?></div><div class="wsp-stat-l">Write Access Active</div></div>
+            <div class="wsp-stat"><div class="wsp-stat-n"><?php echo esc_html( $total ); ?></div><div class="wsp-stat-l"><?php esc_html_e( 'Total Abilities', 'wsp-mcp-ai-agents-connector' ); ?></div></div>
+            <div class="wsp-stat wsp-stat--on"><div class="wsp-stat-n"><?php echo esc_html( $enabled ); ?></div><div class="wsp-stat-l"><?php esc_html_e( 'Enabled', 'wsp-mcp-ai-agents-connector' ); ?></div></div>
+            <div class="wsp-stat wsp-stat--wr"><div class="wsp-stat-n"><?php echo esc_html( $writes ); ?></div><div class="wsp-stat-l"><?php esc_html_e( 'Write Access Active', 'wsp-mcp-ai-agents-connector' ); ?></div></div>
         </div>
         <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-            <button type="button" id="wsp-global-toggle" data-state="enable" style="background:#0073aa;color:#fff;border:none;border-radius:6px;padding:9px 22px;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s">Enable All Abilities</button>
+            <button type="button" id="wsp-global-toggle" data-state="enable" style="background:#0073aa;color:#fff;border:none;border-radius:6px;padding:9px 22px;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s"><?php esc_html_e( 'Enable All Abilities', 'wsp-mcp-ai-agents-connector' ); ?></button>
         </div>
 
         <div id="wsp-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0);z-index:99999;align-items:center;justify-content:center;transition:background .25s">
@@ -306,8 +320,8 @@ function wsp_mcp_settings_page() {
                 <h3 id="wsp-modal-title" style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1d2327;text-align:center"></h3>
                 <p id="wsp-modal-msg" style="margin:0 0 22px;font-size:13px;color:#646970;text-align:center;line-height:1.6"></p>
                 <div style="display:flex;gap:10px;justify-content:center">
-                    <button id="wsp-modal-cancel" style="background:#f6f7f7;color:#1d2327;border:1px solid #dcdcde;border-radius:6px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer">Cancel</button>
-                    <button id="wsp-modal-confirm" style="background:#0073aa;color:#fff;border:none;border-radius:6px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer">Yes, Enable All</button>
+                    <button id="wsp-modal-cancel" style="background:#f6f7f7;color:#1d2327;border:1px solid #dcdcde;border-radius:6px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer"><?php esc_html_e( 'Cancel', 'wsp-mcp-ai-agents-connector' ); ?></button>
+                    <button id="wsp-modal-confirm" style="background:#0073aa;color:#fff;border:none;border-radius:6px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer"><?php echo esc_html__( 'Yes, Enable All', 'wsp-mcp-ai-agents-connector' ); ?></button>
                 </div>
             </div>
         </div>
@@ -330,10 +344,10 @@ function wsp_mcp_settings_page() {
                     <div class="wsp-gh-right">
                         <?php $g_off = $g_total - $g_on; ?>
                         <span class="wsp-gcounts" data-group="<?php echo esc_attr( $gname ); ?>">
-                            <span class="wsp-gcount wsp-gcount--on<?php echo 0 === $g_on ? ' wsp-gcount--zero' : ''; ?>" data-role="on"><?php echo esc_html( $g_on ); ?> Enabled</span>
-                            <span class="wsp-gcount wsp-gcount--off<?php echo 0 === $g_off ? ' wsp-gcount--zero' : ''; ?>" data-role="off"><?php echo esc_html( $g_off ); ?> Disabled</span>
+                            <span class="wsp-gcount wsp-gcount--on<?php echo 0 === $g_on ? ' wsp-gcount--zero' : ''; ?>" data-role="on"><?php /* translators: %d: number of enabled abilities in a group. */ echo esc_html( sprintf( __( '%d Enabled', 'wsp-mcp-ai-agents-connector' ), $g_on ) ); ?></span>
+                            <span class="wsp-gcount wsp-gcount--off<?php echo 0 === $g_off ? ' wsp-gcount--zero' : ''; ?>" data-role="off"><?php /* translators: %d: number of disabled abilities in a group. */ echo esc_html( sprintf( __( '%d Disabled', 'wsp-mcp-ai-agents-connector' ), $g_off ) ); ?></span>
                         </span>
-                        <button type="button" class="wsp-toggle-all" data-group="<?php echo esc_attr( $gname ); ?>">Toggle All</button>
+                        <button type="button" class="wsp-toggle-all" data-group="<?php echo esc_attr( $gname ); ?>"><?php esc_html_e( 'Toggle All', 'wsp-mcp-ai-agents-connector' ); ?></button>
                     </div>
                 </div>
                 <div class="wsp-gbody">
@@ -342,7 +356,7 @@ function wsp_mcp_settings_page() {
                     <div>
                         <div class="wsp-al">
                             <?php echo esc_html( $cfg['label'] ); ?>
-                            <span class="wsp-ac wsp-ac--<?php echo esc_attr( $cfg['access'] ); ?>"><?php echo esc_html( $cfg['access'] ); ?></span>
+                            <span class="wsp-ac wsp-ac--<?php echo esc_attr( $cfg['access'] ); ?>"><?php echo esc_html( 'write' === $cfg['access'] ? __( 'write', 'wsp-mcp-ai-agents-connector' ) : __( 'read', 'wsp-mcp-ai-agents-connector' ) ); ?></span>
                         </div>
                         <div class="wsp-ad"><?php echo esc_html( $cfg['description'] ); ?></div>
                     </div>
@@ -362,8 +376,8 @@ function wsp_mcp_settings_page() {
             <?php endforeach; ?>
 
             <div class="wsp-savebar">
-                <?php submit_button( '💾 Save Settings', 'primary', 'submit', false ); ?>
-                <span class="wsp-savenote">Changes take effect immediately for all active MCP sessions.</span>
+                <?php submit_button( __( '💾 Save Settings', 'wsp-mcp-ai-agents-connector' ), 'primary', 'submit', false ); ?>
+                <span class="wsp-savenote"><?php esc_html_e( 'Changes take effect immediately for all active MCP sessions.', 'wsp-mcp-ai-agents-connector' ); ?></span>
             </div>
         </form>
         </div><!-- .wsp-main -->

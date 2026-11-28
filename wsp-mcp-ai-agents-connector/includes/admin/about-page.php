@@ -16,8 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 function wsp_mcp_add_about_menu() {
 	$page_hook = add_submenu_page(
 		'wsp-mcp-abilities',
-		'About Us',
-		'About Us',
+		__( 'About Us', 'wsp-mcp-ai-agents-connector' ),
+		__( 'About Us', 'wsp-mcp-ai-agents-connector' ),
 		'manage_options',
 		'wsp-mcp-about',
 		'wsp_mcp_about_page'

@@ -16,8 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 function wsp_mcp_add_connection_menu() {
 	$page_hook = add_submenu_page(
 		'wsp-mcp-abilities',
-		'Connection',
-		'Connection',
+		__( 'Connection', 'wsp-mcp-ai-agents-connector' ),
+		__( 'Connection', 'wsp-mcp-ai-agents-connector' ),
 		'manage_options',
 		'wsp-mcp-connection',
 		'wsp_mcp_connection_page'
@@ -125,10 +125,10 @@ function wsp_mcp_enqueue_connection_assets() {
 					btn.addEventListener("click", function() {
 						copyText(code.innerText).then(function() {
 							var orig = btn.innerHTML;
-							btn.innerHTML = \'<span class="dashicons dashicons-yes-alt" style="font-size:16px;width:16px;height:16px;"></span> Copied!\';
+							btn.innerHTML = \'<span class="dashicons dashicons-yes-alt" style="font-size:16px;width:16px;height:16px;"></span> \' + (window.wspMcpConnI18n ? window.wspMcpConnI18n.copied : \'Copied!\');
 							btn.style.color = "#00a32a";
 							setTimeout(function(){ btn.innerHTML = orig; btn.style.color = ""; }, 2500);
-						}).catch(function(){ alert("Failed to copy. Please select and copy manually."); });
+						}).catch(function(){ alert(window.wspMcpConnI18n ? window.wspMcpConnI18n.copyFailed : "Failed to copy. Please select and copy manually."); });
 					});
 				}
 				makeCopyBtn("wsp-copy-ccurl",       "wsp-code-ccurl");
@@ -177,6 +177,12 @@ function wsp_mcp_enqueue_connection_assets() {
 				makeDownloadBtn("wsp-download-opencode",    "wsp-code-opencode",    "opencode.json");
 			});
 		';
+		// Strings used by the inline script below, translated server-side.
+		$i18n = array(
+			'copied'     => __( 'Copied!', 'wsp-mcp-ai-agents-connector' ),
+			'copyFailed' => __( 'Failed to copy. Please select and copy manually.', 'wsp-mcp-ai-agents-connector' ),
+		);
+		wp_add_inline_script( 'common', 'window.wspMcpConnI18n = ' . wp_json_encode( $i18n ) . ';' );
 		wp_add_inline_script( 'common', $custom_js );
 	} );
 }
