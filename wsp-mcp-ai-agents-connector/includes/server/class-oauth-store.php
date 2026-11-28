@@ -148,8 +148,8 @@ class WSP_MCP_OAuth_Store {
 	public static function count_clients() {
 		global $wpdb;
 		$table = self::clients_table();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name from $wpdb->prefix; no user input in this query.
-		return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table name from $wpdb->prefix; no user input in this query.
+		return (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $table ) );
 	}
 
 	/**
@@ -170,12 +170,12 @@ class WSP_MCP_OAuth_Store {
 		$clients = self::clients_table();
 		$tokens  = self::tokens_table();
 		$cutoff  = gmdate( 'Y-m-d H:i:s', time() - self::UNUSED_CLIENT_TTL );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		return (int) $wpdb->query( $wpdb->prepare(
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table names from $wpdb->prefix (no user input); value bound via prepare().
-			"DELETE c FROM {$clients} c
-			 LEFT JOIN {$tokens} t ON t.client_id = c.client_id
+			"DELETE c FROM %i c
+			 LEFT JOIN %i t ON t.client_id = c.client_id
 			 WHERE c.created_at <= %s AND t.id IS NULL",
+			$clients, $tokens,
 			$cutoff
 		) );
 	}
@@ -191,10 +191,10 @@ class WSP_MCP_OAuth_Store {
 	public static function revoke_all_for( $client_id, $user_id ) {
 		global $wpdb;
 		$table = self::tokens_table();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		return (int) $wpdb->query( $wpdb->prepare(
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from $wpdb->prefix (no user input); values bound via prepare().
-			"UPDATE {$table} SET revoked = 1 WHERE client_id = %s AND user_id = %d AND revoked = 0",
+			'UPDATE %i SET revoked = 1 WHERE client_id = %s AND user_id = %d AND revoked = 0',
+			$table,
 			$client_id,
 			(int) $user_id
 		) );
@@ -209,10 +209,10 @@ class WSP_MCP_OAuth_Store {
 	public static function get_client( $client_id ) {
 		global $wpdb;
 		$table = self::clients_table();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$row = $wpdb->get_row( $wpdb->prepare(
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from $wpdb->prefix (no user input); value bound via prepare().
-			"SELECT client_id, client_name, redirect_uris FROM {$table} WHERE client_id = %s",
+			'SELECT client_id, client_name, redirect_uris FROM %i WHERE client_id = %s',
+			$table,
 			$client_id
 		), ARRAY_A );
 		if ( ! $row ) {
@@ -267,10 +267,10 @@ class WSP_MCP_OAuth_Store {
 	public static function consume_code( $code ) {
 		global $wpdb;
 		$table = self::codes_table();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$row = $wpdb->get_row( $wpdb->prepare(
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from $wpdb->prefix (no user input); value bound via prepare().
-			"SELECT * FROM {$table} WHERE code = %s AND expires_at > %s",
+			'SELECT * FROM %i WHERE code = %s AND expires_at > %s',
+			$table,
 			$code,
 			current_time( 'mysql', true )
 		), ARRAY_A );
@@ -327,10 +327,10 @@ class WSP_MCP_OAuth_Store {
 		global $wpdb;
 		$table = self::tokens_table();
 		$hash  = hash( 'sha256', $access_token );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$row = $wpdb->get_row( $wpdb->prepare(
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from $wpdb->prefix (no user input); value bound via prepare().
-			"SELECT user_id, client_id FROM {$table} WHERE access_token_hash = %s AND revoked = 0 AND access_expires_at > %s",
+			'SELECT user_id, client_id FROM %i WHERE access_token_hash = %s AND revoked = 0 AND access_expires_at > %s',
+			$table,
 			$hash,
 			current_time( 'mysql', true )
 		), ARRAY_A );
@@ -351,10 +351,10 @@ class WSP_MCP_OAuth_Store {
 		global $wpdb;
 		$table = self::tokens_table();
 		$hash  = hash( 'sha256', $refresh_token );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$row = $wpdb->get_row( $wpdb->prepare(
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from $wpdb->prefix (no user input); value bound via prepare().
-			"SELECT * FROM {$table} WHERE refresh_token_hash = %s AND client_id = %s AND revoked = 0 AND refresh_expires_at > %s",
+			'SELECT * FROM %i WHERE refresh_token_hash = %s AND client_id = %s AND revoked = 0 AND refresh_expires_at > %s',
+			$table,
 			$hash,
 			$client_id,
 			current_time( 'mysql', true )
@@ -396,10 +396,10 @@ class WSP_MCP_OAuth_Store {
 		global $wpdb;
 		$tokens = self::tokens_table();
 		$codes  = self::codes_table();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table names from $wpdb->prefix; no user input in these queries.
-		$revoked = (int) $wpdb->query( "UPDATE {$tokens} SET revoked = 1 WHERE revoked = 0" );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
-		$wpdb->query( "DELETE FROM {$codes}" );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table names from $wpdb->prefix; no user input in these queries.
+		$revoked = (int) $wpdb->query( $wpdb->prepare( 'UPDATE %i SET revoked = 1 WHERE revoked = 0', $tokens ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->query( $wpdb->prepare( 'DELETE FROM %i', $codes ) );
 		return $revoked;
 	}
 
@@ -416,10 +416,10 @@ class WSP_MCP_OAuth_Store {
 	private static function find_rotated_token( $hash, $client_id ) {
 		global $wpdb;
 		$table = self::tokens_table();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$row = $wpdb->get_row( $wpdb->prepare(
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from $wpdb->prefix (no user input); values bound via prepare().
-			"SELECT user_id FROM {$table} WHERE refresh_token_hash = %s AND client_id = %s AND revoked = 1",
+			'SELECT user_id FROM %i WHERE refresh_token_hash = %s AND client_id = %s AND revoked = 1',
+			$table,
 			$hash,
 			$client_id
 		), ARRAY_A );
@@ -432,16 +432,16 @@ class WSP_MCP_OAuth_Store {
 		$now = current_time( 'mysql', true );
 		$codes_table  = self::codes_table();
 		$tokens_table = self::tokens_table();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$wpdb->query( $wpdb->prepare(
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from $wpdb->prefix (no user input); value bound via prepare().
-			"DELETE FROM {$codes_table} WHERE expires_at <= %s",
+			'DELETE FROM %i WHERE expires_at <= %s',
+			$codes_table,
 			$now
 		) );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$wpdb->query( $wpdb->prepare(
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from $wpdb->prefix (no user input); value bound via prepare().
-			"DELETE FROM {$tokens_table} WHERE (refresh_expires_at IS NOT NULL AND refresh_expires_at <= %s) OR (revoked = 1 AND access_expires_at <= %s)",
+			'DELETE FROM %i WHERE (refresh_expires_at IS NOT NULL AND refresh_expires_at <= %s) OR (revoked = 1 AND access_expires_at <= %s)',
+			$tokens_table,
 			$now,
 			$now
 		) );

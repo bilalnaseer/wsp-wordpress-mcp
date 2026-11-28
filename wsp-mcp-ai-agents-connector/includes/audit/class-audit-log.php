@@ -118,10 +118,10 @@ class WSP_MCP_Audit_Log {
 	public static function get_rejection_counts( $hours = 24 ) {
 		global $wpdb;
 		$table = self::table();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$rows = $wpdb->get_results( $wpdb->prepare(
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from $wpdb->prefix; values bound.
-			"SELECT tool_name, COUNT(*) AS n FROM {$table} WHERE tool_name LIKE %s AND created_at >= %s GROUP BY tool_name ORDER BY n DESC",
+			'SELECT tool_name, COUNT(*) AS n FROM %i WHERE tool_name LIKE %s AND created_at >= %s GROUP BY tool_name ORDER BY n DESC',
+			$table,
 			'mcp:%',
 			gmdate( 'Y-m-d H:i:s', time() - ( (int) $hours * HOUR_IN_SECONDS ) )
 		), ARRAY_A );
@@ -136,10 +136,10 @@ class WSP_MCP_Audit_Log {
 	public static function get_recent_rejections( $limit = 20 ) {
 		global $wpdb;
 		$table = self::table();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$rows = $wpdb->get_results( $wpdb->prepare(
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from $wpdb->prefix; values bound.
-			"SELECT tool_name, message, ip_address, user_login, created_at FROM {$table} WHERE tool_name LIKE %s ORDER BY id DESC LIMIT %d",
+			'SELECT tool_name, message, ip_address, user_login, created_at FROM %i WHERE tool_name LIKE %s ORDER BY id DESC LIMIT %d',
+			$table,
 			'mcp:%',
 			max( 1, min( 100, (int) $limit ) )
 		), ARRAY_A );
@@ -182,27 +182,23 @@ class WSP_MCP_Audit_Log {
 		$status   = isset( $args['status'] ) ? sanitize_key( $args['status'] ) : '';
 		$tool     = isset( $args['tool'] ) ? sanitize_text_field( $args['tool'] ) : '';
 
-		$where  = array( '1=1' );
-		$values = array();
-		if ( '' !== $status ) {
-			$where[]  = 'status = %s';
-			$values[] = $status;
-		}
-		if ( '' !== $tool ) {
-			$where[]  = 'tool_name = %s';
-			$values[] = $tool;
-		}
-		$where_sql = implode( ' AND ', $where );
-		$offset    = ( $paged - 1 ) * $per_page;
-		$values[]  = $per_page;
-		$values[]  = $offset;
+		$offset = ( $paged - 1 ) * $per_page;
 
-		// Table name is built from $wpdb->prefix (no user input); all values are bound via prepare().
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
-		$rows = $wpdb->get_results( $wpdb->prepare(
-			"SELECT * FROM {$table} WHERE {$where_sql} ORDER BY id DESC LIMIT %d OFFSET %d",
-			$values
-		) );
+		// Constant SQL: the filters are optional ("'' = skip"), so no WHERE fragment is
+		// concatenated. The table name is bound with %i and every value with %s / %d.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM %i WHERE ( %s = '' OR status = %s ) AND ( %s = '' OR tool_name = %s ) ORDER BY id DESC LIMIT %d OFFSET %d",
+				$table,
+				$status,
+				$status,
+				$tool,
+				$tool,
+				$per_page,
+				$offset
+			)
+		);
 
 		return is_array( $rows ) ? $rows : array();
 	}
@@ -220,28 +216,18 @@ class WSP_MCP_Audit_Log {
 		$status = isset( $args['status'] ) ? sanitize_key( $args['status'] ) : '';
 		$tool   = isset( $args['tool'] ) ? sanitize_text_field( $args['tool'] ) : '';
 
-		$where  = array( '1=1' );
-		$values = array();
-		if ( '' !== $status ) {
-			$where[]  = 'status = %s';
-			$values[] = $status;
-		}
-		if ( '' !== $tool ) {
-			$where[]  = 'tool_name = %s';
-			$values[] = $tool;
-		}
-		$where_sql = implode( ' AND ', $where );
-
-		if ( empty( $values ) ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table} WHERE {$where_sql}" );
-		}
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
-		return (int) $wpdb->get_var( $wpdb->prepare(
-			"SELECT COUNT(*) FROM {$table} WHERE {$where_sql}",
-			$values
-		) );
+		// Constant SQL, same optional-filter pattern as get_entries().
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM %i WHERE ( %s = '' OR status = %s ) AND ( %s = '' OR tool_name = %s )",
+				$table,
+				$status,
+				$status,
+				$tool,
+				$tool
+			)
+		);
 	}
 
 	/** Distinct tool names seen in the log, for the filter dropdown. */
@@ -249,7 +235,7 @@ class WSP_MCP_Audit_Log {
 		global $wpdb;
 		$table = self::table();
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$names = $wpdb->get_col( "SELECT DISTINCT tool_name FROM {$table} ORDER BY tool_name ASC" );
+		$names = $wpdb->get_col( $wpdb->prepare( 'SELECT DISTINCT tool_name FROM %i ORDER BY tool_name ASC', $table ) );
 		return is_array( $names ) ? $names : array();
 	}
 
@@ -258,7 +244,7 @@ class WSP_MCP_Audit_Log {
 		global $wpdb;
 		$table = self::table();
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$rows = $wpdb->get_results( "SELECT status, COUNT(*) AS n FROM {$table} GROUP BY status", ARRAY_A );
+		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT status, COUNT(*) AS n FROM %i GROUP BY status', $table ), ARRAY_A );
 		$summary = array(
 			'total'                => 0,
 			self::STATUS_SUCCESS   => 0,
@@ -280,7 +266,7 @@ class WSP_MCP_Audit_Log {
 		global $wpdb;
 		$table = self::table();
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$wpdb->query( "TRUNCATE TABLE {$table}" );
+		$wpdb->query( $wpdb->prepare( 'TRUNCATE TABLE %i', $table ) );
 	}
 
 	/**
@@ -292,33 +278,27 @@ class WSP_MCP_Audit_Log {
 	public static function get_analytics_overview( $days = 30 ) {
 		global $wpdb;
 		$table  = self::table();
-		$days   = (int) $days;
-		$where  = '1=1';
-		$values = array();
-		if ( $days > 0 ) {
-			$where    = 'created_at >= %s';
-			$values[] = gmdate( 'Y-m-d H:i:s', time() - ( $days * DAY_IN_SECONDS ) );
-		}
+		$days  = (int) $days;
+		// All-time (0) reads from the epoch, so one constant query serves both cases.
+		$since = $days > 0 ? gmdate( 'Y-m-d H:i:s', time() - ( $days * DAY_IN_SECONDS ) ) : '1970-01-01 00:00:00';
 
-		// Table name is built from $wpdb->prefix (no user input); all values are bound via prepare().
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
-		$total = empty( $values )
-			? (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table} WHERE {$where}" )
-			: (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE {$where}", $values ) );
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$total = (int) $wpdb->get_var(
+			$wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE created_at >= %s', $table, $since )
+		);
 
-		$error_values = array_merge( $values, array( self::STATUS_ERROR ) );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
-		$errors = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE {$where} AND status = %s", $error_values ) );
+		$errors = (int) $wpdb->get_var(
+			$wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE created_at >= %s AND status = %s', $table, $since, self::STATUS_ERROR )
+		);
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
-		$avg_duration = empty( $values )
-			? $wpdb->get_var( "SELECT AVG(duration_ms) FROM {$table} WHERE {$where} AND duration_ms > 0" )
-			: $wpdb->get_var( $wpdb->prepare( "SELECT AVG(duration_ms) FROM {$table} WHERE {$where} AND duration_ms > 0", $values ) );
+		$avg_duration = $wpdb->get_var(
+			$wpdb->prepare( 'SELECT AVG(duration_ms) FROM %i WHERE created_at >= %s AND duration_ms > 0', $table, $since )
+		);
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
-		$most_used = empty( $values )
-			? $wpdb->get_row( "SELECT tool_name, COUNT(*) AS n FROM {$table} WHERE {$where} GROUP BY tool_name ORDER BY n DESC LIMIT 1" )
-			: $wpdb->get_row( $wpdb->prepare( "SELECT tool_name, COUNT(*) AS n FROM {$table} WHERE {$where} GROUP BY tool_name ORDER BY n DESC LIMIT 1", $values ) );
+		$most_used = $wpdb->get_row(
+			$wpdb->prepare( 'SELECT tool_name, COUNT(*) AS n FROM %i WHERE created_at >= %s GROUP BY tool_name ORDER BY n DESC LIMIT 1', $table, $since )
+		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		return array(
 			'total_requests'  => $total,
@@ -344,34 +324,20 @@ class WSP_MCP_Audit_Log {
 		$days  = (int) $days;
 		$limit = max( 1, min( 50, (int) $limit ) );
 
-		// The query is written out in full at each call site rather than built
-		// into a variable first: $wpdb->prepare() can only be verified — by a
-		// reviewer or by PHPCS — when the query it receives is a literal, so
-		// passing a pre-assembled $sql string trips
-		// WordPress.DB.PreparedSQL.NotPrepared even when every value is bound.
-		// The windowed and all-time forms are therefore separate statements,
-		// the same way get_analytics_overview() above handles the same split.
-		// Table name is built from $wpdb->prefix (no user input); every value
-		// is bound via prepare().
-		if ( $days > 0 ) {
-			$since = gmdate( 'Y-m-d H:i:s', time() - ( $days * DAY_IN_SECONDS ) );
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
-			$rows = $wpdb->get_results( $wpdb->prepare(
-				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from $wpdb->prefix; values bound below.
+		// All-time (0) reads from the epoch, so one constant query serves both cases.
+		$since = $days > 0 ? gmdate( 'Y-m-d H:i:s', time() - ( $days * DAY_IN_SECONDS ) ) : '1970-01-01 00:00:00';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
 				"SELECT IF(category = '', 'Uncategorized', category) AS category, COUNT(*) AS n, AVG(duration_ms) AS avg_ms
-				 FROM {$table} WHERE created_at >= %s GROUP BY category ORDER BY n DESC LIMIT %d",
+				 FROM %i WHERE created_at >= %s GROUP BY category ORDER BY n DESC LIMIT %d",
+				$table,
 				$since,
 				$limit
-			), ARRAY_A );
-		} else {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
-			$rows = $wpdb->get_results( $wpdb->prepare(
-				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from $wpdb->prefix; value bound below.
-				"SELECT IF(category = '', 'Uncategorized', category) AS category, COUNT(*) AS n, AVG(duration_ms) AS avg_ms
-				 FROM {$table} GROUP BY category ORDER BY n DESC LIMIT %d",
-				$limit
-			), ARRAY_A );
-		}
+			),
+			ARRAY_A
+		);
 		$rows = is_array( $rows ) ? $rows : array();
 
 		$total = 0;
@@ -399,13 +365,14 @@ class WSP_MCP_Audit_Log {
 		$table = self::table();
 		$limit = max( 1, min( 100, (int) $limit ) );
 
-		// Table name is built from $wpdb->prefix (no user input); value is bound via prepare().
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
-		$rows = $wpdb->get_results( $wpdb->prepare(
-			"SELECT tool_name, category, status, duration_ms, user_login, user_id, created_at
-			 FROM {$table} ORDER BY id DESC LIMIT %d",
-			$limit
-		) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				'SELECT tool_name, category, status, duration_ms, user_login, user_id, created_at FROM %i ORDER BY id DESC LIMIT %d',
+				$table,
+				$limit
+			)
+		);
 
 		return is_array( $rows ) ? $rows : array();
 	}
@@ -419,8 +386,7 @@ class WSP_MCP_Audit_Log {
 			return; // Retention disabled.
 		}
 		$cutoff = gmdate( 'Y-m-d H:i:s', time() - ( $days * DAY_IN_SECONDS ) );
-		// Table name is built from $wpdb->prefix (no user input); value is bound via prepare().
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
-		$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE created_at < %s", $cutoff ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE created_at < %s', $table, $cutoff ) );
 	}
 }
