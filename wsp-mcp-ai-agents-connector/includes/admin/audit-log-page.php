@@ -16,8 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 function wsp_mcp_add_audit_log_menu() {
 	$page_hook = add_submenu_page(
 		'wsp-mcp-abilities',
-		'Audit Log',
-		'Audit Log',
+		__( 'Audit Log', 'wsp-mcp-ai-agents-connector' ),
+		__( 'Audit Log', 'wsp-mcp-ai-agents-connector' ),
 		'manage_options',
 		'wsp-mcp-audit-log',
 		'wsp_mcp_audit_log_page'

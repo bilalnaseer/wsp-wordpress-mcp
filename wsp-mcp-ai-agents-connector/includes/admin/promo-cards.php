@@ -69,22 +69,22 @@ function wsp_mcp_render_promo_cards( $campaign ) {
     <div class="wsp-side">
         <div class="wsp-promo">
             <div class="wsp-promo-icon">&#127916;</div>
-            <h2>Video Tutorials</h2>
-            <p>Check out our video tutorials for connecting your WordPress site with popular AI agents.</p>
+            <h2><?php esc_html_e( 'Video Tutorials', 'wsp-mcp-ai-agents-connector' ); ?></h2>
+            <p><?php esc_html_e( 'Check out our video tutorials for connecting your WordPress site with popular AI agents.', 'wsp-mcp-ai-agents-connector' ); ?></p>
             <a class="button button-secondary"
                 href="<?php echo esc_url( wsp_mcp_promo_url( 'https://wspmcp.com/tutorials', 'tutorials_card', $campaign ) ); ?>"
                 target="_blank"
-                rel="noopener">Watch Tutorials</a>
+                rel="noopener"><?php esc_html_e( 'Watch Tutorials', 'wsp-mcp-ai-agents-connector' ); ?></a>
         </div>
 
         <div class="wsp-promo">
             <div class="wsp-promo-icon">&#129520;</div>
-            <h2>200+ Tools Available</h2>
-            <p>This plugin ships over 200 MCP tools across WordPress core and popular plugins. Browse the full list in our abilities directory.</p>
+            <h2><?php esc_html_e( '200+ Tools Available', 'wsp-mcp-ai-agents-connector' ); ?></h2>
+            <p><?php esc_html_e( 'This plugin ships over 200 MCP tools across WordPress core and popular plugins. Browse the full list in our abilities directory.', 'wsp-mcp-ai-agents-connector' ); ?></p>
             <a class="button button-secondary"
                 href="<?php echo esc_url( wsp_mcp_promo_url( 'https://wspmcp.com/abilities-directory', 'directory_card', $campaign ) ); ?>"
                 target="_blank"
-                rel="noopener">Browse All Tools</a>
+                rel="noopener"><?php esc_html_e( 'Browse All Tools', 'wsp-mcp-ai-agents-connector' ); ?></a>
         </div>
     </div>
     <?php
