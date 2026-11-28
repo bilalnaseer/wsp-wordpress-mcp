@@ -11,7 +11,7 @@ if ( ! function_exists( 'wsp_uae_is_active' ) ) {
     }
 }
 function wsp_uae_cap($cap = 'edit_posts') { return !current_user_can($cap) ? new WP_Error('forbidden', "Need $cap cap.") : true; }
-function wsp_uae_get_opts($key, $default = array()) { return get_option($key, $default); }
+function wsp_uae_get_opts($key, $default_value = array()) { return get_option($key, $default_value); }
 function wsp_uae_set_opts($key, $val) { update_option($key, $val); return array('success'=>true, 'updated'=>$key); }
 
 function wsp_uae_get_registered_widgets() {
@@ -25,9 +25,9 @@ function wsp_uae_get_registered_widgets() {
                     strpos($slug, 'hfe-') === 0 ||
                     strpos($slug, 'hfe_') === 0 ||
                     strpos($slug, 'uael-') === 0 ||
-                    in_array('hfe', $cats) ||
-                    in_array('header-footer-elementor', $cats) ||
-                    in_array('uael', $cats)
+                    in_array('hfe', $cats, true) ||
+                    in_array('header-footer-elementor', $cats, true) ||
+                    in_array('uael', $cats, true)
                 );
                 if ( $is_uae ) {
                     $title = method_exists($widget, 'get_title') ? $widget->get_title() : ucwords(str_replace(array('-','_'), ' ', $slug));
@@ -65,7 +65,7 @@ function wsp_execute_uae_widgets_list($input) {
     $stored     = wsp_uae_get_opts('uae_widgets');
     $result     = array();
     foreach ($registered as $slug => $info) {
-        $info['enabled'] = !isset($stored[$slug]) || $stored[$slug] !== 'disable';
+        $info['enabled'] = !isset($stored[$slug]) || 'disable' !== $stored[$slug];
         $result[$slug]   = $info;
     }
     return array('widgets'=>$result);
@@ -80,7 +80,7 @@ function wsp_execute_uae_widgets_deactivate_unused($input) {
     $stored      = wsp_uae_get_opts('uae_widgets');
     $deactivated = 0;
     foreach ($registered as $slug => $info) {
-        if ( ! in_array($slug, $used_slugs) ) {
+        if ( ! in_array($slug, $used_slugs, true) ) {
             $stored[$slug] = 'disable';
             $deactivated++;
         }
@@ -193,11 +193,11 @@ function wsp_execute_uae_builder_move_element($input) {
     if ( is_wp_error($data) ) return $data;
     if ( ! is_array($data) ) return array('error'=>'Invalid page data structure.');
     $found = function_exists('wsp_elementor_find_by_id') ? wsp_elementor_find_by_id($data, $element_id) : null;
-    if ( $found === null || ! is_array($found) ) return array('error'=>"Element $element_id not found.");
+    if ( null === $found || ! is_array($found) ) return array('error'=>"Element $element_id not found.");
     if ( function_exists('wsp_elementor_remove_by_id') ) {
         wsp_elementor_remove_by_id($data, $element_id);
     }
-    if ( $position !== null ) {
+    if ( null !== $position ) {
         if ( function_exists('wsp_elementor_insert_into') ) {
             wsp_elementor_insert_into($data, null, $found, $position);
         } else {
@@ -298,12 +298,12 @@ function wsp_execute_uae_builder_get_schema($input) {
                 if ( ! empty($controls) ) {
                     $props = new stdClass();
                     foreach ($controls as $name => $ctrl) {
-                        if ( isset($ctrl['tab']) && $ctrl['tab'] === 'style' ) continue;
+                        if ( isset($ctrl['tab']) && 'style' === $ctrl['tab'] ) continue;
                         $prop = array('type'=>'string', 'description'=>$ctrl['label']??$name);
                         if ( isset($ctrl['type']) ) {
-                            if ( in_array($ctrl['type'], array('number','slider')) ) $prop['type'] = 'number';
-                            elseif ( $ctrl['type'] === 'select' ) { $prop['type']='string'; if(!empty($ctrl['options']))$prop['enum']=array_values($ctrl['options']); }
-                            elseif ( $ctrl['type'] === 'switcher' ) $prop['type'] = 'boolean';
+                            if ( in_array($ctrl['type'], array('number','slider'), true) ) $prop['type'] = 'number';
+                            elseif ( 'select' === $ctrl['type'] ) { $prop['type']='string'; if(!empty($ctrl['options']))$prop['enum']=array_values($ctrl['options']); }
+                            elseif ( 'switcher' === $ctrl['type'] ) $prop['type'] = 'boolean';
                         }
                         $props->$name = $prop;
                     }
@@ -338,7 +338,7 @@ function wsp_execute_uae_info_get($input) {
     foreach (array('UAE_VER','UAEL_VER','ULTIMATE_ADDONS_VER','BSF_ULTIMATE_ADDONS_VER','UAEL_VERSION') as $c) {
         if (defined($c)) { $version = constant($c); break; }
     }
-    if ($version === 'unknown' && function_exists('bsf_get_option')) {
+    if ('unknown' === $version && function_exists('bsf_get_option')) {
         $info = bsf_get_option(false, 'ultimate-addons-for-elementor');
         if (!empty($info['version'])) $version = $info['version'];
     }

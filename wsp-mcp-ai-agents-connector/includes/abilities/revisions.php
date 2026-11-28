@@ -53,11 +53,11 @@ function wsp_revisions_resolve_revision( $revision_id ) {
  * Normalize one revision row.
  *
  * @param WP_Post $revision Revision post.
- * @param WP_Post $parent   Its parent post.
+ * @param WP_Post $parent_post   Its parent post.
  * @param bool    $full     Include title/content/excerpt bodies.
  * @return array
  */
-function wsp_revisions_item_data( $revision, $parent, $full = false ) {
+function wsp_revisions_item_data( $revision, $parent_post, $full = false ) {
 	$author = get_userdata( (int) $revision->post_author );
 	$data   = array(
 		'id'            => (int) $revision->ID,
@@ -68,8 +68,8 @@ function wsp_revisions_item_data( $revision, $parent, $full = false ) {
 		'is_autosave'   => wp_is_post_autosave( $revision ) ? true : false,
 		'title'         => $revision->post_title,
 		'content_chars' => mb_strlen( $revision->post_content ),
-		'changed_fields' => array_values( array_filter( array( 'title', 'content', 'excerpt' ), function ( $f ) use ( $revision, $parent ) {
-			return $revision->{"post_$f"} !== $parent->{"post_$f"};
+		'changed_fields' => array_values( array_filter( array( 'title', 'content', 'excerpt' ), function ( $f ) use ( $revision, $parent_post ) {
+			return $revision->{"post_$f"} !== $parent_post->{"post_$f"};
 		} ) ),
 	);
 	if ( $full ) {

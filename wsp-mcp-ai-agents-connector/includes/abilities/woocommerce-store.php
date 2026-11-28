@@ -42,8 +42,14 @@ function wsp_woo_settings_group_arg( $input ) {
 const WSP_WOO_SETTINGS_MAX_CHARS = 50000;
 
 function wsp_execute_woo_get_settings( $input ) {
-	if ( $e = wsp_woo_guard( 'manage_options' ) ) return $e;
-	if ( $e = wsp_woo_guard( 'manage_woocommerce' ) ) return $e;
+	$e = wsp_woo_guard( 'manage_options' );
+	if ( $e ) {
+		return $e;
+	}
+	$e = wsp_woo_guard( 'manage_woocommerce' );
+	if ( $e ) {
+		return $e;
+	}
 	$group = wsp_woo_settings_group_arg( $input );
 	if ( ! $group ) return wsp_woo_fail( 'group is required. One of: ' . implode( ', ', wsp_woo_settings_groups() ) . '.' );
 
@@ -95,8 +101,14 @@ function wsp_execute_woo_get_settings( $input ) {
 }
 
 function wsp_execute_woo_update_settings( $input ) {
-	if ( $e = wsp_woo_guard( 'manage_options' ) ) return $e;
-	if ( $e = wsp_woo_guard( 'manage_woocommerce' ) ) return $e;
+	$e = wsp_woo_guard( 'manage_options' );
+	if ( $e ) {
+		return $e;
+	}
+	$e = wsp_woo_guard( 'manage_woocommerce' );
+	if ( $e ) {
+		return $e;
+	}
 	$group = wsp_woo_settings_group_arg( $input );
 	if ( ! $group ) return wsp_woo_fail( 'group is required. One of: ' . implode( ', ', wsp_woo_settings_groups() ) . '.' );
 	if ( empty( $input['settings'] ) || ! is_array( $input['settings'] ) ) return wsp_woo_fail( 'settings must be a non-empty object of option id => value.' );
@@ -153,7 +165,10 @@ function wsp_woo_tax_rate_row( $r ) {
 }
 
 function wsp_execute_woo_get_tax_classes( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	$classes = wsp_woo_rest( 'GET', 'taxes/classes' );
 	if ( is_wp_error( $classes ) ) return wsp_woo_fail( $classes->get_error_message() );
 	$clean = array();
@@ -187,7 +202,10 @@ function wsp_woo_tax_rate_params( $input ) {
 }
 
 function wsp_execute_woo_create_tax_rate( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	if ( ! isset( $input['rate'] ) ) return wsp_woo_fail( 'rate is required.' );
 	$p = wsp_woo_tax_rate_params( $input );
 	if ( is_string( $p ) ) return wsp_woo_fail( $p );
@@ -197,7 +215,10 @@ function wsp_execute_woo_create_tax_rate( $input ) {
 }
 
 function wsp_execute_woo_update_tax_rate( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	$id = isset( $input['id'] ) ? intval( $input['id'] ) : 0;
 	if ( ! $id ) return wsp_woo_fail( 'id is required.' );
 	$p = wsp_woo_tax_rate_params( $input );
@@ -209,7 +230,10 @@ function wsp_execute_woo_update_tax_rate( $input ) {
 }
 
 function wsp_execute_woo_delete_tax_rate( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	$id = isset( $input['id'] ) ? intval( $input['id'] ) : 0;
 	if ( ! $id ) return wsp_woo_fail( 'id is required.' );
 	if ( ! wsp_woo_flag( $input, 'force' ) ) return wsp_woo_fail( 'Tax rates cannot be trashed. Pass force=true to delete it permanently.' );
@@ -281,7 +305,10 @@ function wsp_woo_zone_read_locations( $zone_id ) {
 }
 
 function wsp_execute_woo_get_shipping_zones( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	$zones = wsp_woo_rest( 'GET', 'shipping/zones' );
 	if ( is_wp_error( $zones ) ) return wsp_woo_fail( $zones->get_error_message() );
 	$out = array();
@@ -299,7 +326,10 @@ function wsp_execute_woo_get_shipping_zones( $input ) {
 }
 
 function wsp_execute_woo_create_shipping_zone( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	if ( empty( $input['name'] ) ) return wsp_woo_fail( 'name is required.' );
 	$locations = array();
 	if ( ! empty( $input['locations'] ) ) {
@@ -318,7 +348,10 @@ function wsp_execute_woo_create_shipping_zone( $input ) {
 }
 
 function wsp_execute_woo_update_shipping_zone( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	if ( ! isset( $input['id'] ) ) return wsp_woo_fail( 'id is required.' );
 	$id = intval( $input['id'] );
 	if ( 0 === $id ) return wsp_woo_fail( 'Zone 0 ("Locations not covered by your other zones") cannot be edited. Manage its methods with the shipping method tools instead.' );
@@ -357,7 +390,10 @@ function wsp_execute_woo_update_shipping_zone( $input ) {
 }
 
 function wsp_execute_woo_delete_shipping_zone( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	if ( ! isset( $input['id'] ) ) return wsp_woo_fail( 'id is required.' );
 	$id = intval( $input['id'] );
 	if ( 0 === $id ) return wsp_woo_fail( 'Zone 0 ("Locations not covered by your other zones") cannot be deleted.' );
@@ -371,7 +407,10 @@ function wsp_execute_woo_delete_shipping_zone( $input ) {
 }
 
 function wsp_execute_woo_get_shipping_methods( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	if ( ! isset( $input['zone_id'] ) ) return wsp_woo_fail( 'zone_id is required (0 = "Locations not covered by your other zones").' );
 	$zid = intval( $input['zone_id'] );
 	$res = wsp_woo_rest( 'GET', "shipping/zones/{$zid}/methods" );
@@ -390,7 +429,10 @@ function wsp_woo_method_settings( $input ) {
 }
 
 function wsp_execute_woo_add_shipping_method( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	if ( ! isset( $input['zone_id'] ) || empty( $input['method_id'] ) ) return wsp_woo_fail( 'zone_id and method_id are required.' );
 	$zid    = intval( $input['zone_id'] );
 	$method = sanitize_key( $input['method_id'] );
@@ -416,7 +458,10 @@ function wsp_execute_woo_add_shipping_method( $input ) {
 }
 
 function wsp_execute_woo_update_shipping_method( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	if ( ! isset( $input['zone_id'] ) || empty( $input['instance_id'] ) ) return wsp_woo_fail( 'zone_id and instance_id are required.' );
 	$zid = intval( $input['zone_id'] );
 	$iid = intval( $input['instance_id'] );
@@ -433,7 +478,10 @@ function wsp_execute_woo_update_shipping_method( $input ) {
 }
 
 function wsp_execute_woo_delete_shipping_method( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	if ( ! isset( $input['zone_id'] ) || empty( $input['instance_id'] ) ) return wsp_woo_fail( 'zone_id and instance_id are required.' );
 	if ( ! wsp_woo_flag( $input, 'force' ) ) return wsp_woo_fail( 'Shipping methods cannot be trashed. Pass force=true to delete it permanently.' );
 	$zid = intval( $input['zone_id'] );
@@ -460,16 +508,28 @@ function wsp_woo_gateway_row( $g ) {
 }
 
 function wsp_execute_woo_get_payment_gateways( $input ) {
-	if ( $e = wsp_woo_guard( 'manage_options' ) ) return $e;
-	if ( $e = wsp_woo_guard( 'manage_woocommerce' ) ) return $e;
+	$e = wsp_woo_guard( 'manage_options' );
+	if ( $e ) {
+		return $e;
+	}
+	$e = wsp_woo_guard( 'manage_woocommerce' );
+	if ( $e ) {
+		return $e;
+	}
 	$rows = wsp_woo_rest( 'GET', 'payment_gateways' );
 	if ( is_wp_error( $rows ) ) return wsp_woo_fail( $rows->get_error_message() );
 	return wsp_woo_ok( array( 'gateways' => array_map( 'wsp_woo_gateway_row', $rows ), 'total' => count( $rows ) ) );
 }
 
 function wsp_execute_woo_update_payment_gateway( $input ) {
-	if ( $e = wsp_woo_guard( 'manage_options' ) ) return $e;
-	if ( $e = wsp_woo_guard( 'manage_woocommerce' ) ) return $e;
+	$e = wsp_woo_guard( 'manage_options' );
+	if ( $e ) {
+		return $e;
+	}
+	$e = wsp_woo_guard( 'manage_woocommerce' );
+	if ( $e ) {
+		return $e;
+	}
 	$id = isset( $input['id'] ) ? sanitize_key( $input['id'] ) : '';
 	if ( '' === $id ) return wsp_woo_fail( 'id is required (e.g. bacs, cheque, cod, stripe).' );
 	$p = array();

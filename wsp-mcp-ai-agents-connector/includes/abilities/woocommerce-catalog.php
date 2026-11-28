@@ -76,8 +76,8 @@ function wsp_woo_pick( $row, $keys ) {
 }
 
 /** Strict bool for tool inputs (accepts true/"true"/1). */
-function wsp_woo_flag( $input, $key, $default = false ) {
-	if ( ! isset( $input[ $key ] ) ) return $default;
+function wsp_woo_flag( $input, $key, $default_value = false ) {
+	if ( ! isset( $input[ $key ] ) ) return $default_value;
 	return filter_var( $input[ $key ], FILTER_VALIDATE_BOOLEAN );
 }
 
@@ -112,7 +112,10 @@ function wsp_woo_delete_object_result( $id, $name, $force, $deleted, $status_aft
 }
 
 function wsp_execute_woo_delete_product( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	$id    = isset( $input['id'] ) ? intval( $input['id'] ) : 0;
 	$force = wsp_woo_flag( $input, 'force' );
 	$p     = $id ? wc_get_product( $id ) : false;
@@ -132,7 +135,10 @@ function wsp_execute_woo_delete_product( $input ) {
 }
 
 function wsp_execute_woo_delete_variation( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	$pid   = isset( $input['product_id'] ) ? intval( $input['product_id'] ) : 0;
 	$vid   = isset( $input['variation_id'] ) ? intval( $input['variation_id'] ) : 0;
 	$force = wsp_woo_flag( $input, 'force' );
@@ -150,7 +156,10 @@ function wsp_execute_woo_delete_variation( $input ) {
 }
 
 function wsp_execute_woo_delete_coupon( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	$id    = isset( $input['id'] ) ? intval( $input['id'] ) : 0;
 	$force = wsp_woo_flag( $input, 'force' );
 	if ( ! $id || 'shop_coupon' !== get_post_type( $id ) ) return wsp_woo_fail( 'Coupon not found.' );
@@ -167,7 +176,10 @@ function wsp_execute_woo_delete_coupon( $input ) {
 
 /** Terms have no trash in WordPress, so permanent deletion needs an explicit force=true. */
 function wsp_woo_delete_term_tool( $input, $taxonomy, $label ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	$id = isset( $input['id'] ) ? intval( $input['id'] ) : 0;
 	$term = $id ? get_term( $id, $taxonomy ) : null;
 	if ( ! $term || is_wp_error( $term ) ) return wsp_woo_fail( ucfirst( $label ) . ' not found.' );
@@ -221,12 +233,18 @@ function wsp_woo_list_terms( $route, $input ) {
 }
 
 function wsp_execute_woo_get_product_categories( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	return wsp_woo_list_terms( 'products/categories', $input );
 }
 
 function wsp_execute_woo_get_product_tags( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	return wsp_woo_list_terms( 'products/tags', $input );
 }
 
@@ -235,7 +253,10 @@ function wsp_execute_woo_get_product_tags( $input ) {
  * wc/v3 REST route so it works on every WooCommerce version that registers the taxonomy.
  */
 function wsp_execute_woo_get_product_brands( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	if ( ! taxonomy_exists( 'product_brand' ) ) {
 		return wsp_woo_fail( 'Brands are not available on this site: the product_brand taxonomy is not registered (WooCommerce 9.6+ includes Brands).' );
 	}
@@ -285,7 +306,10 @@ function wsp_woo_category_params( $input, $creating ) {
 }
 
 function wsp_execute_woo_create_product_category( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	if ( empty( $input['name'] ) ) return wsp_woo_fail( 'name is required.' );
 	$p = wsp_woo_category_params( $input, true );
 	if ( is_string( $p ) ) return wsp_woo_fail( $p );
@@ -296,7 +320,10 @@ function wsp_execute_woo_create_product_category( $input ) {
 }
 
 function wsp_execute_woo_update_product_category( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	$id = isset( $input['id'] ) ? intval( $input['id'] ) : 0;
 	if ( ! $id || ! term_exists( $id, 'product_cat' ) ) return wsp_woo_fail( 'Product category not found.' );
 	$p = wsp_woo_category_params( $input, false );
@@ -311,7 +338,10 @@ function wsp_execute_woo_update_product_category( $input ) {
 }
 
 function wsp_execute_woo_create_product_tag( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	if ( empty( $input['name'] ) ) return wsp_woo_fail( 'name is required.' );
 	$p = array( 'name' => sanitize_text_field( wp_unslash( $input['name'] ) ) );
 	if ( isset( $input['slug'] ) )        $p['slug']        = sanitize_title( wp_unslash( $input['slug'] ) );
@@ -322,7 +352,10 @@ function wsp_execute_woo_create_product_tag( $input ) {
 }
 
 function wsp_execute_woo_assign_product_tags( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	$ids = isset( $input['product_ids'] ) && is_array( $input['product_ids'] ) ? array_values( array_unique( array_filter( array_map( 'intval', $input['product_ids'] ) ) ) ) : array();
 	if ( empty( $ids ) ) return wsp_woo_fail( 'product_ids is required.' );
 	if ( count( $ids ) > 200 ) return wsp_woo_fail( 'At most 200 products per call.' );
@@ -365,7 +398,10 @@ function wsp_execute_woo_assign_product_tags( $input ) {
 }
 
 function wsp_execute_woo_update_product_tag( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	$id = isset( $input['id'] ) ? intval( $input['id'] ) : 0;
 	if ( ! $id || ! term_exists( $id, 'product_tag' ) ) return wsp_woo_fail( 'Product tag not found.' );
 	$p = array();
@@ -413,7 +449,10 @@ function wsp_woo_attribute_params( $input ) {
 }
 
 function wsp_execute_woo_get_attributes( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	$rows = wsp_woo_rest( 'GET', 'products/attributes' );
 	if ( is_wp_error( $rows ) ) return wsp_woo_fail( $rows->get_error_message() );
 	$out = array_map( 'wsp_woo_attribute_row', $rows );
@@ -421,7 +460,10 @@ function wsp_execute_woo_get_attributes( $input ) {
 }
 
 function wsp_execute_woo_create_attribute( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	if ( empty( $input['name'] ) ) return wsp_woo_fail( 'name is required.' );
 	$p = wsp_woo_attribute_params( $input );
 	if ( is_string( $p ) ) return wsp_woo_fail( $p );
@@ -431,7 +473,10 @@ function wsp_execute_woo_create_attribute( $input ) {
 }
 
 function wsp_execute_woo_update_attribute( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	$id = isset( $input['id'] ) ? intval( $input['id'] ) : 0;
 	if ( ! $id ) return wsp_woo_fail( 'id is required.' );
 	$p = wsp_woo_attribute_params( $input );
@@ -443,7 +488,10 @@ function wsp_execute_woo_update_attribute( $input ) {
 }
 
 function wsp_execute_woo_delete_attribute( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	$id = isset( $input['id'] ) ? intval( $input['id'] ) : 0;
 	if ( ! $id ) return wsp_woo_fail( 'id is required.' );
 	if ( ! wsp_woo_flag( $input, 'force' ) ) {
@@ -455,7 +503,10 @@ function wsp_execute_woo_delete_attribute( $input ) {
 }
 
 function wsp_execute_woo_get_attribute_terms( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	$aid = isset( $input['attribute_id'] ) ? intval( $input['attribute_id'] ) : 0;
 	if ( ! $aid ) return wsp_woo_fail( 'attribute_id is required.' );
 	$params = array( 'per_page' => 100, 'hide_empty' => false );
@@ -467,7 +518,10 @@ function wsp_execute_woo_get_attribute_terms( $input ) {
 }
 
 function wsp_execute_woo_create_attribute_term( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	$aid = isset( $input['attribute_id'] ) ? intval( $input['attribute_id'] ) : 0;
 	if ( ! $aid || empty( $input['name'] ) ) return wsp_woo_fail( 'attribute_id and name are required.' );
 	$p = array( 'name' => sanitize_text_field( wp_unslash( $input['name'] ) ) );
@@ -480,7 +534,10 @@ function wsp_execute_woo_create_attribute_term( $input ) {
 }
 
 function wsp_execute_woo_delete_attribute_term( $input ) {
-	if ( $e = wsp_woo_guard() ) return $e;
+	$e = wsp_woo_guard();
+	if ( $e ) {
+		return $e;
+	}
 	$aid = isset( $input['attribute_id'] ) ? intval( $input['attribute_id'] ) : 0;
 	$id  = isset( $input['id'] ) ? intval( $input['id'] ) : 0;
 	if ( ! $aid || ! $id ) return wsp_woo_fail( 'attribute_id and id are required.' );
